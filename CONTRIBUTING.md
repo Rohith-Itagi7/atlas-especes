@@ -6,6 +6,15 @@ coder : il s'agit d'éditer des tableaux Markdown et de déposer des images.
 > Workflow général : **Fork** le dépôt → fais tes changements → ouvre une **Pull Request**.
 > Un mainteneur relit, puis fusionne. Le site se reconstruit et se redéploie tout seul.
 
+## Où contribuer en priorité ?
+
+Le fichier **[COUVERTURE.md](COUVERTURE.md)** liste, pour chaque espèce, les aspects
+(feuille, écorce, fruit, fleur, port) qui ont déjà une photo (✓) et ceux qui **manquent** (✗).
+C'est la meilleure carte des trous à combler. Il est régénéré par `scripts/couverture.py`.
+
+> À chaque Pull Request, une vérification automatique (`scripts/verifier_atlas.py`) contrôle
+> que les tableaux sont bien formés et que les vignettes existent.
+
 ## 1. Ajouter / corriger une **note** ou un **champ**
 
 Ouvre le fichier d'atlas concerné (par ex. `Espèces herbacées - référence.md`), trouve la
