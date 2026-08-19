@@ -121,7 +121,7 @@ def hkey(h):
                    ("strate", "strate"), ("fonction", "fonction"), ("comest", "comestible"),
                    ("ecolog", "ecologie"), ("arbre", "hote"), ("substrat", "hote"), ("hote", "hote"),
                    ("saison", "saison"), ("habitat", "habitat"), ("role", "role"), ("regime", "regime"),
-                   ("note", "notes")]:
+                   ("repart", "repartition"), ("note", "notes")]:
         if h.startswith(pre):
             return k
     if "latin" in h:
@@ -193,6 +193,29 @@ def parse_atlas(path, cat, seen):
                     "note": row.get("notes", ""), "cat": cat, "fields": fields, "paths": paths})
     return out
 
+def load_confusions():
+    """Groupes de sosies depuis « Confusions - référence.md » : | Groupe | Espèces (stems) | Ce qui tranche |"""
+    p = os.path.join(BASE, "Confusions - référence.md")
+    groups = []
+    if not os.path.exists(p):
+        return groups
+    for ln in open(p, encoding="utf-8"):
+        if not ln.lstrip().startswith("|"):
+            continue
+        cells = cells_of(ln)
+        if len(cells) < 3:
+            continue
+        if cells[1].strip().lower().startswith("esp"):  # en-tête
+            continue
+        if set(cells[0].strip()) <= set("-: "):  # séparateur
+            continue
+        stems = [x.strip() for x in re.split(r"[,;]", cells[1]) if x.strip()]
+        tip = cells[2].strip()
+        if stems and tip:
+            groups.append({"stems": stems, "tip": tip})
+    return groups
+CONF = load_confusions()
+
 def to_data(species, enc, cap=None):
     res = []
     for s in species:
@@ -201,9 +224,11 @@ def to_data(species, enc, cap=None):
             extras = sorted(paths[1:], key=lambda p: 0 if [a for a in aspect_of(p, s["stem"]) if a != "divers"] else 1)
             paths = paths[:1] + extras[:cap - 1]
         imgs = [{"u": enc(p), "a": aspect_of(p, s["stem"]), "f": os.path.basename(p)} for p in paths]
+        conf = [{"tip": g["tip"], "mates": [m for m in g["stems"] if m != s["stem"]]}
+                for g in CONF if s["stem"] in g["stems"]]
         res.append({"id": s["id"], "stem": s["stem"], "name": s["name"], "latin": s["latin"],
                     "note": s["note"], "cat": s["cat"], "fields": s["fields"], "imgs": imgs,
-                    "indic": ("indic" in (s["note"] or "").lower())})
+                    "indic": ("indic" in (s["note"] or "").lower()), "conf": conf})
     return res
 
 CSS = r"""
@@ -289,6 +314,7 @@ BODY = r"""
 <div class="sub">identification — progression sauvegardée sur cet appareil</div></header>
 <div id="home">
   <button class="go alt" id="showlist" style="margin-top:0">📋 Explorer l'atlas &amp; les photos</button>
+  <button class="go alt" id="showcrit" style="margin-top:8px;background:linear-gradient(180deg,#c9a24b,#b0862f)">🃏 Trier par critère (swipe)</button>
   <div class="card">
     <div class="grouplab">🗂 Que réviser ?</div><div class="opts" id="scope"></div>
     <div class="grouplab" style="margin-top:14px">🎓 Mode</div><div class="opts" id="mode"></div>
@@ -349,6 +375,24 @@ BODY = r"""
     <div class="chips" id="detailchips" style="justify-content:center;margin-top:6px"></div>
   </div>
 </div>
+<div id="crit" class="hidden">
+  <div class="topbar"><button class="ghost" id="backcrit">← Accueil</button><div class="mini" id="critscore"></div></div>
+  <div id="critchoose">
+    <div class="card"><div class="grouplab">🃏 Sur quelle catégorie ?</div><div class="opts" id="critscope"></div>
+      <div class="grouplab" style="margin-top:14px">Critère à trier</div><div class="opts" id="critlist"></div>
+      <div class="hint">Réponds pour chaque espèce : appartient-elle au critère ? Swipe (ou boutons / flèches ←→).</div>
+    </div>
+  </div>
+  <div id="critplay" class="hidden">
+    <div class="pill" id="critq" style="text-align:center;font-weight:800;font-size:17px;margin:6px 0 10px"></div>
+    <div class="card" id="critcard" style="touch-action:pan-y">
+      <div class="imgbox" id="critimg"><img id="critpic" alt="espèce à trier"></div>
+      <div style="text-align:center;font-weight:700;font-size:17px;margin-top:8px" id="critname"></div>
+    </div>
+    <div class="opts"><button class="opt" id="critno">👎 Dehors</button><button class="opt" id="crityes">👍 Dedans</button></div>
+    <div id="critfb"></div>
+  </div>
+</div>
 <div class="credit">Photos : Wikimedia Commons &amp; iNaturalist (licences libres / CC).<br>
 <a href="https://github.com/iribarnesy/atlas-especes" target="_blank" rel="noopener">Contribuer ou télécharger les atlas (Markdown) sur GitHub ↗</a></div>
 </div>
@@ -360,7 +404,7 @@ const KEY='quizEspeces_v1', FLAGKEY='photoFlags_v1', TAGKEY='tagOverrides_v1', C
 const REPO='iribarnesy/atlas-especes';
 const ASPECTS={tout:'✨ Tout',divers:'Divers',feuille:'🍃 Feuille',ecorce:'🪵 Écorce',fruit:'🍒 Fruit',fleur:'🌸 Fleur',rameau:"❄️ Rameau",port:'🌲 Port'};
 const CHIP_ASPECTS=['feuille','ecorce','fruit','fleur','port'];
-const FIELD_ORDER=[['groupe','Groupe'],['type','Type'],['cycle','Cycle'],['famille','Famille'],['ecologie','Écologie'],['hote','Arbre / substrat'],['habitat','Habitat'],['role','Rôle'],['regime','Régime'],['saison','Saison'],['lumiere','Lumière'],['fixn','Fixation N'],['mycorhize','Mycorhize'],['succession','Succession'],['strate','Strate'],['fonction','Fonction'],['comestible','Comestible'],['notes','Notes']];
+const FIELD_ORDER=[['groupe','Groupe'],['type','Type'],['cycle','Cycle'],['famille','Famille'],['ecologie','Écologie'],['hote','Arbre / substrat'],['habitat','Habitat'],['role','Rôle'],['regime','Régime'],['saison','Saison'],['lumiere','Lumière'],['fixn','Fixation N'],['mycorhize','Mycorhize'],['succession','Succession'],['strate','Strate'],['fonction','Fonction'],['comestible','Comestible'],['repartition','Où on la trouve'],['notes','Notes']];
 const CATLABEL={ligneux:'🌳 Ligneux',herbace:'🌿 Herbacées',champignon:'🍄 Champignons',faune:'🦋 Faune',divers:'🌾 Diverses'};
 const CATSHORT={ligneux:'ligneux',herbace:'herbacée',champignon:'champignon',faune:'animal',divers:'flore'};
 function catsAvail(){const s=[];SPECIES.forEach(sp=>{if(!s.includes(sp.cat))s.push(sp.cat);});return ['ligneux','herbace','champignon','faune','divers'].filter(c=>s.includes(c));}
@@ -374,6 +418,7 @@ let cfg={scope:'ligneux',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'faci
 let current=null, session={s:0,c:0}, answered=false, detailSp=null, detailIdx=0, detailArr=[], detailPos=0, curImg=null;
 const sortedScope=()=>scopeAll().slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));
 const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+const md=s=>(s||'').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
 const save=()=>localStorage.setItem(KEY,JSON.stringify(stats));
 const savef=()=>localStorage.setItem(FLAGKEY,JSON.stringify(flags));
 const savet=()=>localStorage.setItem(TAGKEY,JSON.stringify(tags));
@@ -400,7 +445,7 @@ function renderConfig(){radios('scope',catsAvail().map(c=>[c,CATLABEL[c]||c]).co
   const asp=aspectsAvail();if(!asp.includes(cfg.aspect))cfg.aspect='tout';
   radios('aspect',asp.map(a=>[a,ASPECTS[a]]));document.getElementById('asphint').style.display=asp.length>1?'none':'block';
   radios('qtype',[['photo','📷 Photo'],['fiche','📋 Fiche → devine']]);
-  radios('diff',[['facile','🟢 Facile (4 choix)'],['difficile','🎯 Difficile (liste)']]);renderStats();applyAspectFills();}
+  radios('diff',[['facile','🟢 QCM'],['sosies','🎭 Sosies'],['difficile','🎯 Saisie']]);renderStats();applyAspectFills();}
 function aspectPct(asp){const inS=scopeAll().filter(sp=>asp==='tout'||aspPresent(sp,asp));if(!inS.length)return 0;
   return Math.round(100*inS.filter(sp=>known(sp.id,'photo',asp)).length/inS.length);}
 function applyAspectFills(){document.querySelectorAll('#aspect .opt').forEach(el=>{const val=el.dataset.val;if(!val)return;
@@ -429,9 +474,14 @@ function next(){answered=false;window.scrollTo(0,0);document.getElementById('fee
   const rp=document.getElementById('reportpanel');rp.classList.add('hidden');rp.innerHTML='';
   document.getElementById('ctx').textContent=(cfg.mode==='apprendre'?'Apprendre':'Réviser')+' · '+(CATSHORT[current.cat]||current.cat)+(cfg.qtype==='photo'&&cfg.aspect!=='tout'?' · '+ASPECTS[cfg.aspect].toLowerCase():'')+(cfg.qtype==='fiche'?' · fiche':'')+' · reste '+p.length;
   const zone=document.getElementById('answerzone');
-  if(cfg.diff==='facile'){const same=scopeAll().filter(s=>s.cat===current.cat&&s.id!==current.id);
-    const src=same.length>=3?same:scopeAll().filter(s=>s.id!==current.id);
-    const opts=shuffle(src.slice()).slice(0,3).map(s=>s.name);opts.push(current.name);shuffle(opts);
+  if(cfg.diff!=='difficile'){let src;
+    if(cfg.diff==='sosies'){const mates=new Set();(current.conf||[]).forEach(c=>c.mates.forEach(m=>mates.add(m)));
+      const inScopeMates=scopeAll().filter(s=>s.id!==current.id&&mates.has(s.stem));
+      const filler=scopeAll().filter(s=>s.cat===current.cat&&s.id!==current.id&&!mates.has(s.stem));
+      src=shuffle(inScopeMates.slice()).concat(shuffle(filler.slice()));
+    }else{const same=scopeAll().filter(s=>s.cat===current.cat&&s.id!==current.id);
+      src=shuffle((same.length>=3?same:scopeAll().filter(s=>s.id!==current.id)).slice());}
+    const opts=src.slice(0,3).map(s=>s.name);opts.push(current.name);shuffle(opts);
     zone.innerHTML='<div class="opts">'+opts.map(o=>`<button class="opt">${o}</button>`).join('')+'</div>';
     zone.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(b.textContent===current.name,b));
   }else{const names=[...new Set(scopeAll().map(s=>s.name))].sort((a,b)=>a.localeCompare(b,'fr'));
@@ -441,7 +491,7 @@ function answer(ok,btn){if(answered)return;answered=true;
   const k=stkey(current.id);const s=stats[k]||{s:0,c:0,ko:false};s.s++;if(ok)s.c++;if(!ok&&cfg.mode==='reviser')s.ko=true;if(ok)s.ko=false;
   stats[k]=s;save();session.s++;if(ok)session.c++;document.getElementById('score').textContent=session.c+' / '+session.s;if(btn)btn.classList.add('sel');
   const nk=known(current.id);
-  document.getElementById('feedback').innerHTML=`<div class="fb ${ok?'ok':'no'}">${ok?'✅ Correct':'❌ Faux'}<div class="nm">${current.name}${nk?'<span class="badge">connue ★</span>':''}</div><div class="lt">${current.latin||''}</div>`+(current.note?`<div class="nt">${current.note}</div>`:'')+`<button class="go" id="suiv" style="margin-top:10px">Espèce suivante →</button></div>`;
+  document.getElementById('feedback').innerHTML=`<div class="fb ${ok?'ok':'no'}">${ok?'✅ Correct':'❌ Faux'}<div class="nm">${current.name}${nk?'<span class="badge">connue ★</span>':''}</div><div class="lt">${current.latin||''}</div>`+(current.note?`<div class="nt">${current.note}</div>`:'')+(current.conf&&current.conf.length?`<div class="nt">🔎 ${current.conf.map(c=>md(c.tip)).join('<br>')}</div>`:'')+`<button class="go" id="suiv" style="margin-top:10px">Espèce suivante →</button></div>`;
   document.getElementById('suiv').onclick=next;document.getElementById('suiv').focus();}
 function chipState(id,a){if(flags[id]&&flags[id][a])return 'want';return aspPresent(BYID[id],a)?'ok':'missing';}
 function toggleFlag(id,a){flags[id]=flags[id]||{};if(flags[id][a])delete flags[id][a];else flags[id][a]=1;if(!Object.keys(flags[id]).length)delete flags[id];savef();}
@@ -533,7 +583,40 @@ function publishToGitHub(){
   const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
 function markGaps(){scopeAll().forEach(sp=>CHIP_ASPECTS.forEach(a=>{if(!aspPresent(sp,a)){flags[sp.id]=flags[sp.id]||{};flags[sp.id][a]=1;}}));savef();renderList();}
 function clearMarks(){flags={};savef();renderList();document.getElementById('expout').classList.add('hidden');}
-function show(id){['home','quiz','list','detail'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));}
+const CRITERIA=[
+ {id:'fixn',q:"Fixe l'azote ?",field:'fixn',has:sp=>('fixn' in sp.fields),ok:sp=>/rhizobium|frankia/i.test(sp.fields.fixn||'')},
+ {id:'soleil',q:'Aime le plein soleil ?',field:'lumiere',has:sp=>('lumiere' in sp.fields),ok:sp=>/☀/.test(sp.fields.lumiere||'')},
+ {id:'ombre',q:"Supporte l'ombre ?",field:'lumiere',has:sp=>('lumiere' in sp.fields),ok:sp=>/☾/.test(sp.fields.lumiere||'')},
+ {id:'vivace',q:'Est-ce une vivace ?',field:'cycle',has:sp=>('cycle' in sp.fields),ok:sp=>/vivace/i.test(sp.fields.cycle||'')},
+ {id:'fixateur',q:'A un rôle fixateur ?',field:'fonction',has:sp=>('fonction' in sp.fields),ok:sp=>/(^|[^a-z])fix/i.test(sp.fields.fonction||'')},
+ {id:'cs',q:'Est-ce un couvre-sol ?',field:'fonction',has:sp=>('fonction' in sp.fields),ok:sp=>/(^|[^a-z])cs([^a-z]|$)/i.test(sp.fields.fonction||'')},
+ {id:'pionnier',q:'Espèce pionnière ?',field:'succession',has:sp=>('succession' in sp.fields),ok:sp=>/pion/i.test(sp.fields.succession||'')},
+ {id:'ligneux',q:'Est-ce un ligneux (arbre/arbuste) ?',field:null,only:'mixte',has:sp=>true,ok:sp=>sp.cat==='ligneux'},
+];
+let critC=null,critQueue=[],critPos=0,critSess={s:0,c:0},critScope='ligneux';
+function critScopes(){return ['ligneux','herbace','champignon','faune','divers'].filter(c=>SPECIES.some(s=>s.cat===c)).concat(['mixte']);}
+function renderCritScope(){const host=document.getElementById('critscope');host.innerHTML='';
+  critScopes().forEach(v=>{const d=document.createElement('div');d.className='opt'+(critScope===v?' sel':'');d.tabIndex=0;d.textContent=v==='mixte'?'🎲 Tout':(CATLABEL[v]||v);d.onclick=()=>{critScope=v;renderCritScope();renderCritList();};host.appendChild(d);});}
+function critAvail(cr){return SPECIES.filter(sp=>(critScope==='mixte'||sp.cat===critScope)&&cr.has(sp));}
+function renderCritList(){const host=document.getElementById('critlist');host.innerHTML='';
+  CRITERIA.forEach(cr=>{if(cr.only&&cr.only!==critScope)return;const n=critAvail(cr).length;if(n<4)return;
+    const d=document.createElement('div');d.className='opt';d.tabIndex=0;d.textContent=cr.q+' ('+n+')';d.onclick=()=>startCrit(cr);host.appendChild(d);});
+  if(!host.children.length)host.innerHTML='<div class="hint">Aucun critère objectif pour cette catégorie — essaie Ligneux, Herbacées ou Tout.</div>';}
+function openCrit(){show('crit');document.getElementById('critchoose').classList.remove('hidden');document.getElementById('critplay').classList.add('hidden');document.getElementById('critscore').textContent='';renderCritScope();renderCritList();window.scrollTo(0,0);}
+function startCrit(cr){critC=cr;critQueue=shuffle(critAvail(cr).slice());critPos=0;critSess={s:0,c:0};
+  document.getElementById('critchoose').classList.add('hidden');document.getElementById('critplay').classList.remove('hidden');
+  document.getElementById('critq').textContent=cr.q;document.getElementById('critscore').textContent='0 / 0';critNext();}
+function critReset(){const c=document.getElementById('critcard');c.style.transition='transform .15s,opacity .15s';c.style.transform='';c.style.opacity=1;setTimeout(()=>{c.style.transition='';},150);}
+function critNext(){const fb=document.getElementById('critfb'),card=document.getElementById('critcard');
+  if(critPos>=critQueue.length){card.style.display='none';fb.innerHTML='<div class="fb ok">Terminé ! <b>'+critSess.c+' / '+critSess.s+'</b> bonnes réponses.<button class="go" id="critagain" style="margin-top:10px">Choisir un autre critère</button></div>';document.getElementById('critagain').onclick=openCrit;return;}
+  const sp=critQueue[critPos];card.style.display='';document.getElementById('critpic').src=sp.imgs[0].u;document.getElementById('critname').textContent=sp.name;fb.innerHTML='';critReset();}
+function critAnswer(yes){if(!critC||critPos>=critQueue.length)return;const sp=critQueue[critPos],truth=critC.ok(sp),ok=(yes===truth);
+  critSess.s++;if(ok)critSess.c++;document.getElementById('critscore').textContent=critSess.c+' / '+critSess.s;
+  const val=critC.field?(sp.fields[critC.field]||'—'):(CATSHORT[sp.cat]||sp.cat);
+  document.getElementById('critfb').innerHTML='<div class="fb '+(ok?'ok':'no')+'">'+(ok?'✅ Correct':'❌ Faux')+' — '+sp.name+' est <b>'+(truth?'dedans':'dehors')+'</b> <span class="lt">('+val+')</span><button class="go" id="critsuiv" style="margin-top:8px">Suivante →</button></div>';
+  document.getElementById('critsuiv').onclick=()=>{critPos++;critNext();};}
+function critSwipeOut(yes){const c=document.getElementById('critcard');c.style.transition='transform .2s,opacity .2s';c.style.transform='translateX('+(yes?520:-520)+'px) rotate('+(yes?12:-12)+'deg)';c.style.opacity=0;setTimeout(()=>{c.style.transition='';critAnswer(yes);},170);}
+function show(id){['home','quiz','list','detail','crit'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));}
 function toHome(){show('home');renderConfig();window.scrollTo(0,0);}
 // Historique navigateur : bouton Retour = vue précédente (fonctionne là où l'History API est dispo,
 // ex. GitHub Pages ; repli sur navigation directe si bloquée, ex. iframe d'artifact à origine opaque).
@@ -547,6 +630,7 @@ function renderView(v,id){
     if(el){el.scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
   else if(v==='detail'){openDetail(id||(detailSp&&detailSp.id));}
   else if(v==='quiz'){show('quiz');window.scrollTo(0,0);}
+  else if(v==='crit'){openCrit();}
   else{show('home');renderConfig();window.scrollTo(0,0);}}
 if(HISTOK)window.addEventListener('popstate',function(e){const st=(e.state&&e.state.v)?e.state:{v:'home'};renderView(st.v,st.id);});
 function makeBackup(){return JSON.stringify({v:1,app:'atlas-quiz',stats:stats,tags:tags,flags:flags});}
@@ -577,6 +661,17 @@ document.getElementById('restorebtn').onclick=()=>{const t=document.getElementBy
 document.getElementById('reportbtn').onclick=()=>{const p=document.getElementById('reportpanel');
   if(p.classList.contains('hidden')){p.classList.remove('hidden');renderReport(curImg);}else{p.classList.add('hidden');}};
 document.getElementById('reset').onclick=()=>{if(confirm('Effacer toute la progression (pas les tags/corrections) ?')){stats={};save();renderConfig();}};
+document.getElementById('showcrit').onclick=()=>{openCrit();navPush({v:'crit'});};
+document.getElementById('backcrit').onclick=()=>navBack('home');
+document.getElementById('crityes').onclick=()=>{if(!document.getElementById('critfb').innerHTML)critSwipeOut(true);};
+document.getElementById('critno').onclick=()=>{if(!document.getElementById('critfb').innerHTML)critSwipeOut(false);};
+(function(){const card=document.getElementById('critcard');let x0=0,dx=0,drag=false;
+  card.addEventListener('pointerdown',e=>{if(document.getElementById('critfb').innerHTML)return;drag=true;x0=e.clientX;dx=0;try{card.setPointerCapture(e.pointerId);}catch(_){}});
+  card.addEventListener('pointermove',e=>{if(!drag)return;dx=e.clientX-x0;card.style.transform='translateX('+dx+'px) rotate('+(dx/25)+'deg)';card.style.opacity=(1-Math.min(Math.abs(dx)/500,.35));});
+  card.addEventListener('pointerup',()=>{if(!drag)return;drag=false;if(Math.abs(dx)>90){critSwipeOut(dx>0);}else{critReset();}dx=0;});})();
+window.addEventListener('keydown',e=>{if(document.getElementById('crit').classList.contains('hidden'))return;
+  if(document.getElementById('critplay').classList.contains('hidden'))return;if(document.getElementById('critfb').innerHTML)return;
+  if(e.key==='ArrowRight'){e.preventDefault();critSwipeOut(true);}else if(e.key==='ArrowLeft'){e.preventDefault();critSwipeOut(false);}});
 (function(){const dl=document.createElement('datalist');dl.id='allnames';
   SPECIES.forEach(s=>{const o=document.createElement('option');o.value=s.name;dl.appendChild(o);});document.body.appendChild(dl);})();
 renderConfig();
