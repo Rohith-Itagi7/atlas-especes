@@ -306,6 +306,14 @@ a.reset{display:block;text-align:center;color:var(--soft);font-size:12px;margin-
 .fv.blur.reveal::after{content:''}
 .fichehint{font-size:11px;color:var(--soft);font-style:italic;margin-top:8px}
 .indic{color:#B07C24;font-weight:700;font-size:12px}
+#critplay{display:flex;flex-direction:column;min-height:calc(100dvh - 120px)}
+#critcard{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;margin:0}
+#critimg{width:100%;flex:1 1 auto;min-height:130px;aspect-ratio:auto;border-radius:12px;overflow:hidden;background:#eef0e8;display:flex;align-items:center;justify-content:center}
+#critimg img{width:100%;height:100%;object-fit:contain}
+#critbtns{margin-top:10px}
+.critbanner{padding:9px 12px;border-radius:10px;font-size:14px;margin-top:8px;text-align:center}
+.critbanner.ok{background:#EAF3DD;border:1px solid var(--green)}
+.critbanner.no{background:#F7E4E0;border:1px solid var(--red)}
 """
 
 BODY = r"""
@@ -384,13 +392,13 @@ BODY = r"""
     </div>
   </div>
   <div id="critplay" class="hidden">
-    <div class="pill" id="critq" style="text-align:center;font-weight:800;font-size:17px;margin:6px 0 10px"></div>
+    <div class="pill" id="critq" style="text-align:center;font-weight:800;font-size:17px;margin:4px 0 8px"></div>
     <div class="card" id="critcard" style="touch-action:pan-y">
-      <div class="imgbox" id="critimg"><img id="critpic" alt="espèce à trier"></div>
+      <div id="critimg"><img id="critpic" alt="espèce à trier"></div>
       <div style="text-align:center;font-weight:700;font-size:17px;margin-top:8px" id="critname"></div>
     </div>
-    <div class="opts"><button class="opt" id="critno">👎 Dehors</button><button class="opt" id="crityes">👍 Dedans</button></div>
     <div id="critfb"></div>
+    <div class="opts" id="critbtns"><button class="opt" id="critno">👎 Non</button><button class="opt" id="crityes">👍 Oui</button></div>
   </div>
 </div>
 <div class="credit">Photos : Wikimedia Commons &amp; iNaturalist (licences libres / CC).<br>
@@ -593,7 +601,7 @@ const CRITERIA=[
  {id:'pionnier',q:'Espèce pionnière ?',field:'succession',has:sp=>('succession' in sp.fields),ok:sp=>/pion/i.test(sp.fields.succession||'')},
  {id:'ligneux',q:'Est-ce un ligneux (arbre/arbuste) ?',field:null,only:'mixte',has:sp=>true,ok:sp=>sp.cat==='ligneux'},
 ];
-let critC=null,critQueue=[],critPos=0,critSess={s:0,c:0},critScope='ligneux';
+let critC=null,critQueue=[],critPos=0,critSess={s:0,c:0},critScope='ligneux',critAnim=false;
 function critScopes(){return ['ligneux','herbace','champignon','faune','divers'].filter(c=>SPECIES.some(s=>s.cat===c)).concat(['mixte']);}
 function renderCritScope(){const host=document.getElementById('critscope');host.innerHTML='';
   critScopes().forEach(v=>{const d=document.createElement('div');d.className='opt'+(critScope===v?' sel':'');d.tabIndex=0;d.textContent=v==='mixte'?'🎲 Tout':(CATLABEL[v]||v);d.onclick=()=>{critScope=v;renderCritScope();renderCritList();};host.appendChild(d);});}
@@ -605,18 +613,24 @@ function renderCritList(){const host=document.getElementById('critlist');host.in
 function openCrit(){show('crit');document.getElementById('critchoose').classList.remove('hidden');document.getElementById('critplay').classList.add('hidden');document.getElementById('critscore').textContent='';renderCritScope();renderCritList();window.scrollTo(0,0);}
 function startCrit(cr){critC=cr;critQueue=shuffle(critAvail(cr).slice());critPos=0;critSess={s:0,c:0};
   document.getElementById('critchoose').classList.add('hidden');document.getElementById('critplay').classList.remove('hidden');
-  document.getElementById('critq').textContent=cr.q;document.getElementById('critscore').textContent='0 / 0';critNext();}
+  document.getElementById('critq').textContent=cr.q;document.getElementById('critscore').textContent='0 / 0';
+  document.getElementById('critfb').innerHTML='';document.getElementById('critbtns').style.display='';critNext();}
 function critReset(){const c=document.getElementById('critcard');c.style.transition='transform .15s,opacity .15s';c.style.transform='';c.style.opacity=1;setTimeout(()=>{c.style.transition='';},150);}
-function critNext(){const fb=document.getElementById('critfb'),card=document.getElementById('critcard');
-  if(critPos>=critQueue.length){card.style.display='none';fb.innerHTML='<div class="fb ok">Terminé ! <b>'+critSess.c+' / '+critSess.s+'</b> bonnes réponses.<button class="go" id="critagain" style="margin-top:10px">Choisir un autre critère</button></div>';document.getElementById('critagain').onclick=openCrit;return;}
-  const sp=critQueue[critPos];card.style.display='';document.getElementById('critpic').src=sp.imgs[0].u;document.getElementById('critname').textContent=sp.name;fb.innerHTML='';critReset();}
-function critAnswer(yes){if(!critC||critPos>=critQueue.length)return;const sp=critQueue[critPos],truth=critC.ok(sp),ok=(yes===truth);
+function critNext(){const card=document.getElementById('critcard');
+  if(critPos>=critQueue.length){card.style.display='none';document.getElementById('critbtns').style.display='none';
+    document.getElementById('critfb').innerHTML='<div class="fb ok">Terminé ! <b>'+critSess.c+' / '+critSess.s+'</b> bonnes réponses.<button class="go" id="critagain" style="margin-top:10px">Choisir un autre critère</button></div>';
+    document.getElementById('critagain').onclick=openCrit;return;}
+  const sp=critQueue[critPos];card.style.display='';document.getElementById('critpic').src=sp.imgs[0].u;document.getElementById('critname').textContent=sp.name;critReset();}
+function critCommit(yes){const sp=critQueue[critPos],truth=critC.ok(sp),ok=(yes===truth);
   critSess.s++;if(ok)critSess.c++;document.getElementById('critscore').textContent=critSess.c+' / '+critSess.s;
   const val=critC.field?(sp.fields[critC.field]||'—'):(CATSHORT[sp.cat]||sp.cat);
-  document.getElementById('critfb').innerHTML='<div class="fb '+(ok?'ok':'no')+'">'+(ok?'✅ Correct':'❌ Faux')+' — '+sp.name+' est <b>'+(truth?'dedans':'dehors')+'</b> <span class="lt">('+val+')</span><button class="go" id="critsuiv" style="margin-top:8px">Suivante →</button></div>';
-  document.getElementById('critsuiv').onclick=()=>{critPos++;critNext();};}
-function critSwipeOut(yes){const c=document.getElementById('critcard');c.style.transition='transform .2s,opacity .2s';c.style.transform='translateX('+(yes?520:-520)+'px) rotate('+(yes?12:-12)+'deg)';c.style.opacity=0;setTimeout(()=>{c.style.transition='';critAnswer(yes);},170);}
-function show(id){['home','quiz','list','detail','crit'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));}
+  document.getElementById('critfb').innerHTML='<div class="critbanner '+(ok?'ok':'no')+'">'+(ok?'✅':'❌')+' '+sp.name+' : <b>'+(truth?'oui':'non')+'</b> <span class="lt">('+val+')</span></div>';
+  critPos++;critNext();}
+function critSwipeOut(yes){if(critAnim||!critC||critPos>=critQueue.length)return;critAnim=true;
+  const c=document.getElementById('critcard');c.style.transition='transform .18s,opacity .18s';c.style.transform='translateX('+(yes?520:-520)+'px) rotate('+(yes?12:-12)+'deg)';c.style.opacity=0;
+  setTimeout(()=>{c.style.transition='';critCommit(yes);critAnim=false;},160);}
+function show(id){['home','quiz','list','detail','crit'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));
+  const h=document.querySelector('.hero');if(h)h.style.display=(id==='home')?'':'none';}
 function toHome(){show('home');renderConfig();window.scrollTo(0,0);}
 // Historique navigateur : bouton Retour = vue précédente (fonctionne là où l'History API est dispo,
 // ex. GitHub Pages ; repli sur navigation directe si bloquée, ex. iframe d'artifact à origine opaque).
@@ -663,14 +677,14 @@ document.getElementById('reportbtn').onclick=()=>{const p=document.getElementByI
 document.getElementById('reset').onclick=()=>{if(confirm('Effacer toute la progression (pas les tags/corrections) ?')){stats={};save();renderConfig();}};
 document.getElementById('showcrit').onclick=()=>{openCrit();navPush({v:'crit'});};
 document.getElementById('backcrit').onclick=()=>navBack('home');
-document.getElementById('crityes').onclick=()=>{if(!document.getElementById('critfb').innerHTML)critSwipeOut(true);};
-document.getElementById('critno').onclick=()=>{if(!document.getElementById('critfb').innerHTML)critSwipeOut(false);};
+document.getElementById('crityes').onclick=()=>critSwipeOut(true);
+document.getElementById('critno').onclick=()=>critSwipeOut(false);
 (function(){const card=document.getElementById('critcard');let x0=0,dx=0,drag=false;
-  card.addEventListener('pointerdown',e=>{if(document.getElementById('critfb').innerHTML)return;drag=true;x0=e.clientX;dx=0;try{card.setPointerCapture(e.pointerId);}catch(_){}});
+  card.addEventListener('pointerdown',e=>{if(critAnim)return;drag=true;x0=e.clientX;dx=0;try{card.setPointerCapture(e.pointerId);}catch(_){}});
   card.addEventListener('pointermove',e=>{if(!drag)return;dx=e.clientX-x0;card.style.transform='translateX('+dx+'px) rotate('+(dx/25)+'deg)';card.style.opacity=(1-Math.min(Math.abs(dx)/500,.35));});
   card.addEventListener('pointerup',()=>{if(!drag)return;drag=false;if(Math.abs(dx)>90){critSwipeOut(dx>0);}else{critReset();}dx=0;});})();
 window.addEventListener('keydown',e=>{if(document.getElementById('crit').classList.contains('hidden'))return;
-  if(document.getElementById('critplay').classList.contains('hidden'))return;if(document.getElementById('critfb').innerHTML)return;
+  if(document.getElementById('critplay').classList.contains('hidden'))return;
   if(e.key==='ArrowRight'){e.preventDefault();critSwipeOut(true);}else if(e.key==='ArrowLeft'){e.preventDefault();critSwipeOut(false);}});
 (function(){const dl=document.createElement('datalist');dl.id='allnames';
   SPECIES.forEach(s=>{const o=document.createElement('option');o.value=s.name;dl.appendChild(o);});document.body.appendChild(dl);})();
