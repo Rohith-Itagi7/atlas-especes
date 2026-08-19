@@ -162,6 +162,7 @@ h2{font-size:18px;margin:8px 0 0;text-align:center}
 button.go{width:100%;padding:14px;border:none;border-radius:12px;background:var(--greenD);color:#fff;font-size:17px;font-weight:700;cursor:pointer;margin-top:6px}
 button.go.alt{background:var(--blue)}
 button.ghost{width:100%;background:none;border:1px solid var(--line);color:var(--soft);border-radius:10px;padding:11px 12px;font-size:14px;cursor:pointer;margin-top:8px}
+button:disabled{opacity:.4;cursor:default}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .topbar button.ghost{width:auto;margin:0}
 .stat{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px}
@@ -216,6 +217,7 @@ BODY = r"""
 <h1>🌳 Atlas & quiz des espèces</h1>
 <div class="sub">identification — progression sauvegardée sur cet appareil</div>
 <div id="home">
+  <button class="go alt" id="showlist" style="margin-top:0">📋 Explorer l'atlas &amp; les photos</button>
   <div class="card">
     <div class="grouplab">Que réviser ?</div><div class="opts" id="scope"></div>
     <div class="grouplab" style="margin-top:14px">Mode</div><div class="opts" id="mode"></div>
@@ -226,7 +228,6 @@ BODY = r"""
     <button class="go" id="start">Commencer ▶</button>
   </div>
   <div class="card"><div class="grouplab">Tes statistiques</div><div id="stats"></div></div>
-  <button class="go alt" id="showlist">📋 Explorer l'atlas &amp; les photos</button>
   <div class="card"><div class="grouplab">Sauvegarde de ma progression</div>
     <div class="hint" style="margin-top:0">Exporte pour garder une copie ou changer d'appareil ; importe pour restaurer.</div>
     <div class="tools">
@@ -264,6 +265,7 @@ BODY = r"""
 <div id="detail" class="hidden">
   <div class="topbar"><button class="ghost" id="backdetail">← Atlas</button><div class="mini" id="detailcount"></div></div>
   <h2 id="detailname"></h2><div class="glat" id="detaillat" style="text-align:center"></div>
+  <div class="topbar" style="margin:8px 0"><button class="ghost" id="prevsp">‹ Précédente</button><button class="ghost" id="nextsp">Suivante ›</button></div>
   <div class="card"><div class="big"><img id="detailpic" alt=""></div>
     <div class="asplabel" id="detailasp"></div>
     <div class="tagger" id="tagger"></div>
@@ -293,7 +295,8 @@ let stats=JSON.parse(localStorage.getItem(KEY)||'{}');
 let flags=JSON.parse(localStorage.getItem(FLAGKEY)||'{}');
 let tags=JSON.parse(localStorage.getItem(TAGKEY)||'{}');
 let cfg={scope:'ligneux',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'facile'};
-let current=null, session={s:0,c:0}, answered=false, detailSp=null, detailIdx=0;
+let current=null, session={s:0,c:0}, answered=false, detailSp=null, detailIdx=0, detailArr=[], detailPos=0;
+const sortedScope=()=>scopeAll().slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));
 const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
 const save=()=>localStorage.setItem(KEY,JSON.stringify(stats));
 const savef=()=>localStorage.setItem(FLAGKEY,JSON.stringify(flags));
@@ -331,7 +334,7 @@ function renderStats(){const inS=scopeAll(),qt=cfg.qtype,ql=qt==='fiche'?'fiche'
     row('Connues en photo 📷★',knP+' / '+inS.length)+row('Connues en fiche 📋★',knF+' / '+inS.length);}
 function startQuiz(){if(pool().length===0){alert("Aucune espèce avec ces réglages (essaie « Tout » / change mode/aspect).");return;}
   session={s:0,c:0};show('quiz');document.getElementById('score').textContent='0 / 0';next();}
-function next(){answered=false;document.getElementById('feedback').innerHTML='';
+function next(){answered=false;window.scrollTo(0,0);document.getElementById('feedback').innerHTML='';
   const p=pool();if(p.length===0){toHome();return;}
   let pick;do{pick=p[Math.floor(Math.random()*p.length)];}while(p.length>1&&pick===current);current=pick;
   const imgbox=document.getElementById('imgbox'),fbox=document.getElementById('fichebox');
@@ -365,7 +368,7 @@ function renderListScope(){const host=document.getElementById('listscope');
   const items=catsAvail().map(c=>[c,CATLABEL[c]||c]).concat([['mixte','Tout']]);host.innerHTML='';
   items.forEach(([val,lab])=>{const d=document.createElement('div');d.className='opt'+(cfg.scope===val?' sel':'');d.tabIndex=0;d.textContent=lab;
     d.onclick=()=>{cfg.scope=val;renderList();};d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();d.onclick();}};host.appendChild(d);});}
-function renderList(){renderListScope();const arr=scopeAll().slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+function renderList(){renderListScope();const arr=sortedScope();
   document.getElementById('listcount').textContent=arr.length+' espèces';
   const statTxt=(id,qt)=>{if(known(id,qt))return '★';const x=st(id,qt);return x.s>0?Math.round(100*x.c/x.s)+'%':'–';};
   document.getElementById('glist').innerHTML=arr.map(sp=>{
@@ -380,7 +383,10 @@ const FICHE_BLUR=['comestible','notes'];
 function ficheHTML(sp){const f=sp.fields||{};const rows=FIELD_ORDER.filter(([k])=>f[k]).map(([k,lab])=>`<div class="frow"><div class="fl">${lab}</div><div class="fv${FICHE_BLUR.includes(k)?' blur':''}">${f[k]}</div></div>`).join('');
   const anyBlur=FIELD_ORDER.some(([k])=>FICHE_BLUR.includes(k)&&f[k]);
   return `<div class="fichecard"><div class="qtag">D'après ces caractères (${CATSHORT[sp.cat]||sp.cat}), quelle espèce ?</div>${rows||'<div class="fv">(fiche peu détaillée)</div>'}${anyBlur?'<div class="fichehint">Comestible &amp; Notes sont floutés (indices) — clique pour révéler.</div>':''}</div>`;}
-function openDetail(id){detailSp=BYID[id];show('detail');
+function openDetail(id){detailSp=BYID[id];show('detail');window.scrollTo(0,0);
+  detailArr=sortedScope();detailPos=detailArr.findIndex(s=>s.id===id);
+  document.getElementById('prevsp').disabled=detailPos<=0;
+  document.getElementById('nextsp').disabled=detailPos<0||detailPos>=detailArr.length-1;
   document.getElementById('detailname').innerHTML=detailSp.name+(detailSp.indic?' <span class="indic">🚩 indicatrice</span>':'');
   document.getElementById('detaillat').textContent=detailSp.latin||'';
   document.getElementById('detailcount').textContent=detailSp.imgs.length+' photo(s)';
@@ -421,7 +427,7 @@ function publishToGitHub(){
 function markGaps(){scopeAll().forEach(sp=>CHIP_ASPECTS.forEach(a=>{if(!aspPresent(sp,a)){flags[sp.id]=flags[sp.id]||{};flags[sp.id][a]=1;}}));savef();renderList();}
 function clearMarks(){flags={};savef();renderList();document.getElementById('expout').classList.add('hidden');}
 function show(id){['home','quiz','list','detail'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));}
-function toHome(){show('home');renderConfig();}
+function toHome(){show('home');renderConfig();window.scrollTo(0,0);}
 function makeBackup(){return JSON.stringify({v:1,app:'atlas-quiz',stats:stats,tags:tags,flags:flags});}
 function showBackupBox(txt){const ta=document.getElementById('backupbox');ta.classList.remove('hidden');ta.value=txt;ta.focus();ta.select();
   try{document.execCommand('copy');}catch(e){}try{if(navigator.clipboard)navigator.clipboard.writeText(txt);}catch(e){}}
@@ -433,9 +439,12 @@ function restore(txt){let o;try{o=JSON.parse(txt);}catch(e){alert('Sauvegarde il
   alert('Progression restaurée ✅');renderConfig();}
 document.getElementById('start').onclick=startQuiz;
 document.getElementById('back').onclick=toHome;
-document.getElementById('showlist').onclick=()=>{show('list');renderList();};
+document.getElementById('showlist').onclick=()=>{show('list');renderList();window.scrollTo(0,0);};
 document.getElementById('backlist').onclick=toHome;
-document.getElementById('backdetail').onclick=()=>{show('list');renderList();};
+document.getElementById('backdetail').onclick=()=>{const id=detailSp&&detailSp.id;show('list');renderList();
+  const el=id&&document.querySelector('.gthumb[data-id="'+id+'"]');if(el){el.scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}};
+document.getElementById('prevsp').onclick=()=>{if(detailPos>0)openDetail(detailArr[detailPos-1].id);};
+document.getElementById('nextsp').onclick=()=>{if(detailPos>=0&&detailPos<detailArr.length-1)openDetail(detailArr[detailPos+1].id);};
 document.getElementById('markgaps').onclick=markGaps;
 document.getElementById('clearmarks').onclick=clearMarks;
 document.getElementById('doexport').onclick=exportGaps;
