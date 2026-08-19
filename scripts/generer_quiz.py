@@ -259,7 +259,8 @@ BODY = r"""
     <div class="chips" id="detailchips" style="justify-content:center;margin-top:6px"></div>
   </div>
 </div>
-<div class="credit">Photos : Wikimedia Commons &amp; iNaturalist (licences libres / CC).</div>
+<div class="credit">Photos : Wikimedia Commons &amp; iNaturalist (licences libres / CC).<br>
+<a href="https://github.com/iribarnesy/atlas-especes" target="_blank" rel="noopener">Contribuer ou télécharger les atlas (Markdown) sur GitHub ↗</a></div>
 </div>
 """
 
