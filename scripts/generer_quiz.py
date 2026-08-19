@@ -415,9 +415,9 @@ function renderStats(){const inS=scopeAll(),qt=cfg.qtype,ql=qt==='fiche'?'fiche'
     row('Rencontrées ('+ql+')',seen.length)+row('Répétitions ('+ql+')',reps)+row('% correct ('+ql+')',pct+' %')+
     row('Connues ★ ('+ql+')',knCur+' / '+inS.length);}
 function startQuiz(){if(pool().length===0){alert("Aucune espèce avec ces réglages (essaie « Tout » / change mode/aspect).");return;}
-  session={s:0,c:0};show('quiz');document.getElementById('score').textContent='0 / 0';next();}
+  session={s:0,c:0};show('quiz');navPush({v:'quiz'});document.getElementById('score').textContent='0 / 0';next();}
 function next(){answered=false;window.scrollTo(0,0);document.getElementById('feedback').innerHTML='';
-  const p=pool();if(p.length===0){toHome();return;}
+  const p=pool();if(p.length===0){navBack('home');return;}
   let pick;do{pick=p[Math.floor(Math.random()*p.length)];}while(p.length>1&&pick===current);current=pick;
   const imgbox=document.getElementById('imgbox'),fbox=document.getElementById('fichebox');
   if(cfg.qtype==='fiche'){imgbox.classList.add('hidden');fbox.classList.remove('hidden');fbox.innerHTML=ficheHTML(current);curImg=null;
@@ -460,7 +460,7 @@ function renderList(){renderListScope();const arr=sortedScope();
     const txt='📷 '+statTxt(sp.id,'photo','tout')+' · 📋 '+statTxt(sp.id,'fiche');
     return `<div class="gcard"><div class="gthumb" data-id="${sp.id}" role="button" tabindex="0"><img loading="lazy" src="${sp.imgs[0].u}" alt=""><span class="gcount">${sp.imgs.length} 📷</span></div><div class="gmeta"><div class="gname">${sp.name}${sp.indic?' 🚩':''}</div><div class="glat">${sp.latin||''}</div><div class="gstat ${cls}">${txt}</div><div class="chips">${chipsHTML(sp.id)}</div></div></div>`;}).join('');
   const g=document.getElementById('glist');
-  g.querySelectorAll('.gthumb').forEach(t=>{const o=()=>openDetail(t.dataset.id);t.onclick=o;t.onkeydown=e=>{if(e.key==='Enter')o();};});bindChips(g);}
+  g.querySelectorAll('.gthumb').forEach(t=>{const o=()=>{openDetail(t.dataset.id);navPush({v:'detail',id:t.dataset.id});};t.onclick=o;t.onkeydown=e=>{if(e.key==='Enter')o();};});bindChips(g);}
 function renderFields(sp){const f=sp.fields||{};document.getElementById('detailfields').innerHTML=
   FIELD_ORDER.filter(([k])=>f[k]).map(([k,lab])=>`<div class="frow"><div class="fl">${lab}</div><div class="fv">${f[k]}</div></div>`).join('');}
 const FICHE_BLUR=['comestible','notes'];
@@ -535,6 +535,20 @@ function markGaps(){scopeAll().forEach(sp=>CHIP_ASPECTS.forEach(a=>{if(!aspPrese
 function clearMarks(){flags={};savef();renderList();document.getElementById('expout').classList.add('hidden');}
 function show(id){['home','quiz','list','detail'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));}
 function toHome(){show('home');renderConfig();window.scrollTo(0,0);}
+// Historique navigateur : bouton Retour = vue précédente (fonctionne là où l'History API est dispo,
+// ex. GitHub Pages ; repli sur navigation directe si bloquée, ex. iframe d'artifact à origine opaque).
+const HISTOK=(function(){try{history.replaceState({v:'home'},'');return true;}catch(e){return false;}})();
+function navPush(st){if(HISTOK){try{history.pushState(st,'');}catch(e){}}}
+function navRepl(st){if(HISTOK){try{history.replaceState(st,'');}catch(e){}}}
+function navBack(fallbackView){if(HISTOK){history.back();}else{renderView(fallbackView);}}
+function renderView(v,id){
+  if(v==='list'){show('list');renderList();
+    const key=id||(detailSp&&detailSp.id);const el=key&&document.querySelector('.gthumb[data-id="'+key+'"]');
+    if(el){el.scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+  else if(v==='detail'){openDetail(id||(detailSp&&detailSp.id));}
+  else if(v==='quiz'){show('quiz');window.scrollTo(0,0);}
+  else{show('home');renderConfig();window.scrollTo(0,0);}}
+if(HISTOK)window.addEventListener('popstate',function(e){const st=(e.state&&e.state.v)?e.state:{v:'home'};renderView(st.v,st.id);});
 function makeBackup(){return JSON.stringify({v:1,app:'atlas-quiz',stats:stats,tags:tags,flags:flags});}
 function showBackupBox(txt){const ta=document.getElementById('backupbox');ta.classList.remove('hidden');ta.value=txt;ta.focus();ta.select();
   try{document.execCommand('copy');}catch(e){}try{if(navigator.clipboard)navigator.clipboard.writeText(txt);}catch(e){}}
@@ -545,13 +559,12 @@ function restore(txt){let o;try{o=JSON.parse(txt);}catch(e){alert('Sauvegarde il
   if(o&&o.stats){stats=o.stats;save();}if(o&&o.tags){tags=o.tags;savet();}if(o&&o.flags){flags=o.flags;savef();}
   alert('Progression restaurée ✅');renderConfig();}
 document.getElementById('start').onclick=startQuiz;
-document.getElementById('back').onclick=toHome;
-document.getElementById('showlist').onclick=()=>{show('list');renderList();window.scrollTo(0,0);};
-document.getElementById('backlist').onclick=toHome;
-document.getElementById('backdetail').onclick=()=>{const id=detailSp&&detailSp.id;show('list');renderList();
-  const el=id&&document.querySelector('.gthumb[data-id="'+id+'"]');if(el){el.scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}};
-document.getElementById('prevsp').onclick=()=>{if(detailPos>0)openDetail(detailArr[detailPos-1].id);};
-document.getElementById('nextsp').onclick=()=>{if(detailPos>=0&&detailPos<detailArr.length-1)openDetail(detailArr[detailPos+1].id);};
+document.getElementById('back').onclick=()=>navBack('home');
+document.getElementById('showlist').onclick=()=>{detailSp=null;renderView('list');navPush({v:'list'});};
+document.getElementById('backlist').onclick=()=>navBack('home');
+document.getElementById('backdetail').onclick=()=>navBack('list');
+document.getElementById('prevsp').onclick=()=>{if(detailPos>0){const id=detailArr[detailPos-1].id;openDetail(id);navRepl({v:'detail',id:id});}};
+document.getElementById('nextsp').onclick=()=>{if(detailPos>=0&&detailPos<detailArr.length-1){const id=detailArr[detailPos+1].id;openDetail(id);navRepl({v:'detail',id:id});}};
 document.getElementById('markgaps').onclick=markGaps;
 document.getElementById('clearmarks').onclick=clearMarks;
 document.getElementById('doexport').onclick=exportGaps;
