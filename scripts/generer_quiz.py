@@ -270,7 +270,7 @@ button:disabled{opacity:.4;cursor:default}
 .fb.ok{background:#EAF3DD;border:1px solid var(--green)}.fb.no{background:#F7E4E0;border:1px solid var(--red)}
 .fb .nm{font-weight:700;font-size:17px}.fb .lt{font-style:italic;color:var(--soft)}.fb .nt{margin-top:4px;font-size:13px;color:var(--soft)}
 .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#EEF5E1;color:var(--greenD);margin-left:6px}
-.mini{font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}.pill{font-size:12px;color:var(--soft)}.hidden{display:none}
+.mini{font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}.pill{font-size:12px;color:var(--soft)}.hidden{display:none!important}
 a.reset{display:block;text-align:center;color:var(--soft);font-size:12px;margin-top:14px;text-decoration:underline;cursor:pointer}
 .credit{text-align:center;color:var(--soft);font-size:11px;margin-top:18px}
 .glist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
@@ -306,10 +306,12 @@ a.reset{display:block;text-align:center;color:var(--soft);font-size:12px;margin-
 .fv.blur.reveal::after{content:''}
 .fichehint{font-size:11px;color:var(--soft);font-style:italic;margin-top:8px}
 .indic{color:#B07C24;font-weight:700;font-size:12px}
-#critplay{display:flex;flex-direction:column;min-height:calc(100dvh - 120px)}
-#critcard{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;margin:0}
-#critimg{width:100%;flex:1 1 auto;min-height:130px;aspect-ratio:auto;border-radius:12px;overflow:hidden;background:#eef0e8;display:flex;align-items:center;justify-content:center}
-#critimg img{width:100%;height:100%;object-fit:contain}
+#critplay{display:flex;flex-direction:column}
+#critstack{position:relative;height:56dvh;min-height:210px;margin-bottom:2px}
+.critstackcard{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;margin:0;will-change:transform,opacity}
+#critback{transform:scale(.96);opacity:.7;pointer-events:none}
+.critimg{width:100%;flex:1 1 auto;min-height:110px;border-radius:12px;overflow:hidden;background:#eef0e8;display:flex;align-items:center;justify-content:center}
+.critimg img{width:100%;height:100%;object-fit:contain}
 #critbtns{margin-top:10px}
 .critbanner{padding:9px 12px;border-radius:10px;font-size:14px;margin-top:8px;text-align:center}
 .critbanner.ok{background:#EAF3DD;border:1px solid var(--green)}
@@ -393,9 +395,9 @@ BODY = r"""
   </div>
   <div id="critplay" class="hidden">
     <div class="pill" id="critq" style="text-align:center;font-weight:800;font-size:17px;margin:4px 0 8px"></div>
-    <div class="card" id="critcard" style="touch-action:pan-y">
-      <div id="critimg"><img id="critpic" alt="espèce à trier"></div>
-      <div style="text-align:center;font-weight:700;font-size:17px;margin-top:8px" id="critname"></div>
+    <div id="critstack">
+      <div class="card critstackcard" id="critback"><div class="critimg"><img id="critpicB" alt=""></div><div class="critname" id="critnameB"></div></div>
+      <div class="card critstackcard" id="critcard" style="touch-action:pan-y"><div class="critimg"><img id="critpic" alt="espèce à trier"></div><div class="critname" id="critname"></div></div>
     </div>
     <div id="critfb"></div>
     <div class="opts" id="critbtns"><button class="opt" id="critno">👎 Non</button><button class="opt" id="crityes">👍 Oui</button></div>
@@ -614,21 +616,25 @@ function openCrit(){show('crit');document.getElementById('critchoose').classList
 function startCrit(cr){critC=cr;critQueue=shuffle(critAvail(cr).slice());critPos=0;critSess={s:0,c:0};
   document.getElementById('critchoose').classList.add('hidden');document.getElementById('critplay').classList.remove('hidden');
   document.getElementById('critq').textContent=cr.q;document.getElementById('critscore').textContent='0 / 0';
-  document.getElementById('critfb').innerHTML='';document.getElementById('critbtns').style.display='';critNext();}
-function critReset(){const c=document.getElementById('critcard');c.style.transition='transform .15s,opacity .15s';c.style.transform='';c.style.opacity=1;setTimeout(()=>{c.style.transition='';},150);}
-function critNext(){const card=document.getElementById('critcard');
-  if(critPos>=critQueue.length){card.style.display='none';document.getElementById('critbtns').style.display='none';
+  document.getElementById('critfb').innerHTML='';document.getElementById('critbtns').style.display='';critFace();}
+function critReset(){const c=document.getElementById('critcard');c.style.transition='transform .15s,opacity .15s';c.style.transform='';c.style.opacity=1;}
+function critFace(){const card=document.getElementById('critcard'),back=document.getElementById('critback');
+  if(critPos>=critQueue.length){card.style.display='none';back.style.display='none';document.getElementById('critbtns').style.display='none';
     document.getElementById('critfb').innerHTML='<div class="fb ok">Terminé ! <b>'+critSess.c+' / '+critSess.s+'</b> bonnes réponses.<button class="go" id="critagain" style="margin-top:10px">Choisir un autre critère</button></div>';
     document.getElementById('critagain').onclick=openCrit;return;}
-  const sp=critQueue[critPos];card.style.display='';document.getElementById('critpic').src=sp.imgs[0].u;document.getElementById('critname').textContent=sp.name;critReset();}
+  const cur=critQueue[critPos],nxt=critQueue[critPos+1];
+  card.style.display='';card.style.transition='none';card.style.transform='';card.style.opacity=1;
+  document.getElementById('critpic').src=cur.imgs[0].u;document.getElementById('critname').textContent=cur.name;
+  if(nxt){back.style.display='';document.getElementById('critpicB').src=nxt.imgs[0].u;document.getElementById('critnameB').textContent=nxt.name;}else{back.style.display='none';}
+  void card.offsetWidth;}
 function critCommit(yes){const sp=critQueue[critPos],truth=critC.ok(sp),ok=(yes===truth);
   critSess.s++;if(ok)critSess.c++;document.getElementById('critscore').textContent=critSess.c+' / '+critSess.s;
   const val=critC.field?(sp.fields[critC.field]||'—'):(CATSHORT[sp.cat]||sp.cat);
   document.getElementById('critfb').innerHTML='<div class="critbanner '+(ok?'ok':'no')+'">'+(ok?'✅':'❌')+' '+sp.name+' : <b>'+(truth?'oui':'non')+'</b> <span class="lt">('+val+')</span></div>';
-  critPos++;critNext();}
+  critPos++;critFace();}
 function critSwipeOut(yes){if(critAnim||!critC||critPos>=critQueue.length)return;critAnim=true;
-  const c=document.getElementById('critcard');c.style.transition='transform .18s,opacity .18s';c.style.transform='translateX('+(yes?520:-520)+'px) rotate('+(yes?12:-12)+'deg)';c.style.opacity=0;
-  setTimeout(()=>{c.style.transition='';critCommit(yes);critAnim=false;},160);}
+  const c=document.getElementById('critcard');c.style.transition='transform .2s,opacity .2s';c.style.transform='translateX('+(yes?560:-560)+'px) rotate('+(yes?14:-14)+'deg)';c.style.opacity=0;
+  setTimeout(()=>{critCommit(yes);critAnim=false;},190);}
 function show(id){['home','quiz','list','detail','crit'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));
   const h=document.querySelector('.hero');if(h)h.style.display=(id==='home')?'':'none';}
 function toHome(){show('home');renderConfig();window.scrollTo(0,0);}
