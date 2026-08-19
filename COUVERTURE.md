@@ -6,14 +6,14 @@
 
 ## En bref
 - Plantes (ligneux + herbacées) : **187**
-- …dont **6** avec les 5 aspects, **45** sans aucun aspect taggé.
-- Manques par aspect : Feuille 61 · Écorce 156 · Fruit 116 · Fleur 71 · Port 151
+- …dont **6** avec les 5 aspects, **1** sans aucun aspect taggé.
+- Manques par aspect : Feuille 38 · Écorce 156 · Fruit 107 · Fleur 37 · Port 151
 
 ## Ligneux (73)
 
 | Espèce | 📷 | Feuille | Écorce | Fruit | Fleur | Port | À compléter |
 |---|--:|:-:|:-:|:-:|:-:|:-:|---|
-| Abricotier | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Abricotier | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Ajonc d'Europe | 4 | ✗ | ✗ | ✓ | ✓ | ✓ | Feuille, Écorce |
 | Alisier torminal | 6 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Amandier | 5 | ✗ | ✓ | ✓ | ✓ | ✗ | Feuille, Port |
@@ -29,11 +29,11 @@
 | Callune | 5 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Caragana (arbre à pois) | 5 | ✓ | ✓ | ✗ | ✓ | ✗ | Fruit, Port |
 | Cassissier / Groseillier | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Cerisier | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Cerisier | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Chalef / Olivier de Bohême | 5 | ✓ | ✓ | ✓ | ✓ | ✓ | — (complet) |
 | Charme | 3 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Châtaignier | 5 | ✓ | ✓ | ✓ | ✗ | ✗ | Fleur, Port |
-| Chèvrefeuille comestible (camérisier) | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Chèvrefeuille comestible (camérisier) | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Chêne pubescent | 2 | ✓ | ✗ | ✗ | ✗ | ✓ | Écorce, Fruit, Fleur |
 | Chêne pédonculé | 3 | ✓ | ✗ | ✓ | ✗ | ✓ | Écorce, Fleur |
 | Chêne sessile | 5 | ✓ | ✓ | ✓ | ✗ | ✓ | Fleur |
@@ -42,21 +42,21 @@
 | Cognassier | 3 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Cormier | 3 | ✓ | ✗ | ✓ | ✗ | ✓ | Écorce, Fleur |
 | Cornouiller mâle | 6 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
-| Feijoa (goyavier du Brésil) | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
-| Figuier | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Feijoa (goyavier du Brésil) | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
+| Figuier | 1 | ✓ | ✗ | ✗ | ✗ | ✗ | Écorce, Fruit, Fleur, Port |
 | Framboisier | 4 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Frêne commun | 4 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Févier d'Amérique | 4 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Genévrier commun | 3 | ✓ | ✗ | ✓ | ✗ | ✓ | Écorce, Fleur |
 | Genêt à balais | 5 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
-| Goji (lyciet) | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
-| Grenadier | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Goji (lyciet) | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
+| Grenadier | 1 | ✗ | ✗ | ✓ | ✓ | ✗ | Feuille, Écorce, Port |
 | Houx | 5 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Hêtre | 5 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | If commun | 3 | ✓ | ✗ | ✓ | ✗ | ✓ | Écorce, Fleur |
-| Jujubier | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Jujubier | 1 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Kiwaï | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Laurier-sauce | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Laurier-sauce | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Merisier | 5 | ✓ | ✓ | ✓ | ✓ | ✓ | — (complet) |
 | Micocoulier | 4 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Myrtille | 4 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
@@ -64,16 +64,16 @@
 | Mûrier noir | 4 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Noisetier | 6 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Noyer commun | 4 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Néflier commun | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
-| Olivier | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Néflier commun | 1 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
+| Olivier | 1 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Pin maritime | 5 | ✓ | ✓ | ✓ | ✗ | ✓ | Fleur |
 | Pin sylvestre | 4 | ✓ | ✓ | ✓ | ✗ | ✓ | Fleur |
-| Plaqueminier (kaki) | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Plaqueminier (kaki) | 1 | ✗ | ✗ | ✓ | ✗ | ✗ | Feuille, Écorce, Fleur, Port |
 | Poirier | 4 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Pommier | 5 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Prunellier | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Prunier | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Pêcher | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Pêcher | 1 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Robinier (faux-acacia) | 4 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Ronce | 6 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Sapin pectiné | 5 | ✓ | ✓ | ✓ | ✗ | ✗ | Fleur, Port |
@@ -82,7 +82,7 @@
 | Sureau noir | 3 | ✓ | ✗ | ✗ | ✓ | ✓ | Écorce, Fruit |
 | Tilleul à petites feuilles | 5 | ✓ | ✓ | ✓ | ✓ | ✓ | — (complet) |
 | Tremble | 5 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Vigne | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Vigne | 1 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Épicéa | 5 | ✓ | ✓ | ✓ | ✗ | ✗ | Fleur, Port |
 | Érable champêtre | 4 | ✓ | ✓ | ✓ | ✗ | ✗ | Fleur, Port |
 | Érable sycomore | 5 | ✓ | ✗ | ✓ | ✗ | ✓ | Écorce, Fleur |
@@ -98,22 +98,22 @@
 | Alliaire | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Amarante | 1 | ✓ | ✗ | ✗ | ✗ | ✗ | Écorce, Fruit, Fleur, Port |
 | Aneth | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Armoise / Absinthe | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Armoise / Absinthe | 1 | ✓ | ✗ | ✗ | ✗ | ✗ | Écorce, Fruit, Fleur, Port |
 | Artichaut / Cardon | 5 | ✓ | ✗ | ✗ | ✓ | ✓ | Écorce, Fruit |
 | Arum tacheté (gouet) | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Asperge | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Aspérule odorante | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Aspérule odorante | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Aubergine | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
-| Avoine | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
-| Bardane | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Avoine | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
+| Bardane | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Basilic | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Berce commune | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Betterave / Épinard | 3 | ✓ | ✗ | ✗ | ✓ | ✓ | Écorce, Fruit |
 | Blette (poirée) | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Bourrache | 5 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Camomille (matricaire) | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Camomille (matricaire) | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Capucine | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Cardamine des prés | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Cardamine des prés | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Carotte | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Cerfeuil | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Chicorée / Endive | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
@@ -127,45 +127,45 @@
 | Consoude | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Coriandre | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Courge | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Courgette | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
-| Cresson de fontaine | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Courgette | 1 | ✗ | ✗ | ✓ | ✗ | ✗ | Feuille, Écorce, Fleur, Port |
+| Cresson de fontaine | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Crosne du Japon | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Céleri | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Digitale pourpre | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Estragon | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Fenouil | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Fenouil | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Fraisier des bois | 5 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Féverole / Fève | 3 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Grande ciguë | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Guimauve | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Guimauve | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Haricot | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Hysope | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Hysope | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Laitue | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Lamier blanc | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Lavande | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Lavande | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Livèche | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Lotier corniculé | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Lotier corniculé | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Lupin | 6 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Luzerne | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Marjolaine | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Marjolaine | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Mauve | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Maïs | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Maïs | 1 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Menthe | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Millepertuis | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
-| Moutarde blanche | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Millepertuis | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
+| Moutarde blanche | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Muguet | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Mâche | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Mélilot | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Mélilot | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Mélisse | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Navet | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Oca du Pérou | 3 | ✓ | ✗ | ✗ | ✓ | ✓ | Écorce, Fruit |
 | Oignon | 2 | ✓ | ✗ | ✗ | ✗ | ✓ | Écorce, Fruit, Fleur |
-| Onagre | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Onagre | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Origan | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Ortie | 5 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Oseille | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Panais | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Patate douce | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Patate douce | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Persil | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Phacélie | 3 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Pissenlit | 4 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
@@ -178,28 +178,28 @@
 | Pomme de terre | 5 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Pourpier | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Primevère | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
-| Pâquerette | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Pâquerette | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Radis | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Raifort | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Rhubarbe | 3 | ✓ | ✗ | ✗ | ✓ | ✓ | Écorce, Fruit |
-| Romarin | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Romarin | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Roquette | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
-| Sainfoin | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
-| Sarrasin (blé noir) | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Sainfoin | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
+| Sarrasin (blé noir) | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Sarriette | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Sauge officinale | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Sauge officinale | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Scorsonère | 5 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Seigle | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Seigle | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Souci (calendula) | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
-| Stellaire (mouron blanc) | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Stellaire (mouron blanc) | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Tanaisie | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Thym | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Thym | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Tomate | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Topinambour | 4 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Trèfle blanc | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Trèfle violet | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Valériane officinale | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
-| Verveine citronnelle | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
+| Valériane officinale | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
+| Verveine citronnelle | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Vesce commune | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Violette odorante | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Échalote | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |

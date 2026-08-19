@@ -22,6 +22,25 @@ Publié via **GitHub Pages** (voir l'URL dans l'onglet *Settings → Pages* du d
 Tout le monde peut proposer des **photos**, des **notes** ou de **nouvelles espèces** via une
 Pull Request. Voir **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
+## 📝 Quels fichiers éditer ?
+
+**✍️ À éditer à la main (sources) :**
+
+| Fichier | Rôle |
+|---|---|
+| `Espèces*.md`, `Champignons*.md`, `Faune*.md` | Les espèces et leurs infos (tableaux Markdown) |
+| `img/especes/`, `img/quiz-extra/` | Les photos |
+| `img/quiz-extra/_aspects.tsv` | Annotation des aspects : `fichier → aspects` |
+| `contributions/*.tsv` | Contributions d'aspects (via l'app ou à la main) |
+
+**🤖 Générés automatiquement — NE PAS éditer (écrasés au build) :**
+
+| Fichier | Généré par |
+|---|---|
+| `COUVERTURE.md` | `scripts/couverture.py` (CI, à chaque merge sur `main`) |
+| `index.html` du site, `_site/` | `scripts/build_web.py` (CI) |
+| `Quiz especes*.html` (local) | `scripts/generer_quiz.py` |
+
 ## 🛠 Lancer / construire en local
 
 ```bash

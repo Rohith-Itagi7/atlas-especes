@@ -26,14 +26,24 @@ ASPECT_KW = {"feuille": "feuille", "feuilles": "feuille", "ecorce": "ecorce", "f
              "rameaux": "rameau", "bourgeon": "rameau", "hiver": "rameau", "port": "port", "silhouette": "port"}
 
 def load_sidecar():
-    p = os.path.join(EXTRA, "_aspects.tsv")
+    """Aspects annotés : img/quiz-extra/_aspects.tsv + toutes les contributions/*.tsv
+    (ces dernières, plus récentes, écrasent). Format : « nom_fichier<TAB>aspect1,aspect2 »."""
     d = {}
+    files = []
+    p = os.path.join(EXTRA, "_aspects.tsv")
     if os.path.exists(p):
-        for line in open(p, encoding="utf-8"):
+        files.append(p)
+    cdir = os.path.join(BASE, "contributions")
+    if os.path.isdir(cdir):
+        files += sorted(glob.glob(os.path.join(cdir, "*.tsv")))
+    for fp in files:
+        for line in open(fp, encoding="utf-8"):
             line = line.rstrip("\n")
             if not line or line.startswith("#") or "\t" not in line:
                 continue
             fn, asp = line.split("\t", 1)
+            if fn.strip().lower() in ("fichier", "file"):  # ligne d'en-tête
+                continue
             d[fn.strip()] = [a.strip() for a in re.split(r"[,;]", asp) if a.strip()]
     return d
 SIDE = load_sidecar()
@@ -150,6 +160,7 @@ h2{font-size:18px;margin:8px 0 0;text-align:center}
 .opt.sel{border-color:var(--green);background:#EEF5E1;font-weight:700}
 .opt:focus-visible,button:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--greenD);outline-offset:2px}
 button.go{width:100%;padding:14px;border:none;border-radius:12px;background:var(--greenD);color:#fff;font-size:17px;font-weight:700;cursor:pointer;margin-top:6px}
+button.go.alt{background:var(--blue)}
 button.ghost{width:100%;background:none;border:1px solid var(--line);color:var(--soft);border-radius:10px;padding:11px 12px;font-size:14px;cursor:pointer;margin-top:8px}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .topbar button.ghost{width:auto;margin:0}
@@ -215,7 +226,7 @@ BODY = r"""
     <button class="go" id="start">Commencer ▶</button>
   </div>
   <div class="card"><div class="grouplab">Tes statistiques</div><div id="stats"></div></div>
-  <button class="ghost" id="showlist">📋 Atlas : toutes les espèces &amp; photos</button>
+  <button class="go alt" id="showlist">📋 Explorer l'atlas &amp; les photos</button>
   <div class="card"><div class="grouplab">Sauvegarde de ma progression</div>
     <div class="hint" style="margin-top:0">Exporte pour garder une copie ou changer d'appareil ; importe pour restaurer.</div>
     <div class="tools">
@@ -237,6 +248,7 @@ BODY = r"""
 </div>
 <div id="list" class="hidden">
   <div class="topbar"><button class="ghost" id="backlist">← Accueil</button><div class="mini" id="listcount"></div></div>
+  <div class="grouplab">Catégorie</div><div class="opts" id="listscope" style="margin-bottom:10px"></div>
   <div class="legend">Puces : <b class="ok">vertes = photos présentes</b> · grises = manquantes · <b class="want">orange = demandées</b>.</div>
   <div class="tools">
     <button id="markgaps">Marquer les manques</button>
@@ -245,6 +257,8 @@ BODY = r"""
     <button id="exporttags">🏷 Exporter mes tags</button>
   </div>
   <textarea class="expout hidden" id="expout" readonly></textarea>
+  <button class="go" id="publishpr" style="margin-top:10px">🚀 Publier mes changements sur GitHub (PR)</button>
+  <div class="hint">Envoie tes re-tags de photos (🏷) et tes manques signalés (oranges) sous forme de Pull Request. Une page GitHub s'ouvre : clique « Propose changes ».</div>
   <div class="glist" id="glist"></div>
 </div>
 <div id="detail" class="hidden">
@@ -267,6 +281,7 @@ BODY = r"""
 JS = r"""
 const SPECIES = /*__DATA__*/;
 const KEY='quizEspeces_v1', FLAGKEY='photoFlags_v1', TAGKEY='tagOverrides_v1';
+const REPO='iribarnesy/atlas-especes';
 const ASPECTS={tout:'Tout',divers:'Divers',feuille:'Feuille',ecorce:'Écorce',fruit:'Fruit',fleur:'Fleur',rameau:"Rameau d'hiver",port:'Port'};
 const CHIP_ASPECTS=['feuille','ecorce','fruit','fleur','port'];
 const FIELD_ORDER=[['groupe','Groupe'],['type','Type'],['cycle','Cycle'],['famille','Famille'],['ecologie','Écologie'],['hote','Arbre / substrat'],['habitat','Habitat'],['role','Rôle'],['regime','Régime'],['saison','Saison'],['lumiere','Lumière'],['fixn','Fixation N'],['mycorhize','Mycorhize'],['succession','Succession'],['strate','Strate'],['fonction','Fonction'],['comestible','Comestible'],['notes','Notes']];
@@ -346,7 +361,11 @@ function toggleFlag(id,a){flags[id]=flags[id]||{};if(flags[id][a])delete flags[i
 function chipsHTML(id){return CHIP_ASPECTS.map(a=>`<span class="chip ${chipState(id,a)}" data-id="${id}" data-a="${a}" tabindex="0">${ASPECTS[a]}</span>`).join('');}
 function bindChips(root){root.querySelectorAll('.chip').forEach(c=>{const f=()=>{toggleFlag(c.dataset.id,c.dataset.a);c.className='chip '+chipState(c.dataset.id,c.dataset.a);};
   c.onclick=f;c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f();}};});}
-function renderList(){const arr=scopeAll().slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+function renderListScope(){const host=document.getElementById('listscope');
+  const items=catsAvail().map(c=>[c,CATLABEL[c]||c]).concat([['mixte','Tout']]);host.innerHTML='';
+  items.forEach(([val,lab])=>{const d=document.createElement('div');d.className='opt'+(cfg.scope===val?' sel':'');d.tabIndex=0;d.textContent=lab;
+    d.onclick=()=>{cfg.scope=val;renderList();};d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();d.onclick();}};host.appendChild(d);});}
+function renderList(){renderListScope();const arr=scopeAll().slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));
   document.getElementById('listcount').textContent=arr.length+' espèces';
   const statTxt=(id,qt)=>{if(known(id,qt))return '★';const x=st(id,qt);return x.s>0?Math.round(100*x.c/x.s)+'%':'–';};
   document.getElementById('glist').innerHTML=arr.map(sp=>{
@@ -385,6 +404,20 @@ function exportGaps(){const lines=[];scopeAll().forEach(sp=>{const g=CHIP_ASPECT
   showExport(lines.length?lines.join('\n'):'(aucune demande — clique des puces ou « Marquer les manques »)');}
 function exportTags(){const lines=Object.keys(tags).map(f=>f+'\t'+(tags[f].length?tags[f].join(','):'divers'));
   showExport(lines.length?lines.join('\n'):'(aucun tag modifié — tague des photos dans le détail)');}
+function publishToGitHub(){
+  const tagLines=Object.keys(tags).map(f=>f+'\t'+(tags[f].length?tags[f].join(','):'divers'));
+  const gapLines=[];
+  Object.keys(flags).forEach(id=>{const sp=BYID[id];if(!sp)return;const a=Object.keys(flags[id]||{});
+    if(a.length)gapLines.push('# '+sp.name+' ('+sp.stem+') : '+a.map(x=>ASPECTS[x]||x).join(', '));});
+  if(!tagLines.length&&!gapLines.length){alert('Rien à publier — coche des manques (oranges) ou retague des photos.');return;}
+  const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  const rnd=Math.random().toString(36).slice(2,7);
+  let body="# Contribution depuis l'app ("+stamp+")\n#\n";
+  if(gapLines.length)body+='# --- Manques signales (photos a ajouter) ---\n'+gapLines.join('\n')+'\n#\n';
+  body+='# --- Re-tags de photos (pris en compte au build) ---\n'+(tagLines.length?tagLines.join('\n'):'# (aucun)')+'\n';
+  const fn='contributions/app-'+stamp+'-'+rnd+'.tsv';
+  const url='https://github.com/'+REPO+'/new/main?filename='+encodeURIComponent(fn)+'&value='+encodeURIComponent(body);
+  const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
 function markGaps(){scopeAll().forEach(sp=>CHIP_ASPECTS.forEach(a=>{if(!aspPresent(sp,a)){flags[sp.id]=flags[sp.id]||{};flags[sp.id][a]=1;}}));savef();renderList();}
 function clearMarks(){flags={};savef();renderList();document.getElementById('expout').classList.add('hidden');}
 function show(id){['home','quiz','list','detail'].forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id));}
@@ -407,6 +440,7 @@ document.getElementById('markgaps').onclick=markGaps;
 document.getElementById('clearmarks').onclick=clearMarks;
 document.getElementById('doexport').onclick=exportGaps;
 document.getElementById('exporttags').onclick=exportTags;
+document.getElementById('publishpr').onclick=publishToGitHub;
 document.getElementById('expprog').onclick=doBackup;
 document.getElementById('impfilebtn').onclick=()=>document.getElementById('impfile').click();
 document.getElementById('impfile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>restore(String(r.result));r.readAsText(f);e.target.value='';};
