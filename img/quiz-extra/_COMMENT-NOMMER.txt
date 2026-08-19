@@ -1,0 +1,112 @@
+# Comment nommer les photos du quiz
+# Dossier : img/quiz-extra/
+# Format : <prefixe>-<aspect(s)>-<numero>.jpg
+# Aspects : feuille, ecorce, fruit, fleur, rameau (=rameau d'hiver/bourgeon), port.
+# Plusieurs aspects : separer par _ ou -  (ex. feuille_fleur).
+# Exemples : chene_liege-ecorce-1.jpg  /  pommier-fruit-1.jpg  /  ciboulette-feuille_fleur-1.jpg
+# Sans mot-cle (ex. chene_liege-1.jpg) => aspect 'divers'.
+# Puis relancer : python3 scripts/generer_quiz.py
+
+ESPECE                             PREFIXE DE FICHIER         (latin)
+--------------------------------------------------------------------------------
+Achillée millefeuille              achillee                   Achillea millefolium
+Ail des ours                       ail_des_ours               Allium ursinum
+Ail rocambole                      ail_rocambole              Allium scorodoprasum
+Ajonc d'Europe                     ajonc                      Ulex europaeus
+Alisier torminal                   alisier                    Sorbus torminalis
+Amandier                           amandier                   Prunus dulcis
+Amélanchier                        amelanchier                Amelanchier ovalis
+Arbousier                          arbousier                  Arbutus unedo
+Arbre de Judée                     arbre_de_judee             Cercis siliquastrum
+Argousier                          argousier                  Hippophae rhamnoides
+Aronia                             aronia                     Aronia melanocarpa
+Artichaut / Cardon                 artichaut                  Cynara cardunculus
+Aubépine                           aubepine                   Crataegus monogyna
+Aulne glutineux                    aulne_glutineux            Alnus glutinosa
+Betterave / Épinard                betterave                  Beta / Spinacia
+Bouleau verruqueux                 bouleau                    Betula pendula
+Bourrache                          bourrache                  Borago officinalis
+Buis                               buis                       Buxus sempervirens
+Callune                            callune                    Calluna vulgaris
+Capucine                           capucine                   Tropaeolum majus
+Caragana (arbre à pois)            caragana                   Caragana arborescens
+Carotte                            carotte                    Daucus carota
+Cassissier / Groseillier           groseillier                Ribes sp.
+Chalef / Olivier de Bohême         chalef                     Elaeagnus angustifolia
+Charme                             charme                     Carpinus betulus
+Chou                               chou                       Brassica oleracea
+Chou Daubenton                     chou_daubenton             Brassica oleracea ramosa
+Châtaignier                        chataignier                Castanea sativa
+Chêne pubescent                    chene_pubescent            Quercus pubescens
+Chêne pédonculé                    chene_pedoncule            Quercus robur
+Chêne sessile                      chene_sessile              Quercus petraea
+Chêne vert                         chene_vert                 Quercus ilex
+Chêne-liège                        chene_liege                Quercus suber
+Ciboulette                         ciboulette                 Allium schoenoprasum
+Claytone de Cuba                   claytone                   Claytonia perfoliata
+Cognassier                         cognassier                 Cydonia oblonga
+Consoude                           consoude                   Symphytum ×uplandicum
+Cormier                            cormier                    Sorbus domestica
+Cornouiller mâle                   cornouiller_male           Cornus mas
+Courge                             courge                     Cucurbita sp.
+Fraisier des bois                  fraisier_des_bois          Fragaria vesca
+Framboisier                        framboisier                Rubus idaeus
+Frêne commun                       frene                      Fraxinus excelsior
+Féverole / Fève                    feverole                   Vicia faba
+Févier d'Amérique                  fevier                     Gleditsia triacanthos
+Genévrier commun                   genevrier                  Juniperus communis
+Genêt à balais                     genet                      Cytisus scoparius
+Haricot                            haricot                    Phaseolus vulgaris
+Houx                               houx                       Ilex aquifolium
+Hêtre                              hetre                      Fagus sylvatica
+If commun                          if                         Taxus baccata
+Kiwaï                              kiwai                      Actinidia arguta
+Laitue                             laitue                     Lactuca sativa
+Livèche                            liveche                    Levisticum officinale
+Lupin                              lupin                      Lupinus sp.
+Luzerne                            luzerne                    Medicago sativa
+Menthe                             menthe                     Mentha sp.
+Merisier                           merisier                   Prunus avium
+Micocoulier                        micocoulier                Celtis australis
+Myrtille                           myrtille                   Vaccinium myrtillus
+Mélèze                             meleze                     Larix decidua
+Mûrier noir                        murier                     Morus nigra
+Noisetier                          noisetier                  Corylus avellana
+Noyer commun                       noyer                      Juglans regia
+Oca du Pérou                       oca                        Oxalis tuberosa
+Oignon                             oignon                     Allium cepa
+Origan                             origan                     Origanum vulgare
+Ortie                              ortie                      Urtica dioica
+Oseille                            oseille                    Rumex acetosa
+Phacélie                           phacelie                   Phacelia tanacetifolia
+Pin maritime                       pin_maritime               Pinus pinaster
+Pin sylvestre                      pin_sylvestre              Pinus sylvestris
+Pissenlit                          pissenlit                  Taraxacum officinale
+Poire de terre (yacon)             poire_de_terre             Smallanthus sonchifolius
+Poireau perpétuel                  poireau_perpetuel          Allium ampeloprasum
+Poirier                            poirier                    Pyrus communis
+Pois                               pois                       Pisum sativum
+Pomme de terre                     pomme_de_terre             Solanum tuberosum
+Pommier                            pommier                    Malus domestica
+Prunellier                         prunellier                 Prunus spinosa
+Prunier                            prunier                    Prunus domestica
+Raifort                            raifort                    Armoracia rusticana
+Rhubarbe                           rhubarbe                   Rheum rhabarbarum
+Robinier (faux-acacia)             robinier                   Robinia pseudoacacia
+Ronce                              ronce                      Rubus fruticosus
+Sapin pectiné                      sapin                      Abies alba
+Saule                              saule                      Salix alba
+Scorsonère                         scorsonere                 Scorzonera hispanica
+Sorbier des oiseleurs              sorbier                    Sorbus aucuparia
+Sureau noir                        sureau                     Sambucus nigra
+Tanaisie                           tanaisie                   Tanacetum vulgare
+Tilleul à petites feuilles         tilleul                    Tilia cordata
+Tomate                             tomate                     Solanum lycopersicum
+Topinambour                        topinambour                Helianthus tuberosus
+Tremble                            tremble                    Populus tremula
+Trèfle blanc                       trefle_blanc               Trifolium repens
+Trèfle violet                      trefle_violet              Trifolium pratense
+Vesce commune                      vesce                      Vicia sativa
+Épicéa                             epicea                     Picea abies
+Érable champêtre                   erable_champetre           Acer campestre
+Érable sycomore                    erable_sycomore            Acer pseudoplatanus

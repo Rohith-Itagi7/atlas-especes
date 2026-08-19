@@ -1,0 +1,147 @@
+# Espèces herbacées & non ligneuses — fiche de référence
+
+> [!warning] Fiche de travail (potager & strates basses de la forêt-jardin). Les attributs sont des **tendances** ; recouper avec une flore et des essais locaux. « Accumulateur dynamique » = heuristique de permaculture, peu étayée. Les ligneux (arbres, arbustes, lianes) sont dans l'atlas *Espèces - référence*.
+
+> [!info] Vignettes Wikipédia / Wikimedia Commons (licences libres), dans `img/especes/` ; visibles en **mode Lecture**. La colonne 🔍 ouvre une recherche d'images.
+
+**Légende**
+- **Cycle** : vivace · annuelle · bisannuelle
+- **Strate** : 4 herbacée · 5 couvre-sol · 6 rhizosphère (tubercules) · *pot.* potager (annuelle de plein soleil)
+- **Lumière** : ☀ héliophile · ◐ demi-ombre · ☾ tolère l'ombre
+- **Fix. N** : *Rhizobium* (légumineuses) · non
+- **Fonction** : *acc* accumulateur · *fix* fixateur · *att* attracteur/mellifère · *cs* couvre-sol · *EV* engrais vert · *com* comestible · *rép* répulsif
+
+## Tableau maître (ordre alphabétique)
+
+| Photo | Plante | Nom latin | Famille | Cycle | Strate | Lum. | Fix. N | Fonction | Comestible | Notes | 🔍 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| ![[achillee.jpg\|200]] | Achillée millefeuille | Achillea millefolium | Astéracées | vivace | 4 | ☀ | non | att | (médicinal) | auxiliaires, sol pauvre | [🔍](https://www.google.com/search?tbm=isch&q=Achillea+millefolium) |
+| ![[ail.jpg\|200]] | Ail | Allium sativum | Amaryllidacées | annuel (bulbe) | pot. | ☀ | non | com | bulbe | planté à l'automne ; anti-fongique | [🔍](https://www.google.com/search?tbm=isch&q=Allium+sativum) |
+| ![[ail_des_ours.jpg\|200]] | Ail des ours | Allium ursinum | Amaryllidacées | vivace | 4/5 | ☾ | non | com | feuilles, bulbe | sous-bois printanier | [🔍](https://www.google.com/search?tbm=isch&q=Allium+ursinum) |
+| ![[ail_rocambole.jpg\|200]] | Ail rocambole | Allium scorodoprasum | Amaryllidacées | vivace | 6 | ☀◐ | non | com, anneau | bulbilles, feuilles | anneau anti-herbe au pied des arbres | [🔍](https://www.google.com/search?tbm=isch&q=Allium+scorodoprasum) |
+| ![[alliaire.jpg\|200]] | Alliaire | Alliaria petiolata | Brassicacées | bisannuel | 4 | ◐ | non | com | feuilles (goût d'ail) | sous-bois ; non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Alliaria+petiolata) |
+| ![[amarante.jpg\|200]] | Amarante | Amaranthus retroflexus | Amaranthacées | annuel | pot. | ☀ | non | com | feuilles, graines | pseudo-céréale ; non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Amaranthus+retroflexus) |
+| ![[aneth.jpg\|200]] | Aneth | Anethum graveolens | Apiacées | annuel | 4 | ☀ | non | com, att | feuilles, graines | ombellifère | [🔍](https://www.google.com/search?tbm=isch&q=Anethum+graveolens) |
+| ![[armoise.jpg\|200]] | Armoise / Absinthe | Artemisia absinthium | Astéracées | vivace | 4 | ☀ | non | méd | (⚠ non comestible telle quelle) | amère ; répulsif insectes | [🔍](https://www.google.com/search?tbm=isch&q=Artemisia+absinthium) |
+| ![[artichaut.jpg\|200]] | Artichaut / Cardon | Cynara cardunculus | Astéracées | vivace | 4 | ☀ | non | com | capitules, côtes | port ample, un peu gélif | [🔍](https://www.google.com/search?tbm=isch&q=Cynara+cardunculus) |
+| ![[arum.jpg\|200]] | Arum tacheté (gouet) | Arum maculatum | Aracées | vivace | 5 | ☾ | non | ☠ TOXIQUE | ☠ toxique (oxalates) | sous-bois ; baies rouges attirantes | [🔍](https://www.google.com/search?tbm=isch&q=Arum+maculatum) |
+| ![[asperge.jpg\|200]] | Asperge | Asparagus officinalis | Asparagacées | vivace | 4 | ☀ | non | com | turions (jeunes pousses) | plantation longue durée (griffes) | [🔍](https://www.google.com/search?tbm=isch&q=Asparagus+officinalis) |
+| ![[asperule.jpg\|200]] | Aspérule odorante | Galium odoratum | Rubiacées | vivace | 4 | ☾ | non | cs, com | feuilles (aromatise) | couvre-sol de sous-bois | [🔍](https://www.google.com/search?tbm=isch&q=Galium+odoratum) |
+| ![[aubergine.jpg\|200]] | Aubergine | Solanum melongena | Solanacées | annuel | pot. | ☀ | non | com | fruit | Solanacée (rotation, mildiou) ; chaleur | [🔍](https://www.google.com/search?tbm=isch&q=Solanum+melongena) |
+| ![[avoine.jpg\|200]] | Avoine | Avena sativa | Poacées | annuel | 4 | ☀ | non | EV, com | grains | engrais vert ; gèle l'hiver (mulch) | [🔍](https://www.google.com/search?tbm=isch&q=Avena+sativa) |
+| ![[bardane.jpg\|200]] | Bardane | Arctium lappa | Astéracées | bisannuel | 4 | ☀ | non | com, acc, méd | racine | racine comestible ; pivot = accumulateur | [🔍](https://www.google.com/search?tbm=isch&q=Arctium+lappa) |
+| ![[basilic.jpg\|200]] | Basilic | Ocimum basilicum | Lamiacées | annuel | 4 | ☀ | non | com, att | feuilles | gélif, aime la chaleur ; éloigne pucerons | [🔍](https://www.google.com/search?tbm=isch&q=Ocimum+basilicum) |
+| ![[berce.jpg\|200]] | Berce commune | Heracleum sphondylium | Apiacées | bisannuel | 4 | ☀◐ | non | com | jeunes pousses | ⚠ NE PAS confondre avec la berce du Caucase (brûlures) | [🔍](https://www.google.com/search?tbm=isch&q=Heracleum+sphondylium) |
+| ![[betterave.jpg\|200]] | Betterave / Épinard | Beta / Spinacia | Amaranthacées | ann./bisan. | pot. | ☀ | non | com | racine, feuilles | non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Beta+vulgaris) |
+| ![[blette.jpg\|200]] | Blette (poirée) | Beta vulgaris | Amaranthacées | bisannuel | pot. | ☀ | non | com | feuilles, côtes | non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Beta+vulgaris) |
+| ![[bourrache.jpg\|200]] | Bourrache | Borago officinalis | Boraginacées | annuelle | 4 | ☀ | non | att | fleurs, feuilles | pollinisateurs, se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Borago+officinalis) |
+| ![[camomille.jpg\|200]] | Camomille (matricaire) | Matricaria chamomilla | Astéracées | annuel | 4 | ☀ | non | com (tisane), att, méd | fleurs | se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Matricaria+chamomilla) |
+| ![[capucine.jpg\|200]] | Capucine | Tropaeolum majus | Tropaéolacées | annuelle | 5 | ☀◐ | non | cs, att | fleurs, feuilles, graines | piège à pucerons | [🔍](https://www.google.com/search?tbm=isch&q=Tropaeolum+majus) |
+| ![[cardamine.jpg\|200]] | Cardamine des prés | Cardamine pratensis | Brassicacées | vivace | 4 | ◐ | non | com | feuilles, fleurs | prairies humides ; goût cresson | [🔍](https://www.google.com/search?tbm=isch&q=Cardamine+pratensis) |
+| ![[carotte.jpg\|200]] | Carotte | Daucus carota | Apiacées | bisannuelle | pot. | ☀ | non | com, att | racine | ombellifère → auxiliaires (si montée) | [🔍](https://www.google.com/search?tbm=isch&q=Daucus+carota) |
+| ![[celeri.jpg\|200]] | Céleri | Apium graveolens | Apiacées | bisannuel | pot. | ☀ | non | com | côtes, racine, feuilles | gourmand en eau | [🔍](https://www.google.com/search?tbm=isch&q=Apium+graveolens) |
+| ![[cerfeuil.jpg\|200]] | Cerfeuil | Anthriscus cerefolium | Apiacées | annuel | 4 | ◐ | non | com | feuilles | mi-ombre ; ⚠ ne pas confondre avec la ciguë | [🔍](https://www.google.com/search?tbm=isch&q=Anthriscus+cerefolium) |
+| ![[chenopode.jpg\|200]] | Chénopode blanc | Chenopodium album | Amaranthacées | annuel | pot. | ☀ | non | com | feuilles (cuites) | « épinard sauvage » ; non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Chenopodium+album) |
+| ![[chicoree.jpg\|200]] | Chicorée / Endive | Cichorium intybus | Astéracées | vivace | 4 | ☀ | non | com | feuilles, racine | amère ; racine torréfiée = « café » | [🔍](https://www.google.com/search?tbm=isch&q=Cichorium+intybus) |
+| ![[chou.jpg\|200]] | Chou | Brassica oleracea | Brassicacées | ann./bisan. | pot. | ☀ | non | com | feuilles, fleurs | non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Brassica+oleracea) |
+| ![[chou_daubenton.jpg\|200]] | Chou Daubenton | Brassica oleracea ramosa | Brassicacées | vivace | 4 | ☀ | non | com | feuilles | chou pérenne, se bouture | [🔍](https://www.google.com/search?tbm=isch&q=Brassica+oleracea+daubenton) |
+| ![[ciboulette.jpg\|200]] | Ciboulette | Allium schoenoprasum | Amaryllidacées | vivace | 4 | ☀◐ | non | com, att | feuilles, fleurs | bordure | [🔍](https://www.google.com/search?tbm=isch&q=Allium+schoenoprasum) |
+| ![[claytone.jpg\|200]] | Claytone de Cuba | Claytonia perfoliata | Montiacées | annuelle | 5 | ◐☾ | non | cs, com | feuilles | pourpier d'hiver, ombre, se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Claytonia+perfoliata) |
+| ![[colchique.jpg\|200]] | Colchique | Colchicum autumnale | Colchicacées | vivace | 4 | ☀ | non | ☠ TOXIQUE | ☠ MORTELLE (colchicine) | « safran des prés » ; ⚠ confusion mortelle | [🔍](https://www.google.com/search?tbm=isch&q=Colchicum+autumnale) |
+| ![[concombre.jpg\|200]] | Concombre / Cornichon | Cucumis sativus | Cucurbitacées | annuel | pot. | ☀ | non | com | fruit | aime chaleur + eau | [🔍](https://www.google.com/search?tbm=isch&q=Cucumis+sativus) |
+| ![[consoude.jpg\|200]] | Consoude | Symphytum ×uplandicum | Boraginacées | vivace | 4 | ◐ | non | acc, att | (déconseillé, hépatotox.) | pompe à K, purin, chop-and-drop | [🔍](https://www.google.com/search?tbm=isch&q=Symphytum+officinale) |
+| ![[coriandre.jpg\|200]] | Coriandre | Coriandrum sativum | Apiacées | annuel | 4 | ☀ | non | com, att | feuilles, graines | monte vite à la chaleur | [🔍](https://www.google.com/search?tbm=isch&q=Coriandrum+sativum) |
+| ![[courge.jpg\|200]] | Courge | Cucurbita sp. | Cucurbitacées | annuelle | pot. | ☀ | non | com, cs | fruit | féculent d'hiver, couvre-sol vivant | [🔍](https://www.google.com/search?tbm=isch&q=Cucurbita) |
+| ![[courgette.jpg\|200]] | Courgette | Cucurbita pepo | Cucurbitacées | annuel | pot. | ☀ | non | com | fruit, fleur | très productive ; gourmande | [🔍](https://www.google.com/search?tbm=isch&q=Cucurbita+pepo) |
+| ![[cresson.jpg\|200]] | Cresson de fontaine | Nasturtium officinale | Brassicacées | vivace | 5 | ◐ | non | com | feuilles | eau courante ; ⚠ douve (cuire si eau douteuse) | [🔍](https://www.google.com/search?tbm=isch&q=Nasturtium+officinale) |
+| ![[crosne.jpg\|200]] | Crosne du Japon | Stachys affinis | Lamiacées | vivace | 6 | ☀◐ | non | com | tubercules | petit tubercule nacré | [🔍](https://www.google.com/search?tbm=isch&q=Stachys+affinis) |
+| ![[digitale.jpg\|200]] | Digitale pourpre | Digitalis purpurea | Plantaginacées | bisannuel | ◐ | ◐ | non | ☠ TOXIQUE | ☠ MORTELLE (cardiotoxique) | NE JAMAIS consommer ; bio-indic. sol acide | [🔍](https://www.google.com/search?tbm=isch&q=Digitalis+purpurea) |
+| ![[echalote.jpg\|200]] | Échalote | Allium cepa Aggregatum | Amaryllidacées | annuel (bulbe) | pot. | ☀ | non | com | bulbe | se plante, ne se sème pas | [🔍](https://www.google.com/search?tbm=isch&q=Allium+cepa+Aggregatum) |
+| ![[egopode.jpg\|200]] | Égopode (herbe aux goutteux) | Aegopodium podagraria | Apiacées | vivace | 5 | ◐☾ | non | com | jeunes feuilles | ⚠ très envahissant (traçant) ; d'ombre | [🔍](https://www.google.com/search?tbm=isch&q=Aegopodium+podagraria) |
+| ![[epinard.jpg\|200]] | Épinard | Spinacia oleracea | Amaranthacées | annuel | pot. | ☀◐ | non | com | feuilles | non mycorhizable ; monte à la chaleur | [🔍](https://www.google.com/search?tbm=isch&q=Spinacia+oleracea) |
+| ![[estragon.jpg\|200]] | Estragon | Artemisia dracunculus | Astéracées | vivace | 4 | ☀ | non | com | feuilles | aromate ; peu de graines viables | [🔍](https://www.google.com/search?tbm=isch&q=Artemisia+dracunculus) |
+| ![[fenouil.jpg\|200]] | Fenouil | Foeniculum vulgare | Apiacées | vivace | 4 | ☀ | non | com, att | bulbe, feuilles, graines | ombellifère → auxiliaires ; se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Foeniculum+vulgare) |
+| ![[feverole.jpg\|200]] | Féverole / Fève | Vicia faba | Fabacées | annuelle | pot./EV | ☀ | Rhizobium | fix, EV, com | graines | engrais vert d'hiver | [🔍](https://www.google.com/search?tbm=isch&q=Vicia+faba) |
+| ![[fraisier_des_bois.jpg\|200]] | Fraisier des bois | Fragaria vesca | Rosacées | vivace | 5 | ◐☾ | non | cs, com | fraises | tolère l'ombre | [🔍](https://www.google.com/search?tbm=isch&q=Fragaria+vesca) |
+| ![[cigue.jpg\|200]] | Grande ciguë | Conium maculatum | Apiacées | bisannuel | 4 | ☀◐ | non | ☠ TOXIQUE | ☠ MORTELLE | tige tachée de pourpre, odeur fétide ; ⚠ confusion ombellifères | [🔍](https://www.google.com/search?tbm=isch&q=Conium+maculatum) |
+| ![[guimauve.jpg\|200]] | Guimauve | Althaea officinalis | Malvacées | vivace | 4 | ☀ | non | com, méd | racine, feuilles, fleurs | zones humides ; mucilage | [🔍](https://www.google.com/search?tbm=isch&q=Althaea+officinalis) |
+| ![[haricot.jpg\|200]] | Haricot | Phaseolus vulgaris | Fabacées | annuelle | pot. | ☀ | Rhizobium | fix, com | gousses, graines | nain ou grimpant | [🔍](https://www.google.com/search?tbm=isch&q=Phaseolus+vulgaris) |
+| ![[hysope.jpg\|200]] | Hysope | Hyssopus officinalis | Lamiacées | vivace (ss-arbriss.) | 4 | ☀ | non | com, att, méd | feuilles, fleurs | mellifère ; sec | [🔍](https://www.google.com/search?tbm=isch&q=Hyssopus+officinalis) |
+| ![[laitue.jpg\|200]] | Laitue | Lactuca sativa | Astéracées | annuelle | pot. | ☀◐ | non | com | feuilles | mi-ombre tolérée (anti-montée) | [🔍](https://www.google.com/search?tbm=isch&q=Lactuca+sativa) |
+| ![[lamier.jpg\|200]] | Lamier blanc | Lamium album | Lamiacées | vivace | 4 | ◐ | non | com, att | jeunes pousses, fleurs | « ortie blanche » non urticante ; mellifère | [🔍](https://www.google.com/search?tbm=isch&q=Lamium+album) |
+| ![[lavande.jpg\|200]] | Lavande | Lavandula angustifolia | Lamiacées | vivace (ss-arbriss.) | 4 | ☀ | non | att, méd | (aromatique) | mellifère++ ; sol sec calcaire | [🔍](https://www.google.com/search?tbm=isch&q=Lavandula+angustifolia) |
+| ![[liveche.jpg\|200]] | Livèche | Levisticum officinale | Apiacées | vivace | 4 | ☀◐ | non | com, att | feuilles (goût céleri) | ombellifère, grande | [🔍](https://www.google.com/search?tbm=isch&q=Levisticum+officinale) |
+| ![[lotier.jpg\|200]] | Lotier corniculé | Lotus corniculatus | Fabacées | vivace | 5 | ☀ | Rhizobium | fix, att, cs | (fourrage) | fixateur bas ; prairie | [🔍](https://www.google.com/search?tbm=isch&q=Lotus+corniculatus) |
+| ![[lupin.jpg\|200]] | Lupin | Lupinus sp. | Fabacées | viv./ann. | 4 | ☀ | Rhizobium | fix | graines (détox.) | sables acides ; non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Lupinus) |
+| ![[luzerne.jpg\|200]] | Luzerne | Medicago sativa | Fabacées | vivace | 4 | ☀ | Rhizobium | fix, acc | jeunes pousses | pivot profond, fourrage | [🔍](https://www.google.com/search?tbm=isch&q=Medicago+sativa) |
+| ![[mache.jpg\|200]] | Mâche | Valerianella locusta | Caprifoliacées | annuel | 5 | ☀◐ | non | com, cs | feuilles | rosette d'hiver, se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Valerianella+locusta) |
+| ![[mais.jpg\|200]] | Maïs | Zea mays | Poacées | annuel | pot. | ☀ | non | com | grains | C4 ; « trois sœurs » ; gourmand en eau/N | [🔍](https://www.google.com/search?tbm=isch&q=Zea+mays) |
+| ![[marjolaine.jpg\|200]] | Marjolaine | Origanum majorana | Lamiacées | vivace gélive | 4 | ☀ | non | com, att | feuilles | proche origan, plus douce | [🔍](https://www.google.com/search?tbm=isch&q=Origanum+majorana) |
+| ![[mauve.jpg\|200]] | Mauve | Malva sylvestris | Malvacées | bisannuel | 4 | ☀◐ | non | com, att | feuilles, fleurs | mucilage ; mellifère | [🔍](https://www.google.com/search?tbm=isch&q=Malva+sylvestris) |
+| ![[melilot.jpg\|200]] | Mélilot | Melilotus officinalis | Fabacées | bisannuel | 4 | ☀ | Rhizobium | fix, att | (fourrage) | fixateur ; mellifère++ ; sol pauvre | [🔍](https://www.google.com/search?tbm=isch&q=Melilotus+officinalis) |
+| ![[melisse.jpg\|200]] | Mélisse | Melissa officinalis | Lamiacées | vivace | 4 | ☀◐ | non | com, att | feuilles (tisane) | mellifère, se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Melissa+officinalis) |
+| ![[menthe.jpg\|200]] | Menthe | Mentha sp. | Lamiacées | vivace | 4/5 | ◐ | non | com, att | feuilles | traçante ⚠ envahissante (en bac) | [🔍](https://www.google.com/search?tbm=isch&q=Mentha) |
+| ![[millepertuis.jpg\|200]] | Millepertuis | Hypericum perforatum | Hypéricacées | vivace | 4 | ☀ | non | méd, att | (⚠ photosensibilisant) | médicinal ; sol pauvre | [🔍](https://www.google.com/search?tbm=isch&q=Hypericum+perforatum) |
+| ![[moutarde.jpg\|200]] | Moutarde blanche | Sinapis alba | Brassicacées | annuel | 4 | ☀ | non | EV, com | graines, feuilles | engrais vert rapide ; ⚠ pas avant des crucifères (rotation) | [🔍](https://www.google.com/search?tbm=isch&q=Sinapis+alba) |
+| ![[muguet.jpg\|200]] | Muguet | Convallaria majalis | Asparagacées | vivace | 5 | ☾ | non | ☠ TOXIQUE | ☠ toxique (cardiotoxique) | sous-bois ; ⚠ confusion avec l'ail des ours ! | [🔍](https://www.google.com/search?tbm=isch&q=Convallaria+majalis) |
+| ![[navet.jpg\|200]] | Navet | Brassica rapa | Brassicacées | bisannuel | pot. | ☀ | non | com | racine, fanes | non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Brassica+rapa) |
+| ![[oca.jpg\|200]] | Oca du Pérou | Oxalis tuberosa | Oxalidacées | viv. (tubercule) | 6 | ☀◐ | non | com | tubercules | récolte tardive (jours courts) | [🔍](https://www.google.com/search?tbm=isch&q=Oxalis+tuberosa) |
+| ![[oignon.jpg\|200]] | Oignon | Allium cepa | Amaryllidacées | bisannuelle | pot. | ☀ | non | com | bulbe | — | [🔍](https://www.google.com/search?tbm=isch&q=Allium+cepa) |
+| ![[onagre.jpg\|200]] | Onagre | Oenothera biennis | Onagracées | bisannuel | 4 | ☀ | non | com, att | racine, fleurs | sols pauvres ; mellifère nocturne | [🔍](https://www.google.com/search?tbm=isch&q=Oenothera+biennis) |
+| ![[origan.jpg\|200]] | Origan | Origanum vulgare | Lamiacées | vivace | 5 | ☀ | non | cs, att | feuilles | aromatique mellifère | [🔍](https://www.google.com/search?tbm=isch&q=Origanum+vulgare) |
+| ![[ortie.jpg\|200]] | Ortie | Urtica dioica | Urticacées | vivace | 4 | ☀◐ | non | acc, com | feuilles (cuites) | bio-indic. azote, purin | [🔍](https://www.google.com/search?tbm=isch&q=Urtica+dioica) |
+| ![[oseille.jpg\|200]] | Oseille | Rumex acetosa | Polygonacées | vivace | 4 | ☀◐ | non | com | feuilles (acidulées) | revient seule | [🔍](https://www.google.com/search?tbm=isch&q=Rumex+acetosa) |
+| ![[panais.jpg\|200]] | Panais | Pastinaca sativa | Apiacées | bisannuel | pot. | ☀◐ | non | com | racine | rustique, se conserve en terre | [🔍](https://www.google.com/search?tbm=isch&q=Pastinaca+sativa) |
+| ![[paquerette.jpg\|200]] | Pâquerette | Bellis perennis | Astéracées | vivace | 5 | ☀ | non | com, att | fleurs, feuilles | pelouse ; se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Bellis+perennis) |
+| ![[patate_douce.jpg\|200]] | Patate douce | Ipomoea batatas | Convolvulacées | annuel gélif | 6 | ☀ | non | com | tubercules, feuilles | chaleur ; faux-ami de la pomme de terre | [🔍](https://www.google.com/search?tbm=isch&q=Ipomoea+batatas) |
+| ![[persil.jpg\|200]] | Persil | Petroselinum crispum | Apiacées | bisannuel | 4 | ☀◐ | non | com, att | feuilles | ombellifère → auxiliaires | [🔍](https://www.google.com/search?tbm=isch&q=Petroselinum+crispum) |
+| ![[phacelie.jpg\|200]] | Phacélie | Phacelia tanacetifolia | Boraginacées | annuelle | EV | ☀ | non | EV, att | (non) | engrais vert mellifère | [🔍](https://www.google.com/search?tbm=isch&q=Phacelia+tanacetifolia) |
+| ![[pissenlit.jpg\|200]] | Pissenlit | Taraxacum officinale | Astéracées | vivace | 4 | ☀ | non | acc, com | feuilles, racine | pivot, accumulateur | [🔍](https://www.google.com/search?tbm=isch&q=Taraxacum+officinale) |
+| ![[plantain.jpg\|200]] | Plantain | Plantago lanceolata | Plantaginacées | vivace | 4 | ☀ | non | com, méd | jeunes feuilles | sauvage ; médicinal (piqûres) | [🔍](https://www.google.com/search?tbm=isch&q=Plantago+lanceolata) |
+| ![[poire_de_terre.jpg\|200]] | Poire de terre (yacon) | Smallanthus sonchifolius | Astéracées | viv. (tubercule) | 6 | ☀ | non | com | tubercules sucrés (crus) | grand, gélif | [🔍](https://www.google.com/search?tbm=isch&q=Smallanthus+sonchifolius) |
+| ![[poireau.jpg\|200]] | Poireau | Allium porrum | Amaryllidacées | bisannuel | pot. | ☀ | non | com | fût, feuilles | (distinct du poireau perpétuel) | [🔍](https://www.google.com/search?tbm=isch&q=Allium+porrum) |
+| ![[poireau_perpetuel.jpg\|200]] | Poireau perpétuel | Allium ampeloprasum | Amaryllidacées | vivace | 4 | ☀◐ | non | com | fûts, feuilles | se divise, revient seul | [🔍](https://www.google.com/search?tbm=isch&q=Allium+ampeloprasum) |
+| ![[pois.jpg\|200]] | Pois | Pisum sativum | Fabacées | annuelle | pot. | ☀ | Rhizobium | fix, com | graines | grimpant | [🔍](https://www.google.com/search?tbm=isch&q=Pisum+sativum) |
+| ![[poivron.jpg\|200]] | Poivron / Piment | Capsicum annuum | Solanacées | annuel | pot. | ☀ | non | com | fruit | Solanacée ; chaleur | [🔍](https://www.google.com/search?tbm=isch&q=Capsicum+annuum) |
+| ![[pomme_de_terre.jpg\|200]] | Pomme de terre | Solanum tuberosum | Solanacées | annuelle | pot. | ☀ | non | com | tubercules | féculent de base | [🔍](https://www.google.com/search?tbm=isch&q=Solanum+tuberosum) |
+| ![[pourpier.jpg\|200]] | Pourpier | Portulaca oleracea | Portulacacées | annuel | 5 | ☀ | non | com, cs | feuilles charnues | riche en oméga-3 ; couvre-sol, se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Portulaca+oleracea) |
+| ![[primevere.jpg\|200]] | Primevère | Primula veris | Primulacées | vivace | 5 | ◐ | non | com, att | fleurs, feuilles | prairie ; floraison précoce mellifère | [🔍](https://www.google.com/search?tbm=isch&q=Primula+veris) |
+| ![[radis.jpg\|200]] | Radis | Raphanus sativus | Brassicacées | annuel | pot. | ☀ | non | com | racine, fanes | rapide ; non mycorhizable | [🔍](https://www.google.com/search?tbm=isch&q=Raphanus+sativus) |
+| ![[raifort.jpg\|200]] | Raifort | Armoracia rusticana | Brassicacées | vivace | 6 | ☀◐ | non | com | racine (condiment) | ⚠ traçant tenace, à isoler | [🔍](https://www.google.com/search?tbm=isch&q=Armoracia+rusticana) |
+| ![[rhubarbe.jpg\|200]] | Rhubarbe | Rheum rhabarbarum | Polygonacées | vivace | 4 | ☀◐ | non | com | pétioles (feuilles TOXIQUES) | grande, gourmande en azote | [🔍](https://www.google.com/search?tbm=isch&q=Rheum+rhabarbarum) |
+| ![[romarin.jpg\|200]] | Romarin | Salvia rosmarinus | Lamiacées | vivace (arbriss.) | 4 | ☀ | non | com, att | feuilles | persistant ; mellifère précoce ; sec | [🔍](https://www.google.com/search?tbm=isch&q=Salvia+rosmarinus) |
+| ![[roquette.jpg\|200]] | Roquette | Eruca sativa | Brassicacées | annuel | 4 | ☀◐ | non | com | feuilles | non mycorhizable ; monte vite | [🔍](https://www.google.com/search?tbm=isch&q=Eruca+sativa) |
+| ![[sainfoin.jpg\|200]] | Sainfoin | Onobrychis viciifolia | Fabacées | vivace | 4 | ☀ | Rhizobium | fix, att, EV | (fourrage) | fixateur ; mellifère ; sol calcaire sec | [🔍](https://www.google.com/search?tbm=isch&q=Onobrychis+viciifolia) |
+| ![[sarrasin.jpg\|200]] | Sarrasin (blé noir) | Fagopyrum esculentum | Polygonacées | annuel | 4 | ☀ | non | com, EV, att | graines | engrais vert rapide, étouffe les adventices ; mellifère | [🔍](https://www.google.com/search?tbm=isch&q=Fagopyrum+esculentum) |
+| ![[sarriette.jpg\|200]] | Sarriette | Satureja hortensis | Lamiacées | annuel | 4 | ☀ | non | com | feuilles | aromate des légumineuses | [🔍](https://www.google.com/search?tbm=isch&q=Satureja+hortensis) |
+| ![[sauge.jpg\|200]] | Sauge officinale | Salvia officinalis | Lamiacées | vivace (ss-arbriss.) | 4 | ☀ | non | com, att, méd | feuilles | mellifère ; tailler après floraison ; sol sec | [🔍](https://www.google.com/search?tbm=isch&q=Salvia+officinalis) |
+| ![[scorsonere.jpg\|200]] | Scorsonère | Scorzonera hispanica | Astéracées | vivace | 6 | ☀ | non | com | racine noire | « salsifis noir » | [🔍](https://www.google.com/search?tbm=isch&q=Scorzonera+hispanica) |
+| ![[seigle.jpg\|200]] | Seigle | Secale cereale | Poacées | annuel | 4 | ☀ | non | EV, com | grains | engrais vert d'hiver (avec vesce) ; structure le sol | [🔍](https://www.google.com/search?tbm=isch&q=Secale+cereale) |
+| ![[souci.jpg\|200]] | Souci (calendula) | Calendula officinalis | Astéracées | annuel | 4 | ☀ | non | att, com | pétales | auxiliaires ; se ressème | [🔍](https://www.google.com/search?tbm=isch&q=Calendula+officinalis) |
+| ![[stellaire.jpg\|200]] | Stellaire (mouron blanc) | Stellaria media | Caryophyllacées | annuel | 5 | ◐ | non | com, cs | feuilles | couvre-sol comestible d'hiver ; indicatrice sol riche | [🔍](https://www.google.com/search?tbm=isch&q=Stellaria+media) |
+| ![[tanaisie.jpg\|200]] | Tanaisie | Tanacetum vulgare | Astéracées | vivace | 4 | ☀ | non | att, rép | (toxique à dose) | auxiliaires, répulsif | [🔍](https://www.google.com/search?tbm=isch&q=Tanacetum+vulgare) |
+| ![[thym.jpg\|200]] | Thym | Thymus vulgaris | Lamiacées | vivace (ss-arbriss.) | 5 | ☀ | non | com, att, cs | feuilles | sol sec drainé ; mellifère ; couvre-sol | [🔍](https://www.google.com/search?tbm=isch&q=Thymus+vulgaris) |
+| ![[tomate.jpg\|200]] | Tomate | Solanum lycopersicum | Solanacées | annuelle | pot. | ☀ | non | com | fruit | plein soleil + chaleur | [🔍](https://www.google.com/search?tbm=isch&q=Solanum+lycopersicum) |
+| ![[topinambour.jpg\|200]] | Topinambour | Helianthus tuberosus | Astéracées | viv. (tubercule) | 6 (+ haut) | ☀ | non | com | tubercules | féculent rustique ⚠ envahissant | [🔍](https://www.google.com/search?tbm=isch&q=Helianthus+tuberosus) |
+| ![[trefle_blanc.jpg\|200]] | Trèfle blanc | Trifolium repens | Fabacées | vivace | 5 | ☀ | Rhizobium | fix, cs | fleurs | couvre-sol vivant | [🔍](https://www.google.com/search?tbm=isch&q=Trifolium+repens) |
+| ![[trefle_violet.jpg\|200]] | Trèfle violet | Trifolium pratense | Fabacées | vivace | 4 | ☀ | Rhizobium | fix, EV | fleurs | engrais vert | [🔍](https://www.google.com/search?tbm=isch&q=Trifolium+pratense) |
+| ![[valeriane.jpg\|200]] | Valériane officinale | Valeriana officinalis | Caprifoliacées | vivace | 4 | ☀◐ | non | méd, att | racine | médicinal (sommeil) ; mellifère | [🔍](https://www.google.com/search?tbm=isch&q=Valeriana+officinalis) |
+| ![[verveine_citron.jpg\|200]] | Verveine citronnelle | Aloysia citriodora | Verbénacées | vivace gélive (arbriss.) | 4 | ☀ | non | com, att | feuilles (tisane) | à rentrer l'hiver ; parfum citron | [🔍](https://www.google.com/search?tbm=isch&q=Aloysia+citriodora) |
+| ![[vesce.jpg\|200]] | Vesce commune | Vicia sativa | Fabacées | annuelle | EV | ☀ | Rhizobium | fix, EV | (non) | engrais vert | [🔍](https://www.google.com/search?tbm=isch&q=Vicia+sativa) |
+| ![[violette.jpg\|200]] | Violette odorante | Viola odorata | Violacées | vivace | 5 | ◐☾ | non | com, att | fleurs, feuilles | couvre-sol d'ombre | [🔍](https://www.google.com/search?tbm=isch&q=Viola+odorata) |
+
+## Listes par fonction (aide-mémoire de conception)
+
+- **Fixateurs d'azote ⊕** (via *Rhizobium*) : luzerne, trèfle blanc, trèfle violet, lupin, féverole, pois, haricot, vesce.
+- **Accumulateurs dynamiques** (remontent K/P en profondeur → mulch) : consoude, ortie, pissenlit, luzerne (pivot).
+- **Couvre-sols** (excluent l'herbe, gardent l'humidité) : fraisier des bois, trèfle blanc, capucine, claytone, origan.
+- **Engrais verts** (semés puis fauchés/enfouis) : phacélie, vesce, féverole, trèfle violet, luzerne.
+- **Attracteurs / mellifères** (pollinisateurs & auxiliaires, ch4-C) : bourrache, phacélie, achillée, tanaisie, ciboulette, origan, livèche et carotte **montées** (ombellifères).
+- **Féculents / glucides** (les calories du potager) : pomme de terre, courge, topinambour, poire de terre, oca ; racines : scorsonère, raifort (condiment).
+- **Anneau anti-herbe** (bulbes au pied des arbres) : ail rocambole, ciboulette (+ ail, oignon, narcisse).
+
+## ⚠ Vigilance
+
+- **Traçantes / envahissantes** (à contenir ou isoler en bac/zone dédiée) : menthe, raifort, topinambour.
+- **Parties toxiques** : rhubarbe (**feuilles** toxiques, on ne mange que les **pétioles**), tanaisie (toxique à dose), consoude (usage **interne déconseillé**, alcaloïdes hépatotoxiques).
+- **Non mycorhizables** (n'attendent rien du réseau fongique, ch2) : chou, betterave/épinard, lupin.
