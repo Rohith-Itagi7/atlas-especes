@@ -28,12 +28,14 @@ def aspects_present(sp):
     return got
 
 def main():
-    by_cat = {}
     seen = set()
+    species = []
     for path, cat in gq.ATLASES:
-        by_cat.setdefault(cat, [])
-        for sp in gq.parse_atlas(path, cat, seen):
-            by_cat[cat].append(sp)
+        species += gq.parse_atlas(path, cat, seen)
+    species = gq.apply_corrections(species)
+    by_cat = {}
+    for sp in species:
+        by_cat.setdefault(sp["cat"], []).append(sp)
 
     lines = ["# Couverture photo par espèce", "",
              "> Généré par `scripts/couverture.py` — **ne pas éditer à la main**.",

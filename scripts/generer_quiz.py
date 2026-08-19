@@ -25,14 +25,17 @@ ASPECT_KW = {"feuille": "feuille", "feuilles": "feuille", "ecorce": "ecorce", "f
              "fruits": "fruit", "fleur": "fleur", "fleurs": "fleur", "rameau": "rameau",
              "rameaux": "rameau", "bourgeon": "rameau", "hiver": "rameau", "port": "port", "silhouette": "port"}
 
-def load_sidecar():
-    """Aspects annotés : img/quiz-extra/_aspects.tsv + toutes les contributions/*.tsv
-    (ces dernières, plus récentes, écrasent). Format : « nom_fichier<TAB>aspect1,aspect2 »."""
-    d = {}
+def load_corrections():
+    """Actions de contribution (depuis l'app ou à la main) : img/quiz-extra/_corrections.tsv
+    + contributions/*.tsv. Format : action<TAB>fichier<TAB>valeur, action ∈ tag|reassign|remove.
+      tag      fichier  feuille,fleur   → force les aspects d'une photo
+      reassign fichier  stem_correct    → la photo appartient à cette autre espèce
+      remove   fichier                  → retire la photo (mauvaise attribution)"""
+    tags, reassign, remove = {}, {}, set()
     files = []
-    p = os.path.join(EXTRA, "_aspects.tsv")
-    if os.path.exists(p):
-        files.append(p)
+    fp0 = os.path.join(EXTRA, "_corrections.tsv")
+    if os.path.exists(fp0):
+        files.append(fp0)
     cdir = os.path.join(BASE, "contributions")
     if os.path.isdir(cdir):
         files += sorted(glob.glob(os.path.join(cdir, "*.tsv")))
@@ -41,12 +44,71 @@ def load_sidecar():
             line = line.rstrip("\n")
             if not line or line.startswith("#") or "\t" not in line:
                 continue
+            parts = line.split("\t")
+            act = parts[0].strip().lower()
+            if act in ("action", "type"):  # en-tête
+                continue
+            fn = parts[1].strip() if len(parts) > 1 else ""
+            val = parts[2].strip() if len(parts) > 2 else ""
+            if not fn:
+                continue
+            if act == "tag":
+                tags[fn] = [a.strip() for a in re.split(r"[,;]", val) if a.strip()]
+            elif act == "reassign" and val:
+                reassign[fn] = val; remove.discard(fn)
+            elif act == "remove":
+                remove.add(fn)
+    return tags, reassign, remove
+CORR = load_corrections()
+
+def load_sidecar():
+    """Aspects : img/quiz-extra/_aspects.tsv (fichier<TAB>aspects) + tags des contributions."""
+    d = {}
+    p = os.path.join(EXTRA, "_aspects.tsv")
+    if os.path.exists(p):
+        for line in open(p, encoding="utf-8"):
+            line = line.rstrip("\n")
+            if not line or line.startswith("#") or "\t" not in line:
+                continue
             fn, asp = line.split("\t", 1)
             if fn.strip().lower() in ("fichier", "file"):  # ligne d'en-tête
                 continue
             d[fn.strip()] = [a.strip() for a in re.split(r"[,;]", asp) if a.strip()]
+    d.update(CORR[0])  # les tags de contribution écrasent
     return d
 SIDE = load_sidecar()
+
+def apply_corrections(species):
+    """Applique reassign/remove : retire les photos signalées, déplace les reclassées."""
+    _tags, reassign, remove = CORR
+    if reassign or remove:
+        by_stem = {}
+        for s in species:
+            by_stem.setdefault(s["stem"], s)
+        moved = {}
+        for s in species:
+            keep = []
+            for p in s["paths"]:
+                b = os.path.basename(p)
+                if b in remove:
+                    continue
+                if b in reassign:
+                    moved.setdefault(reassign[b], []).append(p)
+                    continue
+                keep.append(p)
+            s["paths"] = keep
+        for tgt, ps in moved.items():
+            if tgt in by_stem:
+                for p in ps:
+                    if p not in by_stem[tgt]["paths"]:
+                        by_stem[tgt]["paths"].append(p)
+    kept = []
+    for s in species:
+        if s["paths"]:
+            kept.append(s)
+        else:
+            print("  ⚠ espèce sans photo après corrections, retirée du quiz :", s["name"])
+    return kept
 
 def cells_of(line):
     return [c.strip().replace("\x01", "|") for c in line.replace("\\|", "\x01").split("|")][1:-1]
@@ -145,22 +207,31 @@ def to_data(species, enc, cap=None):
     return res
 
 CSS = r"""
-:root{--bg:#FBFAF7;--card:#fff;--ink:#2C2C2A;--soft:#5F5E5A;--line:#E4E1D8;--green:#6FA83C;--greenD:#4E8542;--amber:#C99A3B;--red:#C0392B;--blue:#5F84A8;}
+:root{--bg:#F5F7EF;--bg2:#E7EEDA;--card:#FFFFFF;--ink:#232A20;--soft:#5E6656;--line:#E1E4D6;
+  --green:#6FA83C;--greenD:#4E8542;--greenDD:#3A6A33;--amber:#C99A3B;--red:#C0392B;--blue:#4E7FA8;
+  --shadow:0 1px 2px rgba(35,42,32,.05),0 6px 22px rgba(35,42,32,.07);--radius:14px;}
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--ink);}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;color:var(--ink);
+  background:linear-gradient(180deg,var(--bg2),var(--bg) 300px) no-repeat,var(--bg);-webkit-text-size-adjust:100%;}
 .wrap{max-width:640px;margin:0 auto;padding:16px 14px 40px;}
-h1{font-size:20px;margin:6px 0 2px;text-align:center}
+.hero{text-align:center;padding:24px 14px 16px;margin:-16px -14px 10px;
+  background:radial-gradient(130% 110% at 50% -10%,rgba(78,133,66,.20),transparent 62%);}
+h1{font-size:26px;line-height:1.12;margin:0;text-align:center;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
 h2{font-size:18px;margin:8px 0 0;text-align:center}
-.sub{color:var(--soft);text-align:center;font-size:13px;margin-bottom:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;}
-.grouplab{font-size:12px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.03em;margin:2px 0 8px}
+.sub{color:var(--soft);text-align:center;font-size:13px;margin:7px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin:12px 0;box-shadow:var(--shadow);}
+.grouplab{font-size:12px;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;margin:2px 0 9px}
 .hint{font-size:11px;color:var(--soft);margin-top:6px;font-style:italic}
 .opts{display:flex;flex-wrap:wrap;gap:8px}
-.opt{flex:1 1 45%;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-size:15px;cursor:pointer;text-align:center;}
-.opt.sel{border-color:var(--green);background:#EEF5E1;font-weight:700}
+.opt{flex:1 1 45%;padding:12px 10px;border:1.5px solid var(--line);border-radius:11px;background-color:var(--card);background-repeat:no-repeat;color:var(--ink);font-size:15px;cursor:pointer;text-align:center;transition:border-color .12s,background-color .12s,transform .06s;}
+.opt:hover{border-color:var(--green)}
+.opt:active{transform:scale(.98)}
+.opt.sel{border-color:var(--greenD);background-color:#EAF3D9;font-weight:700;box-shadow:0 1px 0 rgba(78,133,66,.18)}
 .opt:focus-visible,button:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--greenD);outline-offset:2px}
-button.go{width:100%;padding:14px;border:none;border-radius:12px;background:var(--greenD);color:#fff;font-size:17px;font-weight:700;cursor:pointer;margin-top:6px}
-button.go.alt{background:var(--blue)}
+button.go{width:100%;padding:15px;border:none;border-radius:var(--radius);background:linear-gradient(180deg,var(--green),var(--greenD));color:#fff;font-size:17px;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 2px 9px rgba(78,133,66,.32);transition:transform .06s,box-shadow .12s}
+button.go:hover{box-shadow:0 5px 16px rgba(78,133,66,.42)}
+button.go:active{transform:translateY(1px)}
+button.go.alt{background:linear-gradient(180deg,#6a97c0,var(--blue));box-shadow:0 2px 9px rgba(78,127,168,.32)}
 button.ghost{width:100%;background:none;border:1px solid var(--line);color:var(--soft);border-radius:10px;padding:11px 12px;font-size:14px;cursor:pointer;margin-top:8px}
 button:disabled{opacity:.4;cursor:default}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -214,21 +285,21 @@ a.reset{display:block;text-align:center;color:var(--soft);font-size:12px;margin-
 
 BODY = r"""
 <div class="wrap">
-<h1>🌳 Atlas & quiz des espèces</h1>
-<div class="sub">identification — progression sauvegardée sur cet appareil</div>
+<header class="hero"><h1>🌿 Atlas &amp; quiz des espèces</h1>
+<div class="sub">identification — progression sauvegardée sur cet appareil</div></header>
 <div id="home">
   <button class="go alt" id="showlist" style="margin-top:0">📋 Explorer l'atlas &amp; les photos</button>
   <div class="card">
-    <div class="grouplab">Que réviser ?</div><div class="opts" id="scope"></div>
-    <div class="grouplab" style="margin-top:14px">Mode</div><div class="opts" id="mode"></div>
-    <div class="grouplab" style="margin-top:14px">Sur quoi ?</div><div class="opts" id="aspect"></div>
+    <div class="grouplab">🗂 Que réviser ?</div><div class="opts" id="scope"></div>
+    <div class="grouplab" style="margin-top:14px">🎓 Mode</div><div class="opts" id="mode"></div>
+    <div class="grouplab" style="margin-top:14px">🔍 Sur quoi ?</div><div class="opts" id="aspect"></div>
     <div class="hint" id="asphint">Tague des photos (écorce, feuille…) pour filtrer ici.</div>
-    <div class="grouplab" style="margin-top:14px">Question</div><div class="opts" id="qtype"></div>
-    <div class="grouplab" style="margin-top:14px">Difficulté</div><div class="opts" id="diff"></div>
+    <div class="grouplab" style="margin-top:14px">❓ Type de question</div><div class="opts" id="qtype"></div>
+    <div class="grouplab" style="margin-top:14px">🎚 Difficulté</div><div class="opts" id="diff"></div>
     <button class="go" id="start">Commencer ▶</button>
   </div>
-  <div class="card"><div class="grouplab">Tes statistiques</div><div id="stats"></div></div>
-  <div class="card"><div class="grouplab">Sauvegarde de ma progression</div>
+  <div class="card"><div class="grouplab">📊 Tes statistiques</div><div id="stats"></div></div>
+  <div class="card"><div class="grouplab">💾 Sauvegarde de ma progression</div>
     <div class="hint" style="margin-top:0">Exporte pour garder une copie ou changer d'appareil ; importe pour restaurer.</div>
     <div class="tools">
       <button id="expprog">💾 Exporter</button>
@@ -245,11 +316,13 @@ BODY = r"""
   <div class="pill" id="ctx" style="margin:8px 2px"></div>
   <div class="card"><div class="imgbox" id="imgbox"><img id="pic" alt="espèce à identifier"></div>
     <div id="fichebox" class="hidden"></div>
-    <div class="qa" id="answerzone"></div><div id="feedback"></div></div>
+    <div class="qa" id="answerzone"></div><div id="feedback"></div>
+    <button class="ghost" id="reportbtn" style="margin-top:8px">⚠️ Signaler un problème sur cette photo</button>
+    <div id="reportpanel" class="hidden"></div></div>
 </div>
 <div id="list" class="hidden">
   <div class="topbar"><button class="ghost" id="backlist">← Accueil</button><div class="mini" id="listcount"></div></div>
-  <div class="grouplab">Catégorie</div><div class="opts" id="listscope" style="margin-bottom:10px"></div>
+  <div class="grouplab">🗂 Catégorie</div><div class="opts" id="listscope" style="margin-bottom:10px"></div>
   <div class="legend">Puces : <b class="ok">vertes = photos présentes</b> · grises = manquantes · <b class="want">orange = demandées</b>.</div>
   <div class="tools">
     <button id="markgaps">Marquer les manques</button>
@@ -269,7 +342,8 @@ BODY = r"""
   <div class="card"><div class="big"><img id="detailpic" alt=""></div>
     <div class="asplabel" id="detailasp"></div>
     <div class="tagger" id="tagger"></div>
-    <div class="taghint">Clique un aspect pour (dé)tagger CETTE photo (effet immédiat). « Exporter mes tags » dans l'atlas → tu me l'envoies, je fige.</div>
+    <div class="taghint">Clique un aspect pour (dé)tagger CETTE photo (effet immédiat).</div>
+    <div id="detailmis"></div>
     <div class="strip" id="detailstrip"></div>
     <div class="fields" id="detailfields"></div>
     <div class="chips" id="detailchips" style="justify-content:center;margin-top:6px"></div>
@@ -282,28 +356,31 @@ BODY = r"""
 
 JS = r"""
 const SPECIES = /*__DATA__*/;
-const KEY='quizEspeces_v1', FLAGKEY='photoFlags_v1', TAGKEY='tagOverrides_v1';
+const KEY='quizEspeces_v1', FLAGKEY='photoFlags_v1', TAGKEY='tagOverrides_v1', CORRKEY='photoCorr_v1';
 const REPO='iribarnesy/atlas-especes';
-const ASPECTS={tout:'Tout',divers:'Divers',feuille:'Feuille',ecorce:'Écorce',fruit:'Fruit',fleur:'Fleur',rameau:"Rameau d'hiver",port:'Port'};
+const ASPECTS={tout:'✨ Tout',divers:'Divers',feuille:'🍃 Feuille',ecorce:'🪵 Écorce',fruit:'🍒 Fruit',fleur:'🌸 Fleur',rameau:"❄️ Rameau",port:'🌲 Port'};
 const CHIP_ASPECTS=['feuille','ecorce','fruit','fleur','port'];
 const FIELD_ORDER=[['groupe','Groupe'],['type','Type'],['cycle','Cycle'],['famille','Famille'],['ecologie','Écologie'],['hote','Arbre / substrat'],['habitat','Habitat'],['role','Rôle'],['regime','Régime'],['saison','Saison'],['lumiere','Lumière'],['fixn','Fixation N'],['mycorhize','Mycorhize'],['succession','Succession'],['strate','Strate'],['fonction','Fonction'],['comestible','Comestible'],['notes','Notes']];
-const CATLABEL={ligneux:'Ligneux',herbace:'Herbacées',champignon:'Champignons',faune:'Faune',divers:'Diverses'};
+const CATLABEL={ligneux:'🌳 Ligneux',herbace:'🌿 Herbacées',champignon:'🍄 Champignons',faune:'🦋 Faune',divers:'🌾 Diverses'};
 const CATSHORT={ligneux:'ligneux',herbace:'herbacée',champignon:'champignon',faune:'animal',divers:'flore'};
 function catsAvail(){const s=[];SPECIES.forEach(sp=>{if(!s.includes(sp.cat))s.push(sp.cat);});return ['ligneux','herbace','champignon','faune','divers'].filter(c=>s.includes(c));}
 const BYID={}; SPECIES.forEach(s=>BYID[s.id]=s);
+const STEMBYNAME={}; SPECIES.forEach(s=>{STEMBYNAME[s.name]=s.stem;});
 let stats=JSON.parse(localStorage.getItem(KEY)||'{}');
 let flags=JSON.parse(localStorage.getItem(FLAGKEY)||'{}');
 let tags=JSON.parse(localStorage.getItem(TAGKEY)||'{}');
+let corr=JSON.parse(localStorage.getItem(CORRKEY)||'{}');
 let cfg={scope:'ligneux',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'facile'};
-let current=null, session={s:0,c:0}, answered=false, detailSp=null, detailIdx=0, detailArr=[], detailPos=0;
+let current=null, session={s:0,c:0}, answered=false, detailSp=null, detailIdx=0, detailArr=[], detailPos=0, curImg=null;
 const sortedScope=()=>scopeAll().slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));
 const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
 const save=()=>localStorage.setItem(KEY,JSON.stringify(stats));
 const savef=()=>localStorage.setItem(FLAGKEY,JSON.stringify(flags));
 const savet=()=>localStorage.setItem(TAGKEY,JSON.stringify(tags));
-const stkey=(id,qt)=>((qt||cfg.qtype)==='fiche')?id+'::fiche':id; // photo = clé nue (compat progression existante)
-const st=(id,qt)=>stats[stkey(id,qt)]||{s:0,c:0,ko:false};
-const known=(id,qt)=>{const x=st(id,qt);return x.s>3&&(x.c/x.s)>=0.75&&!x.ko;};
+const savec=()=>localStorage.setItem(CORRKEY,JSON.stringify(corr));
+const stkey=(id,qt,asp)=>{qt=qt||cfg.qtype;if(qt==='fiche')return id+'::fiche';asp=asp||cfg.aspect;return (asp&&asp!=='tout')?id+'::'+asp:id;}; // photo+tout = clé nue (compat)
+const st=(id,qt,asp)=>stats[stkey(id,qt,asp)]||{s:0,c:0,ko:false};
+const known=(id,qt,asp)=>{const x=st(id,qt,asp);return x.s>3&&(x.c/x.s)>=0.75&&!x.ko;};
 const effA=im=>{const o=tags[im.f];return o?(o.length?o:['divers']):im.a;};
 const inScope=sp=>cfg.scope==='mixte'||sp.cat===cfg.scope;
 const scopeAll=()=>SPECIES.filter(inScope);
@@ -316,33 +393,40 @@ function aspectsAvail(){const set=new Set();scopeAll().forEach(sp=>sp.imgs.forEa
   const order=['divers','feuille','ecorce','fruit','fleur','rameau','port'];const present=order.filter(a=>set.has(a));
   return present.filter(a=>a!=='divers').length?['tout',...present]:['tout'];}
 function radios(key,items){const host=document.getElementById(key);host.innerHTML='';
-  items.forEach(([val,lab])=>{const d=document.createElement('div');d.className='opt'+(cfg[key]===val?' sel':'');d.tabIndex=0;d.textContent=lab;
+  items.forEach(([val,lab])=>{const d=document.createElement('div');d.className='opt'+(cfg[key]===val?' sel':'');d.tabIndex=0;d.textContent=lab;d.dataset.val=val;
     d.onclick=()=>{cfg[key]=val;renderConfig();};d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();d.onclick();}};host.appendChild(d);});}
-function renderConfig(){radios('scope',catsAvail().map(c=>[c,CATLABEL[c]||c]).concat([['mixte','Tout']]));
-  radios('mode',[['apprendre','Apprendre'],['reviser','Réviser']]);
+function renderConfig(){radios('scope',catsAvail().map(c=>[c,CATLABEL[c]||c]).concat([['mixte','🎲 Tout']]));
+  radios('mode',[['apprendre','📚 Apprendre'],['reviser','🔁 Réviser']]);
   const asp=aspectsAvail();if(!asp.includes(cfg.aspect))cfg.aspect='tout';
   radios('aspect',asp.map(a=>[a,ASPECTS[a]]));document.getElementById('asphint').style.display=asp.length>1?'none':'block';
-  radios('qtype',[['photo','Photo'],['fiche','Fiche → devine']]);
-  radios('diff',[['facile','Facile (4 choix)'],['difficile','Difficile (liste)']]);renderStats();}
-function renderStats(){const inS=scopeAll(),qt=cfg.qtype,ql=qt==='fiche'?'fiche':'photo';
+  radios('qtype',[['photo','📷 Photo'],['fiche','📋 Fiche → devine']]);
+  radios('diff',[['facile','🟢 Facile (4 choix)'],['difficile','🎯 Difficile (liste)']]);renderStats();applyAspectFills();}
+function aspectPct(asp){const inS=scopeAll().filter(sp=>asp==='tout'||aspPresent(sp,asp));if(!inS.length)return 0;
+  return Math.round(100*inS.filter(sp=>known(sp.id,'photo',asp)).length/inS.length);}
+function applyAspectFills(){document.querySelectorAll('#aspect .opt').forEach(el=>{const val=el.dataset.val;if(!val)return;
+  const pct=aspectPct(val);el.style.backgroundImage='linear-gradient(to right,rgba(111,168,60,.30) '+pct+'%,transparent '+pct+'%)';
+  el.textContent=(ASPECTS[val]||val)+(pct?'  '+pct+'%':'');el.title=pct+'% appris en photo';});}
+function renderStats(){const inS=scopeAll(),qt=cfg.qtype,ql=qt==='fiche'?'fiche':('photo · '+(ASPECTS[cfg.aspect]||cfg.aspect));
   const seen=inS.filter(sp=>st(sp.id,qt).s>0);
   const reps=inS.reduce((a,sp)=>a+st(sp.id,qt).s,0),cor=inS.reduce((a,sp)=>a+st(sp.id,qt).c,0);
-  const knP=inS.filter(sp=>known(sp.id,'photo')).length,knF=inS.filter(sp=>known(sp.id,'fiche')).length;
+  const knCur=inS.filter(sp=>known(sp.id,qt)).length;
   const pct=reps?Math.round(100*cor/reps):0;
   document.getElementById('stats').innerHTML=row('Espèces du périmètre',inS.length)+
     row('Rencontrées ('+ql+')',seen.length)+row('Répétitions ('+ql+')',reps)+row('% correct ('+ql+')',pct+' %')+
-    row('Connues en photo 📷★',knP+' / '+inS.length)+row('Connues en fiche 📋★',knF+' / '+inS.length);}
+    row('Connues ★ ('+ql+')',knCur+' / '+inS.length);}
 function startQuiz(){if(pool().length===0){alert("Aucune espèce avec ces réglages (essaie « Tout » / change mode/aspect).");return;}
   session={s:0,c:0};show('quiz');document.getElementById('score').textContent='0 / 0';next();}
 function next(){answered=false;window.scrollTo(0,0);document.getElementById('feedback').innerHTML='';
   const p=pool();if(p.length===0){toHome();return;}
   let pick;do{pick=p[Math.floor(Math.random()*p.length)];}while(p.length>1&&pick===current);current=pick;
   const imgbox=document.getElementById('imgbox'),fbox=document.getElementById('fichebox');
-  if(cfg.qtype==='fiche'){imgbox.classList.add('hidden');fbox.classList.remove('hidden');fbox.innerHTML=ficheHTML(current);
+  if(cfg.qtype==='fiche'){imgbox.classList.add('hidden');fbox.classList.remove('hidden');fbox.innerHTML=ficheHTML(current);curImg=null;
     fbox.querySelectorAll('.fv.blur').forEach(el=>el.onclick=()=>el.classList.add('reveal'));}
   else{fbox.classList.add('hidden');imgbox.classList.remove('hidden');
     const imgs=cfg.aspect==='tout'?current.imgs:current.imgs.filter(im=>effA(im).includes(cfg.aspect));
-    document.getElementById('pic').src=imgs[Math.floor(Math.random()*imgs.length)].u;}
+    const chosen=imgs[Math.floor(Math.random()*imgs.length)];document.getElementById('pic').src=chosen.u;curImg=chosen;}
+  const rb=document.getElementById('reportbtn');rb.style.display=cfg.qtype==='photo'?'block':'none';
+  const rp=document.getElementById('reportpanel');rp.classList.add('hidden');rp.innerHTML='';
   document.getElementById('ctx').textContent=(cfg.mode==='apprendre'?'Apprendre':'Réviser')+' · '+(CATSHORT[current.cat]||current.cat)+(cfg.qtype==='photo'&&cfg.aspect!=='tout'?' · '+ASPECTS[cfg.aspect].toLowerCase():'')+(cfg.qtype==='fiche'?' · fiche':'')+' · reste '+p.length;
   const zone=document.getElementById('answerzone');
   if(cfg.diff==='facile'){const same=scopeAll().filter(s=>s.cat===current.cat&&s.id!==current.id);
@@ -370,10 +454,10 @@ function renderListScope(){const host=document.getElementById('listscope');
     d.onclick=()=>{cfg.scope=val;renderList();};d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();d.onclick();}};host.appendChild(d);});}
 function renderList(){renderListScope();const arr=sortedScope();
   document.getElementById('listcount').textContent=arr.length+' espèces';
-  const statTxt=(id,qt)=>{if(known(id,qt))return '★';const x=st(id,qt);return x.s>0?Math.round(100*x.c/x.s)+'%':'–';};
+  const statTxt=(id,qt,asp)=>{if(known(id,qt,asp))return '★';const x=st(id,qt,asp);return x.s>0?Math.round(100*x.c/x.s)+'%':'–';};
   document.getElementById('glist').innerHTML=arr.map(sp=>{
-    const cls=(known(sp.id,'photo')||known(sp.id,'fiche'))?'k':(st(sp.id,'photo').s>0||st(sp.id,'fiche').s>0)?'p':'n';
-    const txt='📷 '+statTxt(sp.id,'photo')+' · 📋 '+statTxt(sp.id,'fiche');
+    const cls=(known(sp.id,'photo','tout')||known(sp.id,'fiche'))?'k':(st(sp.id,'photo','tout').s>0||st(sp.id,'fiche').s>0)?'p':'n';
+    const txt='📷 '+statTxt(sp.id,'photo','tout')+' · 📋 '+statTxt(sp.id,'fiche');
     return `<div class="gcard"><div class="gthumb" data-id="${sp.id}" role="button" tabindex="0"><img loading="lazy" src="${sp.imgs[0].u}" alt=""><span class="gcount">${sp.imgs.length} 📷</span></div><div class="gmeta"><div class="gname">${sp.name}${sp.indic?' 🚩':''}</div><div class="glat">${sp.latin||''}</div><div class="gstat ${cls}">${txt}</div><div class="chips">${chipsHTML(sp.id)}</div></div></div>`;}).join('');
   const g=document.getElementById('glist');
   g.querySelectorAll('.gthumb').forEach(t=>{const o=()=>openDetail(t.dataset.id);t.onclick=o;t.onkeydown=e=>{if(e.key==='Enter')o();};});bindChips(g);}
@@ -398,11 +482,32 @@ function openDetail(id){detailSp=BYID[id];show('detail');window.scrollTo(0,0);
 function setMain(i){detailIdx=i;const im=detailSp.imgs[i];document.getElementById('detailpic').src=im.u;
   document.getElementById('detailasp').textContent='Aspect : '+effA(im).map(a=>ASPECTS[a]||a).join(', ')+'  ('+(i+1)+'/'+detailSp.imgs.length+')';
   document.getElementById('detailstrip').querySelectorAll('img').forEach((x,j)=>x.classList.toggle('sel',j===i));
-  renderTagger(im);}
+  renderTagger(im);renderDetailMis(im);}
 function renderTagger(im){const eff=new Set(effA(im));
   const t=document.getElementById('tagger');t.innerHTML=CHIP_ASPECTS.map(a=>`<button class="tagbtn ${eff.has(a)?'active':''}" data-a="${a}">${ASPECTS[a]}</button>`).join('');
   t.querySelectorAll('.tagbtn').forEach(b=>b.onclick=()=>{const cur=new Set(tags[im.f]||im.a);cur.has(b.dataset.a)?cur.delete(b.dataset.a):cur.add(b.dataset.a);cur.delete('divers');tags[im.f]=[...cur];savet();setMain(detailIdx);
     document.getElementById('detailchips').innerHTML=chipsHTML(detailSp.id);bindChips(document.getElementById('detailchips'));});}
+function misattribHTML(im){const c=corr[im.f]||{};
+  let extra='';
+  if(c.reassign)extra='<div class="taghint">→ reclassée vers <b>'+c.reassign+'</b> · <a href="#" data-cancel style="color:var(--red)">annuler</a></div>';
+  return '<div style="margin-top:8px"><div class="taghint">Cette photo ne correspond pas à l\'espèce ?</div>'
+    +'<div class="tagger"><button class="tagbtn '+(c.remove?'active':'')+'" data-act="remove">🗑 Photo à retirer</button></div>'
+    +'<input class="ans" list="allnames" placeholder="…ou reclasser vers une autre espèce" data-reassign style="margin-top:6px">'+extra+'</div>';}
+function bindMisattrib(root,im,after){
+  const rm=root.querySelector('[data-act="remove"]');
+  if(rm)rm.onclick=()=>{corr[im.f]=corr[im.f]||{};if(corr[im.f].remove){delete corr[im.f].remove;}else{corr[im.f]={remove:1};}if(!Object.keys(corr[im.f]).length)delete corr[im.f];savec();after();};
+  const ri=root.querySelector('[data-reassign]');
+  if(ri)ri.onchange=()=>{const st=STEMBYNAME[ri.value.trim()];if(st){corr[im.f]={reassign:st};savec();after();}else if(ri.value.trim()){alert('Espèce inconnue : '+ri.value);}};
+  const cx=root.querySelector('[data-cancel]');
+  if(cx)cx.onclick=e=>{e.preventDefault();delete corr[im.f];savec();after();};}
+function renderReport(im){const host=document.getElementById('reportpanel');if(!im){host.innerHTML='';return;}
+  const eff=new Set(effA(im));
+  host.innerHTML='<div class="fichecard"><div class="taghint">Aspect(s) de cette photo (corrige si c\'est faux) :</div>'
+   +'<div class="tagger" id="rtag">'+CHIP_ASPECTS.map(a=>'<button class="tagbtn '+(eff.has(a)?'active':'')+'" data-a="'+a+'">'+ASPECTS[a]+'</button>').join('')+'</div>'
+   +misattribHTML(im)+'<div class="taghint" style="margin-top:6px">Tes signalements partent dans la même Pull Request (bouton « Publier » de l\'atlas).</div></div>';
+  host.querySelectorAll('#rtag .tagbtn').forEach(b=>b.onclick=()=>{const cur=new Set(tags[im.f]||im.a);cur.has(b.dataset.a)?cur.delete(b.dataset.a):cur.add(b.dataset.a);cur.delete('divers');tags[im.f]=[...cur];savet();renderReport(im);});
+  bindMisattrib(host,im,()=>renderReport(im));}
+function renderDetailMis(im){const host=document.getElementById('detailmis');if(!host)return;host.innerHTML=misattribHTML(im);bindMisattrib(host,im,()=>renderDetailMis(im));}
 function showExport(txt){const ta=document.getElementById('expout');ta.classList.remove('hidden');ta.value=txt;ta.focus();ta.select();
   try{document.execCommand('copy');}catch(e){}try{if(navigator.clipboard)navigator.clipboard.writeText(txt);}catch(e){}}
 function exportGaps(){const lines=[];scopeAll().forEach(sp=>{const g=CHIP_ASPECTS.filter(a=>chipState(sp.id,a)==='want');
@@ -411,16 +516,18 @@ function exportGaps(){const lines=[];scopeAll().forEach(sp=>{const g=CHIP_ASPECT
 function exportTags(){const lines=Object.keys(tags).map(f=>f+'\t'+(tags[f].length?tags[f].join(','):'divers'));
   showExport(lines.length?lines.join('\n'):'(aucun tag modifié — tague des photos dans le détail)');}
 function publishToGitHub(){
-  const tagLines=Object.keys(tags).map(f=>f+'\t'+(tags[f].length?tags[f].join(','):'divers'));
+  const actions=[];
+  Object.keys(tags).forEach(f=>actions.push('tag\t'+f+'\t'+(tags[f].length?tags[f].join(','):'divers')));
+  Object.keys(corr).forEach(f=>{const c=corr[f]||{};if(c.remove)actions.push('remove\t'+f+'\t');else if(c.reassign)actions.push('reassign\t'+f+'\t'+c.reassign);});
   const gapLines=[];
   Object.keys(flags).forEach(id=>{const sp=BYID[id];if(!sp)return;const a=Object.keys(flags[id]||{});
     if(a.length)gapLines.push('# '+sp.name+' ('+sp.stem+') : '+a.map(x=>ASPECTS[x]||x).join(', '));});
-  if(!tagLines.length&&!gapLines.length){alert('Rien à publier — coche des manques (oranges) ou retague des photos.');return;}
+  if(!actions.length&&!gapLines.length){alert('Rien à publier — corrige un aspect, signale une photo, ou coche des manques (oranges).');return;}
   const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
   const rnd=Math.random().toString(36).slice(2,7);
-  let body="# Contribution depuis l'app ("+stamp+")\n#\n";
-  if(gapLines.length)body+='# --- Manques signales (photos a ajouter) ---\n'+gapLines.join('\n')+'\n#\n';
-  body+='# --- Re-tags de photos (pris en compte au build) ---\n'+(tagLines.length?tagLines.join('\n'):'# (aucun)')+'\n';
+  let body="# Contribution depuis l'app ("+stamp+")\n";
+  if(gapLines.length)body+='#\n# Manques signales (photos a ajouter) :\n'+gapLines.join('\n')+'\n';
+  body+='#\naction\tfichier\tvaleur\n'+(actions.length?actions.join('\n'):'# (aucune action)')+'\n';
   const fn='contributions/app-'+stamp+'-'+rnd+'.tsv';
   const url='https://github.com/'+REPO+'/new/main?filename='+encodeURIComponent(fn)+'&value='+encodeURIComponent(body);
   const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
@@ -454,7 +561,11 @@ document.getElementById('expprog').onclick=doBackup;
 document.getElementById('impfilebtn').onclick=()=>document.getElementById('impfile').click();
 document.getElementById('impfile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>restore(String(r.result));r.readAsText(f);e.target.value='';};
 document.getElementById('restorebtn').onclick=()=>{const t=document.getElementById('backupbox').value.trim();if(t)restore(t);else{document.getElementById('backupbox').classList.remove('hidden');alert('Colle d\'abord une sauvegarde dans le cadre.');}};
-document.getElementById('reset').onclick=()=>{if(confirm('Effacer toute la progression (pas les tags) ?')){stats={};save();renderConfig();}};
+document.getElementById('reportbtn').onclick=()=>{const p=document.getElementById('reportpanel');
+  if(p.classList.contains('hidden')){p.classList.remove('hidden');renderReport(curImg);}else{p.classList.add('hidden');}};
+document.getElementById('reset').onclick=()=>{if(confirm('Effacer toute la progression (pas les tags/corrections) ?')){stats={};save();renderConfig();}};
+(function(){const dl=document.createElement('datalist');dl.id='allnames';
+  SPECIES.forEach(s=>{const o=document.createElement('option');o.value=s.name;dl.appendChild(o);});document.body.appendChild(dl);})();
 renderConfig();
 """
 
@@ -472,6 +583,7 @@ def main():
         got = parse_atlas(path, cat, seen)
         print("%-38s : %d espèces" % (path, len(got)))
         species += got
+    species = apply_corrections(species)
     print("TOTAL : %d espèces, %d images, sidecar=%d" % (len(species), sum(len(s["paths"]) for s in species), len(SIDE)))
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(assemble(to_data(species, b64_asis), True))

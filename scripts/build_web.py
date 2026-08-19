@@ -27,6 +27,7 @@ def main():
         got = gq.parse_atlas(path, cat, seen)
         print("%-38s : %d espèces" % (path, len(got)))
         species += got
+    species = gq.apply_corrections(species)
     data = gq.to_data(species, enc_web, cap=None)
     html = gq.assemble(data, True)
     os.makedirs(OUTDIR, exist_ok=True)
