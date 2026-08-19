@@ -7,7 +7,7 @@
 ## En bref
 - Plantes (ligneux + herbacées) : **187**
 - …dont **6** avec les 5 aspects, **1** sans aucun aspect taggé.
-- Manques par aspect : Feuille 38 · Écorce 156 · Fruit 107 · Fleur 37 · Port 151
+- Manques par aspect : Feuille 38 · Écorce 155 · Fruit 107 · Fleur 36 · Port 151
 
 ## Ligneux (73)
 
@@ -44,7 +44,7 @@
 | Cornouiller mâle | 6 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Feijoa (goyavier du Brésil) | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Figuier | 1 | ✓ | ✗ | ✗ | ✗ | ✗ | Écorce, Fruit, Fleur, Port |
-| Framboisier | 4 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
+| Framboisier | 4 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Frêne commun | 4 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Févier d'Amérique | 4 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Genévrier commun | 3 | ✓ | ✗ | ✓ | ✗ | ✓ | Écorce, Fleur |
