@@ -1,0 +1,13 @@
+# Contribution depuis l'app (2026-08-19-12-33-46)
+#
+action	fichier	valeur
+tag	neflier.jpg	fruit,feuille
+tag	framboisier.jpg	feuille,fruit,ecorce,fleur
+tag	ajonc.jpg	fleur,feuille
+tag	ajonc-1.jpg	fleur,port,feuille
+tag	ajonc-2.jpg	fleur,feuille
+tag	ajonc-fruit-1.jpg	fruit,feuille
+tag	ronce-ecorce-1.jpg	divers
+tag	ronce-feuille-1.jpg	divers
+remove	ronce-ecorce-1.jpg	
+remove	ronce-feuille-1.jpg	
