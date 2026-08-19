@@ -312,6 +312,7 @@ a.reset{display:block;text-align:center;color:var(--soft);font-size:12px;margin-
 #critback{transform:scale(.96);opacity:.7;pointer-events:none}
 .critimg{width:100%;flex:1 1 auto;min-height:110px;border-radius:12px;overflow:hidden;background:#eef0e8;display:flex;align-items:center;justify-content:center}
 .critimg img{width:100%;height:100%;object-fit:contain}
+.critname{text-align:center;font-weight:700;font-size:17px;margin-top:8px}
 #critbtns{margin-top:10px}
 .critbanner{padding:9px 12px;border-radius:10px;font-size:14px;margin-top:8px;text-align:center}
 .critbanner.ok{background:#EAF3DD;border:1px solid var(--green)}
