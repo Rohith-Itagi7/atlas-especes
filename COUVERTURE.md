@@ -7,14 +7,14 @@
 ## En bref
 - Plantes (ligneux + herbacées) : **187**
 - …dont **6** avec les 5 aspects, **1** sans aucun aspect taggé.
-- Manques par aspect : Feuille 38 · Écorce 156 · Fruit 107 · Fleur 37 · Port 151
+- Manques par aspect : Feuille 37 · Écorce 156 · Fruit 107 · Fleur 36 · Port 151
 
 ## Ligneux (73)
 
 | Espèce | 📷 | Feuille | Écorce | Fruit | Fleur | Port | À compléter |
 |---|--:|:-:|:-:|:-:|:-:|:-:|---|
 | Abricotier | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
-| Ajonc d'Europe | 4 | ✗ | ✗ | ✓ | ✓ | ✓ | Feuille, Écorce |
+| Ajonc d'Europe | 4 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Alisier torminal | 6 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Amandier | 5 | ✗ | ✓ | ✓ | ✓ | ✗ | Feuille, Port |
 | Amélanchier | 4 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
@@ -44,7 +44,7 @@
 | Cornouiller mâle | 6 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Feijoa (goyavier du Brésil) | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Figuier | 1 | ✓ | ✗ | ✗ | ✗ | ✗ | Écorce, Fruit, Fleur, Port |
-| Framboisier | 4 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
+| Framboisier | 4 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Frêne commun | 4 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Févier d'Amérique | 4 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Genévrier commun | 3 | ✓ | ✗ | ✓ | ✗ | ✓ | Écorce, Fleur |
@@ -75,7 +75,7 @@
 | Prunier | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Pêcher | 1 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
 | Robinier (faux-acacia) | 4 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
-| Ronce | 6 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
+| Ronce | 4 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Sapin pectiné | 5 | ✓ | ✓ | ✓ | ✗ | ✗ | Fleur, Port |
 | Saule | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Sorbier des oiseleurs | 5 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
