@@ -88,6 +88,11 @@ input{font-family:var(--font-body)}
 .anim{animation:pop 220ms cubic-bezier(.16,1,.3,1) both}
 .flyL{animation:flyL 260ms cubic-bezier(.65,0,.35,1) both}
 .flyR{animation:flyR 260ms cubic-bezier(.65,0,.35,1) both}
+.quizwrap{background:var(--color-brand-red-soft);border:1px solid var(--color-line-strong);border-radius:14px;padding:16px}
+@media(min-width:900px){.quizwrap{padding:22px}}
+.quizbar{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding:11px 15px;border-radius:10px;background:var(--color-navy-900)}
+.quizbar .qt{font:700 10px/1.1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-yellow)}
+.quizbar .ql{font:700 15px/1.2 var(--font-body);color:#fff;margin-top:3px}
 """
 
 BODY = '<div id="app"></div>'
@@ -228,6 +233,7 @@ class App{
       qtOpts:this.QT.map(c=>({label:c[0]==='photo'?'Une photo':'Sa fiche de caractères',on:cfg.qtype===c[0]?'1':'0',go:this.pick('qtype',c[0])})),
       dfOpts:this.DF.map(c=>({label:c[1],on:cfg.diff===c[0]?'1':'0',go:this.pick('diff',c[0])})),
       poolCount:this.pool().length,
+      quizModeLine:this.label(this.CATS,cfg.cat)+' · '+(cfg.qtype==='photo'?('photo'+(cfg.aspect!=='tout'?' — '+this.label(this.ASP,cfg.aspect).toLowerCase():'')):'fiche')+' · '+this.label(this.DF,cfg.diff).toLowerCase(),
       isPhotoQ:!!q&&cfg.qtype==='photo',isFicheQ:!!q&&cfg.qtype==='fiche',
       qImg:q?q.img.u:'',qAspect:q?(q.img.a.map(a=>this.label(this.ASP,a)).join(' · ')||'Divers'):'',
       qFields:q?this.fieldRows(sp,!answered):[],
@@ -310,7 +316,8 @@ JS += r"""
         +(V.hasTips?'<div style="margin-top:12px;padding:12px;border-radius:8px;background:var(--color-warning-soft)"><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-warning)">Ne pas confondre</div>'+V.tips.map(t=>'<div style="margin-top:8px;font:400 13px/1.45 var(--font-body);color:var(--fg-1)">'+e(t.txt)+'</div>').join('')+'</div>':'')
         +'<div style="display:flex;gap:8px;margin-top:16px"><button class="pb" style="min-height:48px;font-size:15px" data-k="dark" data-h="'+h(V.next)+'">Suivante'+ARROW+'</button><button class="ib" data-h="'+h(V.openAnswerFiche)+'">Voir la fiche</button></div></div>';
       }
-      return '<div class="r-quiz"><div>'+left+'</div><div style="display:flex;flex-direction:column;gap:10px">'+right+'</div></div>';
+      const bar='<div class="quizbar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E3B45C" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3.5"></circle></svg><div><div class="qt">Quiz — identifie l\'espèce</div><div class="ql">'+e(V.quizModeLine)+'</div></div></div>';
+      return '<div class="quizwrap">'+bar+'<div class="r-quiz"><div>'+left+'</div><div style="display:flex;flex-direction:column;gap:10px">'+right+'</div></div></div>';
     }
     if(V.isAtlas){
       return '<div style="display:flex;flex-direction:column;gap:16px">'
