@@ -133,7 +133,7 @@ class App{
     cfg:{cat:'ligneux',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'qcm'},
     data:SPECIES_DATA||null, q:null, picked:null, typed:'',
     sess:{s:0,c:0,streak:0,best:0},
-    query:'', listCat:'mixte', fiche:null, fimg:0,
+    query:'', listCat:'mixte', fiche:null, fimg:0, ficheFrom:'atlas',
     crit:null, cq:[], cp:0, csess:{s:0,c:0}, cfb:null, canim:'',
     prog:{}
   };
@@ -167,8 +167,8 @@ class App{
   goAtlas=()=>this.setState({tab:'atlas',view:'atlas'});
   goTrier=()=>this.setState({tab:'trier',view:'trierPick',crit:null});
   goProgres=()=>this.setState({tab:'progres',view:'progres'});
-  back=()=>{const v=this.state.view;if(v==='fiche')this.setState({view:'atlas',tab:'atlas'});else if(v==='trierPlay')this.setState({view:'trierPick',crit:null});else this.setState({view:'home',tab:'reviser'});};
-  openFiche(id){return ()=>this.setState({view:'fiche',tab:'atlas',fiche:id,fimg:0});}
+  back=()=>{const v=this.state.view;if(v==='fiche')this.setState(this.state.ficheFrom==='quiz'?{view:'quiz',tab:'reviser'}:{view:'atlas',tab:'atlas'});else if(v==='trierPlay')this.setState({view:'trierPick',crit:null});else this.setState({view:'home',tab:'reviser'});};
+  openFiche(id){return ()=>this.setState({view:'fiche',tab:'atlas',fiche:id,fimg:0,ficheFrom:'atlas'});}
   atlasArr(){const q=this.norm(this.state.query);return this.all().filter(s=>this.inCat(s,this.state.listCat)).filter(s=>!q||this.norm(s.name+s.latin+(s.fields.famille||'')).indexOf(q)>=0).slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));}
   moveFiche(d){return ()=>{const arr=this.atlasArr();const i=arr.findIndex(s=>s.id===this.state.fiche);const n=arr[(i+d+arr.length)%arr.length];if(n)this.setState({fiche:n.id,fimg:0});};}
   startCrit(c){return ()=>{const q=this.all().filter(s=>this.inCat(s,this.state.cfg.cat)&&c.has(s)).sort(()=>Math.random()-0.5);this.setState({view:'trierPlay',crit:c,cq:q,cp:0,csess:{s:0,c:0},cfb:null,canim:''});};}
@@ -188,7 +188,7 @@ class App{
     const fimgs=fiche?fiche.imgs:[];const fcur=fimgs[S.fimg]||fimgs[0];
     const critSp=S.cq[S.cp];
     const titles={home:'Ma session',quiz:'Quiz',atlas:'Atlas des espèces',fiche:'Fiche espèce',trierPick:'Questions oui / non',trierPlay:S.crit?S.crit.q:'Questions oui / non',progres:'Ma progression'};
-    const crumbs={home:'Réviser',quiz:this.label(this.CATS,cfg.cat)+' · '+this.label(this.QT,cfg.qtype),atlas:all.length+' espèces',fiche:'Atlas',trierPick:'Oui / Non',trierPlay:this.label(this.CATS,cfg.cat),progres:'Progrès'};
+    const crumbs={home:'Réviser',quiz:this.label(this.CATS,cfg.cat)+' · '+this.label(this.QT,cfg.qtype),atlas:all.length+' espèces',fiche:S.ficheFrom==='quiz'?'Quiz':'Atlas',trierPick:'Oui / Non',trierPlay:this.label(this.CATS,cfg.cat),progres:'Progrès'};
     return {
       onReviser:S.tab==='reviser'?'1':'0',onAtlas:S.tab==='atlas'?'1':'0',onTrier:S.tab==='trier'?'1':'0',onProgres:S.tab==='progres'?'1':'0',
       goReviser:this.goReviser,goAtlas:this.goAtlas,goTrier:this.goTrier,goProgres:this.goProgres,back:this.back,
@@ -227,7 +227,7 @@ class App{
       answered,fbColor:correct?'#2F6B3A':'#A33A2B',fbLabel:correct?'Bonne réponse':'Raté',
       answerName:sp?sp.name:'',answerLatin:sp?sp.latin:'',answerNote:sp?this.clean(sp.note==='—'?(sp.fields.repartition||''):sp.note):'',
       hasTips:!!(sp&&sp.conf&&sp.conf.length),tips:sp&&sp.conf?sp.conf.map(t=>({txt:this.clean(t)})):[],
-      next:this.next,openAnswerFiche:()=>this.setState({view:'fiche',tab:'atlas',fiche:sp.id,fimg:0}),
+      next:this.next,openAnswerFiche:()=>this.setState({view:'fiche',tab:'atlas',fiche:sp.id,fimg:0,ficheFrom:'quiz'}),
       sessLine:S.sess.c+' / '+S.sess.s+' cette session',sessPct:S.sess.s?Math.round(100*S.sess.c/S.sess.s):0,
       query:S.query,onSearch:ev=>{this.state.query=ev.target.value;this.render();},atlasCount:this.atlasArr().length,
       listChips:catList.map(c=>({label:c[1],on:S.listCat===c[0]?'1':'0',go:()=>this.setState({listCat:c[0]})})),
