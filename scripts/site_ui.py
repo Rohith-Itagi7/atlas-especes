@@ -141,6 +141,7 @@ class App{
   mount(){
     try{const p=localStorage.getItem('atlas-v2-prog');if(p)this.state.prog=JSON.parse(p);}catch(e){}
     this.render();
+    try{history.replaceState(this.snapshot(),'');}catch(e){}
   }
   // progress
   key(id,qt){return id+'|'+qt;}
@@ -159,23 +160,28 @@ class App{
   pool(){const {cfg}=this.state;const base=this.all().filter(s=>this.inCat(s,cfg.cat));const byMode=base.filter(s=>cfg.mode==='apprendre'?!this.known(s.id,cfg.qtype):this.known(s.id,cfg.qtype));let p=(byMode.length>=4?byMode:base);if(cfg.qtype==='photo'&&cfg.aspect!=='tout'){const f=p.filter(s=>s.imgs.some(i=>i.a.indexOf(cfg.aspect)>=0));if(f.length>=4)p=f;}return p;}
   buildQ(){const {cfg}=this.state;const p=this.pool();if(!p.length)return null;const sp=p[Math.floor(Math.random()*p.length)];let imgs=sp.imgs;if(cfg.aspect!=='tout'){const f=imgs.filter(i=>i.a.indexOf(cfg.aspect)>=0);if(f.length)imgs=f;}const img=imgs[Math.floor(Math.random()*imgs.length)]||sp.imgs[0];let opts=[];if(cfg.diff!=='saisie'){const genus=(sp.latin||'').split(' ')[0];let peers=this.all().filter(s=>s.id!==sp.id&&this.inCat(s,cfg.cat));if(cfg.diff==='sosies'){const near=peers.filter(s=>(s.latin||'').split(' ')[0]===genus||s.fields.famille===sp.fields.famille);peers=near.length>=3?near:peers;}else{const same=peers.filter(s=>s.cat===sp.cat);peers=same.length>=3?same:peers;}const shuffled=peers.slice().sort(()=>Math.random()-0.5).slice(0,3).map(s=>s.name);opts=shuffled.concat([sp.name]).sort(()=>Math.random()-0.5);}return{sp,img,opts};}
   top(){window.scrollTo(0,0);}
-  start=()=>{const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();};
+  start=()=>{const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();this.pushNav();};
   next=()=>{this.setState({q:this.buildQ(),picked:null,typed:'',reveal:{},info:null});this.top();};
   grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.norm(name)===this.norm(q.sp.name);const streak=ok?sess.streak+1:0;let keys=[q.sp.id+'|'+cfg.qtype];if(cfg.qtype==='photo'&&q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));this.setState({picked:name,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});}
   setCfg(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg});};}
   pick(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg,open:null});};}
-  goReviser=()=>{this.setState({tab:'reviser',view:'home'});this.top();};
-  goAtlas=()=>{this.setState({tab:'atlas',view:'atlas'});this.top();};
-  goTrier=()=>{this.setState({tab:'trier',view:'trierPick',crit:null});this.top();};
-  goProgres=()=>{this.setState({tab:'progres',view:'progres'});this.top();};
-  back=()=>{const v=this.state.view;
-    if(v==='fiche'){const sy=this._ficheScroll||0;this.setState(this.state.ficheFrom==='quiz'?{view:'quiz',tab:'reviser'}:{view:'atlas',tab:'atlas'});window.scrollTo(0,sy);}
-    else if(v==='trierPlay'){this.setState({view:'trierPick',crit:null});this.top();}
-    else{this.setState({view:'home',tab:'reviser'});this.top();}};
-  openFiche(id){return ()=>{this._ficheScroll=window.scrollY;this.setState({view:'fiche',tab:'atlas',fiche:id,fimg:0,ficheFrom:'atlas'});this.top();};}
+  goReviser=()=>{this.setState({tab:'reviser',view:'home'});this.top();this.pushNav();};
+  goAtlas=()=>{this.setState({tab:'atlas',view:'atlas'});this.top();this.pushNav();};
+  goTrier=()=>{this.setState({tab:'trier',view:'trierPick',crit:null});this.top();this.pushNav();};
+  goProgres=()=>{this.setState({tab:'progres',view:'progres'});this.top();this.pushNav();};
+  snapshot(){const s=this.state;return {v:s.view,tab:s.tab,fiche:s.fiche,ficheFrom:s.ficheFrom,crit:s.crit?s.crit.id:null};}
+  pushNav(){try{history.pushState(this.snapshot(),'');}catch(e){}}
+  restore(st){const from=this.state.view;
+    if(st.v==='trierPlay'&&!this.state.cq.length){this.setState({view:'trierPick',tab:'trier',crit:null});window.scrollTo(0,0);return;}
+    const patch={view:st.v,tab:st.tab||'reviser',fiche:st.fiche||null,ficheFrom:st.ficheFrom||'atlas'};
+    if(st.crit){const c=this.CRIT.find(x=>x.id===st.crit);if(c)patch.crit=c;}
+    this.setState(patch);
+    if(from==='fiche'&&(st.v==='atlas'||st.v==='quiz'))window.scrollTo(0,this._ficheScroll||0);else window.scrollTo(0,0);}
+  back=()=>{try{history.back();}catch(e){this.setState({view:'home',tab:'reviser'});}};
+  openFiche(id){return ()=>{this._ficheScroll=window.scrollY;this.setState({view:'fiche',tab:'atlas',fiche:id,fimg:0,ficheFrom:'atlas'});this.top();this.pushNav();};}
   atlasArr(){const q=this.norm(this.state.query);return this.all().filter(s=>this.inCat(s,this.state.listCat)).filter(s=>!q||this.norm(s.name+s.latin+(s.fields.famille||'')).indexOf(q)>=0).slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));}
   moveFiche(d){return ()=>{const arr=this.atlasArr();const i=arr.findIndex(s=>s.id===this.state.fiche);const n=arr[(i+d+arr.length)%arr.length];if(n)this.setState({fiche:n.id,fimg:0});};}
-  startCrit(c){return ()=>{const q=this.all().filter(s=>this.inCat(s,this.state.cfg.cat)&&c.has(s)).sort(()=>Math.random()-0.5);this.setState({view:'trierPlay',crit:c,cq:q,cp:0,csess:{s:0,c:0},cfb:null,canim:''});};}
+  startCrit(c){return ()=>{const q=this.all().filter(s=>this.inCat(s,this.state.cfg.cat)&&c.has(s)).sort(()=>Math.random()-0.5);this.setState({view:'trierPlay',tab:'trier',crit:c,cq:q,cp:0,csess:{s:0,c:0},cfb:null,canim:''});this.top();this.pushNav();};}
   critAns(yes){return ()=>{const {crit,cq,cp,csess}=this.state;const sp=cq[cp];if(!sp||this.state.cfb)return;const truth=crit.ok(sp);const ok=truth===yes;this.setState({cfb:ok?'Exact — '+(truth?'oui':'non'):"Raté — c'est "+(truth?'oui':'non'),csess:{s:csess.s+1,c:csess.c+(ok?1:0)},canim:yes?'flyR':'flyL',prog:this.bumpKeys(['crit|'+crit.id],ok)});setTimeout(()=>this.setState({cp:(cp+1)%cq.length,cfb:null,canim:'anim'}),420);};}
   exportProg=()=>{try{const b=new Blob([JSON.stringify(this.state.prog)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='atlas-progression.json';document.body.appendChild(a);a.click();a.remove();}catch(e){}};
   resetProg=()=>{if(!confirm('Réinitialiser toute la progression ?'))return;try{localStorage.removeItem('atlas-v2-prog');}catch(e){}this.setState({prog:{},sess:{s:0,c:0,streak:0,best:0}});};
@@ -231,7 +237,7 @@ class App{
       answered,fbColor:correct?'#2F6B3A':'#A33A2B',fbLabel:correct?'Bonne réponse':'Raté',
       answerName:sp?sp.name:'',answerLatin:sp?sp.latin:'',answerNote:sp?this.clean(sp.note==='—'?(sp.fields.repartition||''):sp.note):'',
       hasTips:!!(sp&&sp.conf&&sp.conf.length),tips:sp&&sp.conf?sp.conf.map(t=>({txt:this.clean(t)})):[],
-      next:this.next,openAnswerFiche:()=>{this._ficheScroll=window.scrollY;this.setState({view:'fiche',tab:'atlas',fiche:sp.id,fimg:0,ficheFrom:'quiz'});this.top();},
+      next:this.next,openAnswerFiche:()=>{this._ficheScroll=window.scrollY;this.setState({view:'fiche',tab:'atlas',fiche:sp.id,fimg:0,ficheFrom:'quiz'});this.top();this.pushNav();},
       sessLine:S.sess.c+' / '+S.sess.s+' cette session',sessPct:S.sess.s?Math.round(100*S.sess.c/S.sess.s):0,
       query:S.query,onSearch:ev=>{this.state.query=ev.target.value;this.render();},atlasCount:this.atlasArr().length,
       listChips:catList.map(c=>({label:c[1],on:S.listCat===c[0]?'1':'0',go:()=>this.setState({listCat:c[0]})})),
@@ -376,6 +382,7 @@ JS += r"""
   }
 }
 const APP=new App();
+window.addEventListener('popstate',ev=>{if(ev.state&&ev.state.v)APP.restore(ev.state);});
 window.addEventListener('keydown',ev=>{
   if(APP.state.view==='trierPlay'&&!APP.state.cfb){if(ev.key==='ArrowRight'){ev.preventDefault();APP.critAns(true)();}else if(ev.key==='ArrowLeft'){ev.preventDefault();APP.critAns(false)();}}
 });
