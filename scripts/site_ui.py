@@ -133,6 +133,7 @@ class App{
     comestible:'Partie consommable. « toxique » ou « TOXIQUES » = ne jamais consommer, même cuit.'
   };
   props={quickSessions:true,showMastery:true};
+  _recent=[];
   state={
     open:null, reveal:{}, info:null, tab:'reviser', view:'home',
     cfg:{cat:'ligneux',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'qcm'},
@@ -163,9 +164,16 @@ class App{
   norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
   clean(s){return (s||'').replace(/\*\*/g,'');}
   pool(){const {cfg}=this.state;const base=this.all().filter(s=>this.inCat(s,cfg.cat));const byMode=base.filter(s=>cfg.mode==='apprendre'?!this.known(s.id,cfg.qtype):this.known(s.id,cfg.qtype));let p=(byMode.length>=4?byMode:base);if(cfg.qtype==='photo'&&cfg.aspect!=='tout'){const f=p.filter(s=>s.imgs.some(i=>i.a.indexOf(cfg.aspect)>=0));if(f.length>=4)p=f;}return p;}
-  buildQ(){const {cfg}=this.state;const p=this.pool();if(!p.length)return null;const sp=p[Math.floor(Math.random()*p.length)];let imgs=sp.imgs;if(cfg.aspect!=='tout'){const f=imgs.filter(i=>i.a.indexOf(cfg.aspect)>=0);if(f.length)imgs=f;}const img=imgs[Math.floor(Math.random()*imgs.length)]||sp.imgs[0];let opts=[];if(cfg.diff!=='saisie'){const genus=(sp.latin||'').split(' ')[0];let peers=this.all().filter(s=>s.id!==sp.id&&this.inCat(s,cfg.cat));if(cfg.diff==='sosies'){const near=peers.filter(s=>(s.latin||'').split(' ')[0]===genus||s.fields.famille===sp.fields.famille);peers=near.length>=3?near:peers;}else{const same=peers.filter(s=>s.cat===sp.cat);peers=same.length>=3?same:peers;}const shuffled=peers.slice().sort(()=>Math.random()-0.5).slice(0,3).map(s=>s.name);opts=shuffled.concat([sp.name]).sort(()=>Math.random()-0.5);}return{sp,img,opts};}
+  buildQ(){const {cfg}=this.state;const p=this.pool();if(!p.length)return null;
+    const win=Math.min(12,Math.max(0,p.length-1));const recent=new Set(this._recent.slice(-win));
+    let cand=p.filter(s=>!recent.has(s.id));
+    if(!cand.length)cand=p.filter(s=>!this.state.q||s.id!==this.state.q.sp.id);
+    if(!cand.length)cand=p;
+    const sp=cand[Math.floor(Math.random()*cand.length)];
+    this._recent.push(sp.id);if(this._recent.length>Math.max(win,1))this._recent=this._recent.slice(-Math.max(win,1));
+    let imgs=sp.imgs;if(cfg.aspect!=='tout'){const f=imgs.filter(i=>i.a.indexOf(cfg.aspect)>=0);if(f.length)imgs=f;}const img=imgs[Math.floor(Math.random()*imgs.length)]||sp.imgs[0];let opts=[];if(cfg.diff!=='saisie'){const genus=(sp.latin||'').split(' ')[0];let peers=this.all().filter(s=>s.id!==sp.id&&this.inCat(s,cfg.cat));if(cfg.diff==='sosies'){const near=peers.filter(s=>(s.latin||'').split(' ')[0]===genus||s.fields.famille===sp.fields.famille);peers=near.length>=3?near:peers;}else{const same=peers.filter(s=>s.cat===sp.cat);peers=same.length>=3?same:peers;}const shuffled=peers.slice().sort(()=>Math.random()-0.5).slice(0,3).map(s=>s.name);opts=shuffled.concat([sp.name]).sort(()=>Math.random()-0.5);}return{sp,img,opts};}
   top(){window.scrollTo(0,0);}
-  start=()=>{const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();this.pushNav();};
+  start=()=>{this._recent=[];const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();this.pushNav();};
   next=()=>{this.setState({q:this.buildQ(),picked:null,typed:'',reveal:{},info:null});this.top();};
   grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.norm(name)===this.norm(q.sp.name);const streak=ok?sess.streak+1:0;let keys=[q.sp.id+'|'+cfg.qtype];if(cfg.qtype==='photo'&&q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));this.setState({picked:name,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});}
   setCfg(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg});};}
