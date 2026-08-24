@@ -63,7 +63,8 @@ Espèces diverses - référence.md   fougères, graminées, mousses, lichens
 img/especes/                      vignette principale de chaque espèce
 img/quiz-extra/                   photos supplémentaires + _aspects.tsv (annotation des aspects)
 COUVERTURE.md                     carte des aspects présents/manquants par espèce (généré)
-scripts/build_web.py              build du site statique (utilisé par la CI)
+scripts/build_web.py              build du site statique — nouvelle interface (utilisé par la CI)
+scripts/site_ui.py                interface du site (CSS + app vanilla, refonte)
 scripts/generer_quiz.py           build local des versions autonome / Artifact (macOS)
 scripts/couverture.py             (re)génère COUVERTURE.md
 scripts/verifier_atlas.py         validation des atlas (CI sur les PR)
