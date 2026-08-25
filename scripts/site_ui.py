@@ -93,6 +93,19 @@ input{font-family:var(--font-body)}
 .quizbar{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding:11px 15px;border-radius:10px;background:var(--color-navy-900)}
 .quizbar .qt{font:700 10px/1.1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-yellow)}
 .quizbar .ql{font:700 15px/1.2 var(--font-body);color:#fff;margin-top:3px}
+.dd[data-open="1"]{z-index:200}
+.qphoto{width:100%;max-height:42vh;object-fit:contain;display:block;background:var(--color-navy-50)}
+@media(min-width:900px){.qphoto{max-height:66vh}}
+.critstack{position:relative;height:52vh;min-height:240px;margin:2px 0 4px}
+@media(min-width:900px){.critstack{height:44vh;min-height:280px}}
+.critcard{position:absolute;inset:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;will-change:transform,opacity}
+.critcard.critback{transform:scale(.96);opacity:.55;pointer-events:none}
+.cimg{flex:1 1 auto;min-height:0;background:var(--color-navy-50);overflow:hidden}
+.cimg img{width:100%;height:100%;object-fit:cover;display:block}
+.cmeta{padding:12px 14px;text-align:center;flex:0 0 auto}
+.critbanner{padding:12px 14px;border-radius:10px;font:700 14px/1.35 var(--font-body);text-align:center}
+.critbanner.ok{background:var(--color-success-soft);color:var(--color-success)}
+.critbanner.no{background:var(--color-danger-soft);color:var(--color-danger)}
 """
 
 BODY = '<div id="app"></div>'
@@ -134,6 +147,7 @@ class App{
   };
   props={quickSessions:true,showMastery:true};
   _recent=[];
+  _critBusy=false;
   state={
     open:null, reveal:{}, info:null, tab:'reviser', view:'home',
     cfg:{cat:'ligneux',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'qcm'},
@@ -159,6 +173,7 @@ class App{
   ficheStat(){const all=this.all(),P=this.state.prog;let reps=0,cor=0,k=0;all.forEach(s=>{const x=P[s.id+'|fiche']||{s:0,c:0};reps+=x.s;cor+=x.c;if(x.s>=3&&x.c/x.s>=0.75)k++;});return{n:all.length,reps,k,pct:all.length?Math.round(100*k/all.length):0,acc:reps?Math.round(100*cor/reps):0};}
   mastery(id){const a=this.st(id,'photo'),b=this.st(id,'fiche');const s=a.s+b.s,c=a.c+b.c;return s?Math.round(100*c/s):0;}
   all(){return this.state.data||[];}
+  aspAvail(){const cat=this.state.cfg.cat,set=new Set();this.all().forEach(s=>{if(this.inCat(s,cat))s.imgs.forEach(i=>i.a.forEach(a=>set.add(a)));});return ['feuille','ecorce','fruit','fleur','port','rameau'].filter(a=>set.has(a));}
   inCat(s,cat){return cat==='mixte'||s.cat===cat;}
   label(list,id){const f=list.find(x=>x[0]===id);return f?f[1]:id;}
   norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
@@ -175,7 +190,8 @@ class App{
   top(){window.scrollTo(0,0);}
   start=()=>{this._recent=[];const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();this.pushNav();};
   next=()=>{this.setState({q:this.buildQ(),picked:null,typed:'',reveal:{},info:null});this.top();};
-  grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.norm(name)===this.norm(q.sp.name);const streak=ok?sess.streak+1:0;let keys=[q.sp.id+'|'+cfg.qtype];if(cfg.qtype==='photo'&&q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));this.setState({picked:name,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});}
+  grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.norm(name)===this.norm(q.sp.name);const streak=ok?sess.streak+1:0;let keys=[q.sp.id+'|'+cfg.qtype];if(cfg.qtype==='photo'&&q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));this.setState({picked:name,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});
+    setTimeout(()=>{const el=document.getElementById('quiz-fb');if(el&&window.innerWidth<900)el.scrollIntoView({behavior:'smooth',block:'center'});},30);}
   setCfg(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg});};}
   pick(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg,open:null});};}
   goReviser=()=>{this.setState({tab:'reviser',view:'home'});this.top();this.pushNav();};
@@ -194,14 +210,19 @@ class App{
   openFiche(id){return ()=>{this._ficheScroll=window.scrollY;this.setState({view:'fiche',tab:'atlas',fiche:id,fimg:0,ficheFrom:'atlas'});this.top();this.pushNav();};}
   atlasArr(){const q=this.norm(this.state.query);return this.all().filter(s=>this.inCat(s,this.state.listCat)).filter(s=>!q||this.norm(s.name+s.latin+(s.fields.famille||'')).indexOf(q)>=0).slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));}
   moveFiche(d){return ()=>{const arr=this.atlasArr();const i=arr.findIndex(s=>s.id===this.state.fiche);const n=arr[(i+d+arr.length)%arr.length];if(n)this.setState({fiche:n.id,fimg:0});};}
-  startCrit(c){return ()=>{const q=this.all().filter(s=>this.inCat(s,this.state.cfg.cat)&&c.has(s)).sort(()=>Math.random()-0.5);this.setState({view:'trierPlay',tab:'trier',crit:c,cq:q,cp:0,csess:{s:0,c:0},cfb:null,canim:''});this.top();this.pushNav();};}
-  critAns(yes){return ()=>{const {crit,cq,cp,csess}=this.state;const sp=cq[cp];if(!sp||this.state.cfb)return;const truth=crit.ok(sp);const ok=truth===yes;this.setState({cfb:ok?'Exact — '+(truth?'oui':'non'):"Raté — c'est "+(truth?'oui':'non'),csess:{s:csess.s+1,c:csess.c+(ok?1:0)},canim:yes?'flyR':'flyL',prog:this.bumpKeys(['crit|'+crit.id],ok)});setTimeout(()=>this.setState({cp:(cp+1)%cq.length,cfb:null,canim:'anim'}),420);};}
+  startCrit(c){return ()=>{this._critBusy=false;const q=this.all().filter(s=>this.inCat(s,this.state.cfg.cat)&&c.has(s)).sort(()=>Math.random()-0.5);this.setState({view:'trierPlay',tab:'trier',crit:c,cq:q,cp:0,csess:{s:0,c:0},cfb:null,cfbOk:false,canim:''});this.top();this.pushNav();};}
+  critAns(yes){return ()=>{if(this._critBusy)return;const {crit,cq,cp,csess}=this.state;const sp=cq[cp];if(!sp)return;
+    const truth=crit.ok(sp),ok=truth===yes;this._critBusy=true;
+    this.setState({cfb:(ok?'✅ Bravo':'❌ Raté')+' — '+sp.name+' : c’était '+(truth?'oui':'non'),cfbOk:ok,csess:{s:csess.s+1,c:csess.c+(ok?1:0)},canim:yes?'flyR':'flyL',prog:this.bumpKeys(['crit|'+crit.id],ok)});
+    setTimeout(()=>{this._critBusy=false;this.setState({cp:(cp+1)%cq.length,canim:''});},320);};}
   exportProg=()=>{try{const b=new Blob([JSON.stringify(this.state.prog)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='atlas-progression.json';document.body.appendChild(a);a.click();a.remove();}catch(e){}};
   resetProg=()=>{if(!confirm('Réinitialiser toute la progression ?'))return;try{localStorage.removeItem('atlas-v2-prog');}catch(e){}this.setState({prog:{},sess:{s:0,c:0,streak:0,best:0}});};
   fieldRows(sp,quiz){if(!sp)return [];const hidden={comestible:1,notes:1};return this.FIELDS.filter(f=>sp.fields[f[0]]).map(f=>{const k=f[0],rk=sp.id+'|'+k,blur=!!(quiz&&hidden[k]&&!this.state.reveal[rk]);return{l:f[1],v:this.clean(sp.fields[k]),b:blur?'1':'0',go:blur?(()=>{const r=Object.assign({},this.state.reveal);r[rk]=1;this.setState({reveal:r});}):(()=>{}),hasInfo:!!this.GLOSS[k],info:this.GLOSS[k]||'',openInfo:this.state.info===rk,goInfo:()=>this.setState({info:this.state.info===rk?null:rk})};});}
 
   renderVals(){
     const S=this.state,cfg=S.cfg,all=this.all();const catList=this.CATS;
+    const aspAv=this.aspAvail();if(cfg.aspect!=='tout'&&aspAv.indexOf(cfg.aspect)<0)cfg.aspect='tout';
+    const showAsp=cfg.qtype==='photo'&&aspAv.length>0;
     const catOf=c=>all.filter(s=>this.inCat(s,c));
     const knownIn=c=>catOf(c).filter(s=>this.knownAny(s.id)).length;
     const heroAll=catOf(cfg.cat),heroK=knownIn(cfg.cat);
@@ -237,7 +258,8 @@ class App{
       toggleQt:()=>this.setState({open:S.open==='qt'?null:'qt'}),toggleDf:()=>this.setState({open:S.open==='df'?null:'df'}),
       closeAll:()=>this.setState({open:null}),
       catOpts:catList.map(c=>({label:c[1],on:cfg.cat===c[0]?'1':'0',go:this.pick('cat',c[0])})),
-      aspOpts:this.ASP.map(c=>({label:c[0]==='tout'?'Tous les aspects':c[1],on:cfg.aspect===c[0]?'1':'0',go:this.pick('aspect',c[0])})),
+      showAsp:showAsp,
+      aspOpts:[['tout','Tous les aspects']].concat(aspAv.map(a=>[a,this.label(this.ASP,a)])).map(c=>({label:c[1],on:cfg.aspect===c[0]?'1':'0',go:this.pick('aspect',c[0])})),
       qtOpts:this.QT.map(c=>({label:c[0]==='photo'?'Une photo':'Sa fiche de caractères',on:cfg.qtype===c[0]?'1':'0',go:this.pick('qtype',c[0])})),
       dfOpts:this.DF.map(c=>({label:c[1],on:cfg.diff===c[0]?'1':'0',go:this.pick('diff',c[0])})),
       poolCount:this.pool().length,
@@ -264,8 +286,9 @@ class App{
       fPrev:this.moveFiche(-1),fNext:this.moveFiche(1),
       catChips:catList.map(c=>({label:c[1],on:cfg.cat===c[0]?'1':'0',go:this.setCfg('cat',c[0])})),
       criteria:this.CRIT.map(c=>({q:c.q,n:all.filter(s=>this.inCat(s,cfg.cat)&&c.has(s)).length,go:this.startCrit(c)})).filter(x=>x.n>=4),
-      critQ:S.crit?S.crit.q:'',critImg:critSp?critSp.imgs[0].u:'',critName:critSp?critSp.name:'',critLatin:critSp?critSp.latin:'',
-      critAnim:S.canim,critHasFb:!!S.cfb,critFb:S.cfb||'',critFbBg:S.cfb&&S.cfb.indexOf('Exact')===0?'#E4EFDF':'#F6E2DD',
+      critQ:S.crit?S.crit.q:'',critTopImg:critSp?critSp.imgs[0].u:'',critTopName:critSp?critSp.name:'',critTopLatin:critSp?critSp.latin:'',
+      critHasBack:!!S.cq[S.cp+1],critBackImg:S.cq[S.cp+1]?S.cq[S.cp+1].imgs[0].u:'',critBackName:S.cq[S.cp+1]?S.cq[S.cp+1].name:'',
+      critAnim:S.canim,critHasFb:!!S.cfb,critFb:S.cfb||'',critFbOk:!!S.cfbOk,
       critYes:this.critAns(true),critNo:this.critAns(false),critScore:S.csess.c+' / '+S.csess.s+' · carte '+(S.cp+1)+' sur '+S.cq.length,
       skillRows:this.ASP.map(a=>{const st=this.aspStat(a[0]);return{label:a[0]==='tout'?'Photo — vue d’ensemble':'Photo — '+a[1].toLowerCase(),n:st.n,right:st.k+' / '+st.n+' maîtrisées',acc:st.reps?st.acc+'% de réussite · '+st.reps+(st.reps>1?' réponses':' réponse'):'jamais travaillé',pct:st.pct,bar:st.reps?'#2F6B3A':'#C8D2C6'};}).filter(r=>r.n>0).concat([(f=>({label:'Fiche de caractères (sans photo)',right:f.k+' / '+f.n+' maîtrisées',n:f.n,acc:f.reps?f.acc+'% de réussite · '+f.reps+(f.reps>1?' réponses':' réponse'):'jamais travaillé',pct:f.pct,bar:f.reps?'#2F6B3A':'#C8D2C6'}))(this.ficheStat())]),
       critRows:this.CRIT.map(c=>{const x=S.prog['crit|'+c.id]||{s:0,c:0},acc=x.s?Math.round(100*x.c/x.s):0;return{label:c.q,right:x.s?x.c+' / '+x.s+' bonnes réponses':'jamais joué',acc:x.s>=6?(acc>=75?'Solide':(acc>=50?'À consolider':'Fragile')):(x.s?'Trop peu de réponses':'—'),pct:acc,bar:x.s?(acc>=75?'#2F6B3A':(acc>=50?'#A87B3C':'#A33A2B')):'#C8D2C6'};}),
@@ -282,7 +305,7 @@ JS += r"""
     return '<div class="menu">'+opts.map(o=>'<button class="mi" data-on="'+o.on+'" data-h="'+h(o.go)+'">'+e(o.label)+'</button>').join('')+'</div>';
   }
   chip(V,label,openKey,toggle,opts){
-    return '<span class="dd"><button class="ch sel" data-on="'+(V[openKey]?'1':'0')+'" data-h="'+h(toggle)+'">'+e(label)+CHEV+'</button>'+this.ddMenu(V,openKey,opts)+'</span>';
+    return '<span class="dd"'+(V[openKey]?' data-open="1"':'')+'><button class="ch sel" data-on="'+(V[openKey]?'1':'0')+'" data-h="'+h(toggle)+'">'+e(label)+CHEV+'</button>'+this.ddMenu(V,openKey,opts)+'</span>';
   }
   fieldsHtml(rows,flex){
     return rows.map(f=>'<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;gap:12px;align-items:baseline"><span style="flex:0 0 '+flex+';display:flex;align-items:center;gap:6px;font:600 13px/1.35 var(--font-body);color:var(--fg-3)">'+e(f.l)+(f.hasInfo?'<button class="inf" data-on="'+f.openInfo+'" data-h="'+h(f.goInfo)+'">i</button>':'')+'</span><span class="fv" style="flex:1" data-b="'+f.b+'" data-h="'+h(f.go)+'">'+e(f.v)+'</span></div>'+(f.openInfo?'<div class="gloss">'+e(f.info)+'</div>':'')+'</div>').join('');
@@ -293,9 +316,9 @@ JS += r"""
       +'<div style="font:700 10px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-brand-red)">Une session, une phrase</div>'
       +'<div style="font:400 27px/1.5 var(--font-body);letter-spacing:-.01em;padding-bottom:4px">Je révise les '
         +this.chip(V,V.cfgCatLabel,'openCat',V.toggleCat,V.catOpts)
-        +' d\'après <span style="white-space:nowrap">'+this.chip(V,V.cfgQtypeLabel,'openQt',V.toggleQt,V.qtOpts)+',</span>'
-        +' en me concentrant sur <span style="white-space:nowrap">'+this.chip(V,V.cfgAspectLabel,'openAsp',V.toggleAsp,V.aspOpts)+',</span>'
-        +' en mode '+this.chip(V,V.cfgDiffLabel,'openDf',V.toggleDf,V.dfOpts)+'.</div>'
+        +' d\'après '+this.chip(V,V.cfgQtypeLabel,'openQt',V.toggleQt,V.qtOpts)
+        +(V.showAsp?', en me concentrant sur '+this.chip(V,V.cfgAspectLabel,'openAsp',V.toggleAsp,V.aspOpts):'')
+        +', en mode '+this.chip(V,V.cfgDiffLabel,'openDf',V.toggleDf,V.dfOpts)+'.</div>'
       +(V.anyOpen?'<div data-h="'+h(V.closeAll)+'" style="position:fixed;inset:0;z-index:40"></div>':'')
       +'<div style="display:flex;flex-wrap:wrap;gap:24px;padding:18px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
         +'<div><div style="font:700 22px/1 var(--font-headline-data)">'+V.poolCount+'</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:5px">espèces dans le tirage</div></div>'
@@ -310,14 +333,14 @@ JS += r"""
     }
     if(V.isQuiz){
       let left='';
-      if(V.isPhotoQ) left='<div style="position:relative;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img src="'+e(V.qImg)+'" alt="espèce à identifier" style="width:100%;max-height:68vh;object-fit:contain;display:block;background:var(--color-navy-50)"><div style="position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:999px;background:rgba(14,23,48,.82);font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:#fff">'+e(V.qAspect)+'</div></div>';
+      if(V.isPhotoQ) left='<div style="position:relative;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img class="qphoto" src="'+e(V.qImg)+'" alt="espèce à identifier"><div style="position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:999px;background:rgba(14,23,48,.82);font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:#fff">'+e(V.qAspect)+'</div></div>';
       else left='<div style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:20px"><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:var(--color-brand-red)">Fiche de caractères</div><div style="margin-top:14px">'+this.fieldsHtml(V.qFields,'40%')+'</div><div style="margin-top:12px;font:italic 400 12px/1.4 var(--font-body);color:var(--fg-3)">Deux lignes sont floutées : elles trahissent l\'espèce. Clique dessus pour l\'indice. Le « i » explique les abréviations.</div></div>';
       left+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px"><div style="font:600 12px/1 var(--font-body);color:var(--fg-3)">'+e(V.sessLine)+'</div><div style="font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+V.sessPct+'%</div></div><div style="height:3px;margin-top:8px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-brand-red);width:'+V.sessPct+'%"></div></div>';
       let right='';
       if(V.isTyped) right+='<div style="display:flex;gap:8px"><input id="q-typed" value="'+e(V.typed)+'" data-hi="'+h(V.onType)+'" data-hk="'+h(V.onTypeKey)+'" placeholder="Tape le nom de l\'espèce…" style="flex:1;padding:14px 16px;border:1px solid var(--border);border-radius:8px;font:400 15px/1 var(--font-body);color:var(--fg-1);min-width:0"><button class="ib" style="padding:12px 18px" data-h="'+h(V.submitTyped)+'">Valider</button></div>';
       if(V.hasOptions) right+=V.options.map(o=>'<button class="opt" data-s="'+o.s+'" data-h="'+h(o.go)+'"><span>'+e(o.label)+'</span></button>').join('');
       if(V.answered){
-        right+='<div class="anim" style="margin-top:6px;border:1px solid var(--border);border-left:3px solid '+V.fbColor+';border-radius:8px;background:#fff;padding:16px">'
+        right+='<div class="anim" id="quiz-fb" style="margin-top:6px;border:1px solid var(--border);border-left:3px solid '+V.fbColor+';border-radius:8px;background:#fff;padding:16px">'
         +'<span style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:'+V.fbColor+'">'+e(V.fbLabel)+'</span>'
         +'<div style="margin-top:10px;font:700 20px/1.2 var(--font-body)">'+e(V.answerName)+'</div><div style="font:italic 400 13px/1.35 var(--font-body);color:var(--fg-3)">'+e(V.answerLatin)+'</div>'
         +(V.answerNote?'<div style="margin-top:10px;font:400 14px/1.45 var(--font-body);color:var(--fg-2)">'+e(V.answerNote)+'</div>':'')
@@ -348,9 +371,12 @@ JS += r"""
       +'<div style="display:flex;flex-direction:column;gap:8px">'+(V.criteria.length?V.criteria.map(c=>'<button class="opt" data-h="'+h(c.go)+'"><span>'+e(c.q)+'</span><span style="font:600 11px/1 var(--font-mono);color:var(--fg-3)">'+c.n+' espèces</span></button>').join(''):'<div style="font:400 14px/1.5 var(--font-body);color:var(--fg-3)">Aucune question applicable à cette catégorie — change de catégorie ci-dessus.</div>')+'</div></div>';
     }
     if(V.isTrierPlay){
-      return '<div style="max-width:430px;margin:0 auto;display:flex;flex-direction:column;gap:14px"><div style="text-align:center;font:700 19px/1.3 var(--font-body)">'+e(V.critQ)+'</div>'
-      +'<div class="'+V.critAnim+'" style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img src="'+e(V.critImg)+'" alt="" style="width:100%;max-height:52vh;object-fit:contain;display:block;background:var(--color-navy-50)"><div style="padding:14px 16px;text-align:center"><div style="font:700 17px/1.2 var(--font-body)">'+e(V.critName)+'</div><div style="font:italic 400 12px/1.3 var(--font-body);color:var(--fg-3);margin-top:3px">'+e(V.critLatin)+'</div></div></div>'
-      +(V.critHasFb?'<div class="anim" style="padding:11px 14px;border-radius:8px;background:'+V.critFbBg+';font:600 13px/1.35 var(--font-body);text-align:center">'+e(V.critFb)+'</div>':'')
+      return '<div style="max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:12px"><div style="text-align:center;font:700 19px/1.3 var(--font-body)">'+e(V.critQ)+'</div>'
+      +'<div class="critstack">'
+        +(V.critHasBack?'<div class="critcard critback"><div class="cimg"><img src="'+e(V.critBackImg)+'" alt=""></div><div class="cmeta"><div style="font:700 17px/1.2 var(--font-body)">'+e(V.critBackName)+'</div></div></div>':'')
+        +'<div class="critcard '+V.critAnim+'" data-drag="1"><div class="cimg"><img src="'+e(V.critTopImg)+'" alt=""></div><div class="cmeta"><div style="font:700 17px/1.2 var(--font-body)">'+e(V.critTopName)+'</div><div style="font:italic 400 12px/1.3 var(--font-body);color:var(--fg-3);margin-top:3px">'+e(V.critTopLatin)+'</div></div></div>'
+      +'</div>'
+      +(V.critHasFb?'<div class="critbanner '+(V.critFbOk?'ok':'no')+'">'+e(V.critFb)+'</div>':'<div style="font:400 12px/1.4 var(--font-body);color:var(--fg-3);text-align:center">Swipe la carte ← non &nbsp;·&nbsp; oui → (ou les boutons)</div>')
       +'<div style="display:flex;gap:10px"><button class="opt" style="justify-content:center" data-h="'+h(V.critNo)+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A33A2B" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>Non</button><button class="opt" style="justify-content:center" data-h="'+h(V.critYes)+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6B3A" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"></path></svg>Oui</button></div>'
       +'<div style="text-align:center;font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+e(V.critScore)+'</div></div>';
     }
@@ -389,6 +415,11 @@ JS += r"""
     root.querySelectorAll('[data-h]').forEach(el=>{el.addEventListener('click',ev=>{const f=H[+el.getAttribute('data-h')];if(f)f(ev);});});
     root.querySelectorAll('[data-hi]').forEach(el=>{el.addEventListener('input',ev=>{const f=H[+el.getAttribute('data-hi')];if(f)f(ev);});});
     root.querySelectorAll('[data-hk]').forEach(el=>{el.addEventListener('keydown',ev=>{const f=H[+el.getAttribute('data-hk')];if(f)f(ev);});});
+    const top=root.querySelector('.critstack [data-drag]');
+    if(top){let x0=0,dx=0,drag=false;const self=this;top.style.touchAction='pan-y';
+      top.addEventListener('pointerdown',ev=>{if(self._critBusy)return;drag=true;x0=ev.clientX;dx=0;try{top.setPointerCapture(ev.pointerId);}catch(e){}});
+      top.addEventListener('pointermove',ev=>{if(!drag)return;dx=ev.clientX-x0;top.style.transform='translateX('+dx+'px) rotate('+(dx/22)+'deg)';top.style.opacity=String(1-Math.min(Math.abs(dx)/480,.4));});
+      top.addEventListener('pointerup',()=>{if(!drag)return;drag=false;if(Math.abs(dx)>70){self.critAns(dx>0)();}else{top.style.transition='transform .15s,opacity .15s';top.style.transform='';top.style.opacity='1';setTimeout(()=>{top.style.transition='';},160);}dx=0;});}
   }
   render(){
     const ae=document.activeElement,aid=ae&&ae.id,asel=(ae&&ae.selectionStart!=null)?ae.selectionStart:null;
@@ -399,7 +430,7 @@ JS += r"""
 const APP=new App();
 window.addEventListener('popstate',ev=>{if(ev.state&&ev.state.v)APP.restore(ev.state);});
 window.addEventListener('keydown',ev=>{
-  if(APP.state.view==='trierPlay'&&!APP.state.cfb){if(ev.key==='ArrowRight'){ev.preventDefault();APP.critAns(true)();}else if(ev.key==='ArrowLeft'){ev.preventDefault();APP.critAns(false)();}}
+  if(APP.state.view==='trierPlay'&&!APP._critBusy){if(ev.key==='ArrowRight'){ev.preventDefault();APP.critAns(true)();}else if(ev.key==='ArrowLeft'){ev.preventDefault();APP.critAns(false)();}}
 });
 APP.mount();
 """
