@@ -209,7 +209,7 @@ class App{
   _critBusy=false;
   state={
     open:null, reveal:{}, info:null, tab:'reviser', view:'home',
-    cfg:{cat:'ligneux',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'qcm'},
+    cfg:{cat:'ligneux',aspect:'tout',qtype:'photo',diff:'qcm'},
     data:SPECIES_DATA||null, q:null, picked:null, ok:false, typed:'',
     sess:{s:0,c:0,streak:0,best:0},
     query:'', listCat:'mixte', fiche:null, fimg:0, ficheFrom:'atlas',
@@ -221,7 +221,11 @@ class App{
   };
   setState(patch,cb){Object.assign(this.state,patch);this.render();if(cb)cb.call(this);}
   mount(){
-    try{const p=localStorage.getItem('atlas-v2-prog');if(p)this.state.prog=JSON.parse(p);}catch(e){}
+    // Progression relue puis migrée vers le format planifié (box/due/last) si besoin.
+    // La réécriture n'a lieu que s'il y a eu quelque chose à migrer.
+    try{const p=localStorage.getItem('atlas-v2-prog');
+      if(p){const m=this.migrerProg(JSON.parse(p),this.jour());this.state.prog=m.prog;
+        if(m.migrees)try{localStorage.setItem('atlas-v2-prog',JSON.stringify(m.prog));}catch(e2){}}}catch(e){}
     // L'app gère son défilement (retour de fiche) : sans « manual », le navigateur
     // réappliquerait sa propre position mémorisée juste après, écrasant la nôtre.
     try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){}
@@ -231,13 +235,92 @@ class App{
     this.ecrireHistorique(true);
   }
   // progress
+  // __SRS_DEBUT__  (bloc extrait et testé sous node par tests/test_revision.py)
+  // Révision espacée, boîtes de Leitner. Une « carte » est une entrée de progression :
+  //   {s, c, box, due, last}  — s/c les compteurs historiques, box le niveau 0→5,
+  //   due et last des **numéros de jour** (jours depuis 1970), pas des timestamps :
+  //   un entier par jour civil, comparable, minuscule dans le JSON exporté.
+  INTERVALLES=[0,1,3,7,16,35];
+  get BOITE_MAX(){return this.INTERVALLES.length-1;}
+  // Date.UTC(y,m,d) tombe pile sur un multiple de 86 400 000 : le numéro de jour est
+  // exact et ne bouge pas au changement d'heure, contrairement à Date.now()/86400000.
+  jourDe(d){const t=d||new Date();return Math.round(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate())/86400000);}
+  intervalle(box){return this.INTERVALLES[Math.max(0,Math.min(this.BOITE_MAX,box|0))];}
+  // Mauvaise réponse : on redescend d'**un** cran, pas jusqu'à zéro. Mesuré sur 502
+  // cartes (251 espèces × photo/fiche) à 30 réponses/jour pendant 6 mois : le retour
+  // à zéro n'introduit que ~312 espèces sur 502 contre ~437, parce que ré-piocher les
+  // cartes ratées mange le budget quotidien et affame la découverte. La file d'échues
+  // ne sature dans aucun des deux cas (~30 cartes/jour), donc le retour à zéro coûte
+  // l'étendue de l'atlas sans rien faire gagner.
+  planifier(carte,ok,jour){const x=carte||{s:0,c:0,box:0};const b=x.box|0;
+    const box=ok?Math.min(this.BOITE_MAX,b+1):Math.max(0,b-1);
+    return{s:(x.s|0)+1,c:(x.c|0)+(ok?1:0),box,due:jour+this.intervalle(box),last:jour};}
+  retard(carte,jour){return carte?jour-(carte.due|0):-1;}
+  estEchue(carte,jour){return !!carte&&(carte.due|0)<=jour;}
+  // « Maîtrisée » n'est plus un seuil définitif : il faut être haut ET à jour. Une carte
+  // acquise en 2026 qui n'a pas été revue depuis 35 jours redevient à revoir.
+  estMaitrisee(carte,jour){return !!carte&&(carte.box|0)>=4&&!this.estEchue(carte,jour);}
+  // Ordre de service : échues (les plus en retard d'abord) → jamais vues → vues il y a
+  // le plus longtemps. C'est ce classement qui remplace l'ancien couple Apprendre/Réviser.
+  ordonnerFile(entrees,jour,alea){const r=alea||Math.random;
+    const echues=[],neuves=[],reste=[];
+    entrees.forEach(x=>{if(!x.carte)neuves.push(x);else if(this.estEchue(x.carte,jour))echues.push(x);else reste.push(x);});
+    echues.sort((a,b)=>this.retard(b.carte,jour)-this.retard(a.carte,jour)||(a.id<b.id?-1:1));
+    reste.sort((a,b)=>(a.carte.last|0)-(b.carte.last|0)||(a.id<b.id?-1:1));
+    // les jamais-vues n'ont pas d'ordre naturel : les tirer alphabétiquement ferait
+    // parcourir l'atlas de A à Z, on mélange donc.
+    for(let i=neuves.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t=neuves[i];neuves[i]=neuves[j];neuves[j]=t;}
+    return echues.concat(neuves,reste).map(x=>x.id);}
+  // Combien de cartes du haut de file peuvent entrer dans le tirage au sort. Le hasard
+  // ne doit pas mordre sur le palier suivant : tant qu'il reste des cartes échues, il ne
+  // pioche que parmi elles — sinon une carte à jour passait devant une carte en retard
+  // (mesuré : 9 tirages sur 60 avec une tête de taille fixe).
+  tailleTete(cartes,jour,max){const m=Math.max(1,max|0);let n=0;
+    while(n<cartes.length&&this.estEchue(cartes[n],jour))n++;
+    if(n)return Math.min(n,m);
+    while(n<cartes.length&&!cartes[n])n++;
+    if(n)return Math.min(n,m);
+    return Math.min(Math.max(cartes.length,1),m);}
+  // Migration des progressions d'avant la planification : la boîte de départ se déduit
+  // de la réussite passée, et l'échéance est celle d'une révision qui vient d'avoir lieu
+  // — sinon les centaines de cartes déjà acquises tomberaient toutes en retard le même
+  // jour, et le compteur de maîtrise serait remis à zéro sous les yeux de l'utilisateur.
+  boiteInitiale(x){const s=x.s|0,c=x.c|0;if(!s)return 0;
+    if(s>=3&&c/s>=0.75)return 4;      // « maîtrisée » sous l'ancienne règle
+    if(c/s>=0.5)return 1;
+    return 0;}
+  migrerCarte(x,jour){
+    if(!x||typeof x!=='object'||Array.isArray(x))return null;
+    if(!Number.isFinite(x.s)||!Number.isFinite(x.c))return null;
+    if(typeof x.box==='number'&&typeof x.due==='number')return x;
+    const box=this.boiteInitiale(x);
+    return{s:x.s|0,c:x.c|0,box,due:jour+this.intervalle(box),last:jour};}
+  migrerProg(prog,jour){const out={};let migrees=0;
+    Object.keys(prog||{}).forEach(k=>{const av=prog[k],ap=this.migrerCarte(av,jour);
+      if(!ap)return;out[k]=ap;if(ap!==av)migrees++;});
+    return{prog:out,migrees};}
+  resumeBoites(prog,jour){const boites=new Array(this.BOITE_MAX+1).fill(0);let dues=0,total=0;
+    Object.keys(prog||{}).forEach(k=>{const c=prog[k];if(!c||typeof c.box!=='number')return;
+      total++;boites[Math.max(0,Math.min(this.BOITE_MAX,c.box|0))]++;if(this.estEchue(c,jour))dues++;});
+    return{dues,boites,total};}
+  // __SRS_FIN__
   key(id,qt){return id+'|'+qt;}
+  // La carte que le quiz est en train de travailler : avec un filtre d'aspect, c'est bien
+  // la carte de cet aspect (reconnaître une écorce n'est pas reconnaître une fleur).
+  cleQuiz(id,cfg){const c=cfg||this.state.cfg;
+    if(c.qtype!=='photo')return id+'|'+c.qtype;
+    return c.aspect&&c.aspect!=='tout'?id+'|photo:'+c.aspect:id+'|photo';}
   st(id,qt){return this.state.prog[this.key(id,qt||this.state.cfg.qtype)]||{s:0,c:0};}
-  known(id,qt){const x=this.st(id,qt);return x.s>=3&&x.c/x.s>=0.75;}
+  jour(){return this.jourDe();}
+  carte(cle){return this.state.prog[cle]||null;}
+  known(id,qt){return this.estMaitrisee(this.state.prog[this.key(id,qt||this.state.cfg.qtype)],this.jour());}
   knownAny(id){return this.known(id,'photo')&&this.known(id,'fiche');}
-  bumpKeys(keys,ok){const prog=Object.assign({},this.state.prog);keys.forEach(k=>{const x=prog[k]||{s:0,c:0};prog[k]={s:x.s+1,c:x.c+(ok?1:0)};});try{localStorage.setItem('atlas-v2-prog',JSON.stringify(prog));}catch(e){}return prog;}
-  aspStat(a){const all=this.all(),P=this.state.prog;const cov=a==='tout'?all:all.filter(s=>s.imgs.some(i=>i.a.indexOf(a)>=0));let reps=0,cor=0,k=0;cov.forEach(s=>{const x=P[a==='tout'?s.id+'|photo':s.id+'|photo:'+a]||{s:0,c:0};reps+=x.s;cor+=x.c;if(x.s>=3&&x.c/x.s>=0.75)k++;});return{n:cov.length,reps,k,pct:cov.length?Math.round(100*k/cov.length):0,acc:reps?Math.round(100*cor/reps):0};}
-  ficheStat(){const all=this.all(),P=this.state.prog;let reps=0,cor=0,k=0;all.forEach(s=>{const x=P[s.id+'|fiche']||{s:0,c:0};reps+=x.s;cor+=x.c;if(x.s>=3&&x.c/x.s>=0.75)k++;});return{n:all.length,reps,k,pct:all.length?Math.round(100*k/all.length):0,acc:reps?Math.round(100*cor/reps):0};}
+  duesTotal(){return this.resumeBoites(this.state.prog,this.jour()).dues;}
+  bumpKeys(keys,ok){const prog=Object.assign({},this.state.prog),jour=this.jour();
+    keys.forEach(k=>{prog[k]=this.planifier(prog[k],ok,jour);});
+    try{localStorage.setItem('atlas-v2-prog',JSON.stringify(prog));}catch(e){}return prog;}
+  aspStat(a){const all=this.all(),P=this.state.prog,jour=this.jour();const cov=a==='tout'?all:all.filter(s=>s.imgs.some(i=>i.a.indexOf(a)>=0));let reps=0,cor=0,k=0,dus=0;cov.forEach(s=>{const c=P[a==='tout'?s.id+'|photo':s.id+'|photo:'+a];const x=c||{s:0,c:0};reps+=x.s;cor+=x.c;if(this.estMaitrisee(c,jour))k++;if(this.estEchue(c,jour))dus++;});return{n:cov.length,reps,k,dus,pct:cov.length?Math.round(100*k/cov.length):0,acc:reps?Math.round(100*cor/reps):0};}
+  ficheStat(){const all=this.all(),P=this.state.prog,jour=this.jour();let reps=0,cor=0,k=0,dus=0;all.forEach(s=>{const c=P[s.id+'|fiche'];const x=c||{s:0,c:0};reps+=x.s;cor+=x.c;if(this.estMaitrisee(c,jour))k++;if(this.estEchue(c,jour))dus++;});return{n:all.length,reps,k,dus,pct:all.length?Math.round(100*k/all.length):0,acc:reps?Math.round(100*cor/reps):0};}
   mastery(id){const a=this.st(id,'photo'),b=this.st(id,'fiche');const s=a.s+b.s,c=a.c+b.c;return s?Math.round(100*c/s):0;}
   all(){return this.state.data||[];}
   aspAvail(){const cat=this.state.cfg.cat,set=new Set();this.all().forEach(s=>{if(this.inCat(s,cat))s.imgs.forEach(i=>i.a.forEach(a=>set.add(a)));});return ASPECTS_DATA.map(a=>a.id).filter(a=>set.has(a));}
@@ -409,13 +492,25 @@ class App{
     }
     return {noms:choisis.slice(0,3).map(s=>s.name),conf};}
   // __SOSIES_FIN__
-  pool(){const {cfg}=this.state;const base=this.all().filter(s=>this.inCat(s,cfg.cat));const byMode=base.filter(s=>cfg.mode==='apprendre'?!this.known(s.id,cfg.qtype):this.known(s.id,cfg.qtype));let p=(byMode.length>=4?byMode:base);if(cfg.qtype==='photo'&&cfg.aspect!=='tout'){const f=p.filter(s=>s.imgs.some(i=>i.a.indexOf(cfg.aspect)>=0));if(f.length>=4)p=f;}return p;}
+  // Le tirage ne filtre plus sur un mode Apprendre/Réviser : c'est la file de révision
+  // qui décide de l'ordre (cf. ordonnerFile). Le pool ne fait que la catégorie et l'aspect.
+  pool(){const {cfg}=this.state;let p=this.all().filter(s=>this.inCat(s,cfg.cat));
+    if(cfg.qtype==='photo'&&cfg.aspect!=='tout'){const f=p.filter(s=>s.imgs.some(i=>i.a.indexOf(cfg.aspect)>=0));if(f.length>=4)p=f;}return p;}
+  // Combien de cartes du haut de file entrent dans le tirage aléatoire : assez pour que
+  // deux sessions ne se ressemblent pas, assez peu pour qu'une carte très en retard passe
+  // avant une carte à peine échue.
+  TETE_FILE=12;
   buildQ(){const {cfg}=this.state;const p=this.pool();if(!p.length)return null;
+    const jour=this.jour(),cartes={};
+    p.forEach(s=>{cartes[s.id]=this.carte(this.cleQuiz(s.id,cfg));});
+    const file=this.ordonnerFile(p.map(s=>({id:s.id,carte:cartes[s.id]})),jour);
     const win=Math.min(12,Math.max(0,p.length-1));const recent=new Set(this._recent.slice(-win));
-    let cand=p.filter(s=>!recent.has(s.id));
-    if(!cand.length)cand=p.filter(s=>!this.state.q||s.id!==this.state.q.sp.id);
-    if(!cand.length)cand=p;
-    const sp=cand[Math.floor(Math.random()*cand.length)];
+    let cand=file.filter(id=>!recent.has(id));
+    if(!cand.length)cand=file.filter(id=>!this.state.q||id!==this.state.q.sp.id);
+    if(!cand.length)cand=file;
+    const tete=cand.slice(0,this.tailleTete(cand.map(id=>cartes[id]),jour,this.TETE_FILE));
+    const choisi=tete[Math.floor(Math.random()*tete.length)];
+    const sp=p.find(s=>s.id===choisi)||p[0];
     this._recent.push(sp.id);if(this._recent.length>Math.max(win,1))this._recent=this._recent.slice(-Math.max(win,1));
     let imgs=sp.imgs;if(cfg.aspect!=='tout'){const f=imgs.filter(i=>i.a.indexOf(cfg.aspect)>=0);if(f.length)imgs=f;}const img=imgs[Math.floor(Math.random()*imgs.length)]||sp.imgs[0];let opts=[],conf=-1;
     if(cfg.diff!=='saisie'){const d=this.distracteurs(sp,cfg,Math.random);conf=d.conf;
@@ -428,7 +523,8 @@ class App{
     this.top();return true;}
   start=()=>{if(this.lancerQuiz())this.pushNav();};
   next=()=>{this.setState({q:this.buildQ(),picked:null,ok:false,typed:'',reveal:{},info:null});this.top();};
-  grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.answerOk(name,q.sp);const streak=ok?sess.streak+1:0;let keys=[q.sp.id+'|'+cfg.qtype];if(cfg.qtype==='photo'&&q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));this.setState({picked:name,ok,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});
+  grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.answerOk(name,q.sp);const streak=ok?sess.streak+1:0;// la carte du réglage courant est planifiée en premier, puis celles des aspects montrés
+    let keys=[this.cleQuiz(q.sp.id,cfg)];if(cfg.qtype==='photo'){keys.push(q.sp.id+'|photo');if(q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));keys=keys.filter((k,i)=>keys.indexOf(k)===i);}this.setState({picked:name,ok,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});
     setTimeout(()=>{const el=document.getElementById('quiz-fb');if(el&&window.innerWidth<900)el.scrollIntoView({behavior:'smooth',block:'center'});},30);}
   setCfg(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg});};}
   pick(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg,open:null});};}
@@ -505,30 +601,50 @@ class App{
     setTimeout(()=>{this._critBusy=false;this.setState({cp:(cp+1)%cq.length,canim:''});},320);};}
   // __PROG_DEBUT__  (bloc extrait et testé sous node par tests/test_progression.py)
   // Clés de progression : « <espèce>|photo », « <espèce>|photo:<aspect> », « <espèce>|fiche »,
-  // « crit|<question> ». Une entrée = {s: réponses, c: correctes}.
+  // « crit|<question> ». Une entrée = {s: réponses, c: correctes} et, depuis la révision
+  // espacée (#16), {box, due, last} — cf. le bloc __SRS_*__.
   CLE_PROG=/^(?:crit\|[^|]+|[^|]+\|photo(?::[a-z]+)?|[^|]+\|fiche)$/;
-  progExport(prog){return JSON.stringify({v:1,app:'atlas-especes',prog:prog||{}});}
-  // Lit un fichier de progression : enveloppe {v:1,prog:…} ou ancien format (objet plat).
-  // Les entrées non conformes sont comptées et ignorées, pas rejetées en bloc.
+  progExport(prog){return JSON.stringify({v:2,app:'atlas-especes',prog:prog||{}});}
+  // Lit un fichier de progression : enveloppe {v:…,prog:…} ou ancien format (objet plat).
+  // Les entrées non conformes sont comptées et ignorées, pas rejetées en bloc. Une entrée
+  // v1 (sans planification) est acceptée telle quelle : c'est migrerProg qui la datera,
+  // avec le jour de l'import comme référence.
   progParse(txt){
     let o;
     try{o=JSON.parse(txt);}catch(e){return {erreur:'Fichier illisible : ce n’est pas du JSON.'};}
     if(o&&typeof o==='object'&&!Array.isArray(o)&&o.prog&&typeof o.prog==='object')o=o.prog;
     if(!o||typeof o!=='object'||Array.isArray(o))return {erreur:'Fichier inattendu : aucune progression trouvée.'};
     const prog={};let ignores=0;
+    const entier=(v)=>Number.isInteger(v);
     Object.keys(o).forEach(k=>{const v=o[k];
       const bon=this.CLE_PROG.test(k)&&v&&typeof v==='object'
         &&Number.isInteger(v.s)&&Number.isInteger(v.c)&&v.s>=0&&v.c>=0&&v.c<=v.s;
-      if(bon)prog[k]={s:v.s,c:v.c};else ignores++;});
+      if(!bon){ignores++;return;}
+      const e={s:v.s,c:v.c};
+      // planification reprise seulement si elle est cohérente, sinon la carte repart
+      // d'une boîte déduite des compteurs (migrerProg s'en charge)
+      if(entier(v.box)&&entier(v.due)&&v.box>=0&&v.box<=this.BOITE_MAX){
+        e.box=v.box;e.due=v.due;e.last=entier(v.last)?v.last:v.due-this.intervalle(v.box);}
+      prog[k]=e;});
     if(!Object.keys(prog).length)
       return {erreur:'Aucune entrée exploitable dans ce fichier'+(ignores?' ('+ignores+' ignorée'+(ignores>1?'s':'')+')':'')+'.'};
     return {prog,ignores};}
   // Fusion additive : c'est le cas d'usage (« je récupère ma progression d'un autre appareil »).
+  // Les compteurs s'additionnent ; la planification, elle, ne s'additionne pas — on garde
+  // celle de la révision la **plus récente** des deux, qui est la seule à dire où en est
+  // vraiment la mémoire. À égalité de date, la boîte la plus haute gagne.
   progFusion(actuel,entrant){const prog=Object.assign({},actuel||{});let ajoutes=0,fusionnes=0;
-    Object.keys(entrant).forEach(k=>{const e=entrant[k];
-      if(prog[k]){prog[k]={s:prog[k].s+e.s,c:prog[k].c+e.c};fusionnes++;}
-      else{prog[k]={s:e.s,c:e.c};ajoutes++;}});
+    Object.keys(entrant).forEach(k=>{const e=entrant[k],a=prog[k];
+      if(!a){prog[k]=Object.assign({},e);ajoutes++;return;}
+      const f={s:a.s+e.s,c:a.c+e.c};
+      const plan=this.planLePlusRecent(a,e);
+      if(plan){f.box=plan.box;f.due=plan.due;f.last=plan.last;}
+      prog[k]=f;fusionnes++;});
     return {prog,ajoutes,fusionnes};}
+  planLePlusRecent(a,b){const pa=typeof a.box==='number'?a:null,pb=typeof b.box==='number'?b:null;
+    if(!pa)return pb;if(!pb)return pa;
+    if((pa.last|0)!==(pb.last|0))return (pa.last|0)>(pb.last|0)?pa:pb;
+    return (pa.box|0)>=(pb.box|0)?pa:pb;}
   // Résumé de ce qui vient de se passer : on compte les entrées **du fichier**, pas le total
   // après fusion, sinon les nombres ne s'additionnent pas pour l'utilisateur.
   progResume(r,remplace){const n=r.ajoutes+r.fusionnes;
@@ -546,8 +662,10 @@ class App{
       const n=Object.keys(lu.prog).length,actuel=Object.keys(this.state.prog).length;
       if(remplace&&actuel&&!confirm('Remplacer toute ta progression ('+actuel+' entrées) par ce fichier ('+n+' entrées) ? Ton avancement actuel sera perdu.'))return;
       const res=remplace?{prog:lu.prog,ajoutes:n,fusionnes:0}:this.progFusion(this.state.prog,lu.prog);
-      try{localStorage.setItem('atlas-v2-prog',JSON.stringify(res.prog));}catch(e){}
-      this.setState({prog:res.prog,progMsg:this.progResume({ajoutes:res.ajoutes,fusionnes:res.fusionnes,ignores:lu.ignores},remplace),progMsgOk:true});};
+      // un fichier d'avant #16 n'a pas de planification : on la lui donne au jour de l'import
+      const prog=this.migrerProg(res.prog,this.jour()).prog;
+      try{localStorage.setItem('atlas-v2-prog',JSON.stringify(prog));}catch(e){}
+      this.setState({prog,progMsg:this.progResume({ajoutes:res.ajoutes,fusionnes:res.fusionnes,ignores:lu.ignores},remplace),progMsgOk:true});};
     r.readAsText(f);};
   resetProg=()=>{if(!confirm('Réinitialiser toute la progression ?'))return;try{localStorage.removeItem('atlas-v2-prog');}catch(e){}this.setState({prog:{},sess:{s:0,c:0,streak:0,best:0},progMsg:'Progression réinitialisée.',progMsgOk:true});};
   fieldRows(sp,quiz){if(!sp)return [];const hidden={comestible:1,notes:1};return this.FIELDS.filter(f=>sp.fields[f[0]]).map(f=>{const k=f[0],rk=sp.id+'|'+k,blur=!!(quiz&&hidden[k]&&!this.state.reveal[rk]);return{l:f[1],v:this.clean(sp.fields[k]),b:blur?'1':'0',go:blur?(()=>{const r=Object.assign({},this.state.reveal);r[rk]=1;this.setState({reveal:r});}):(()=>{}),hasInfo:!!this.GLOSS[k],info:this.GLOSS[k]||'',openInfo:this.state.info===rk,goInfo:()=>this.setState({info:this.state.info===rk?null:rk})};});}
@@ -558,6 +676,7 @@ class App{
     const showAsp=cfg.qtype==='photo'&&aspAv.length>0;
     const catOf=c=>all.filter(s=>this.inCat(s,c));
     const knownIn=c=>catOf(c).filter(s=>this.knownAny(s.id)).length;
+    const srs=this.resumeBoites(S.prog,this.jour());
     const heroAll=catOf(cfg.cat),heroK=knownIn(cfg.cat);
     const q=S.q,sp=q&&q.sp,answered=!!S.picked;
     const correct=answered&&!!S.ok;   // verdict posé par grade() (cf. answerOk)
@@ -575,14 +694,18 @@ class App{
       totalPct:all.length?Math.round(100*all.filter(s=>this.knownAny(s.id)).length/all.length):0,
       totalSeen:all.filter(s=>this.st(s.id,'photo').s+this.st(s.id,'fiche').s>0).length,
       totalReps:Object.keys(S.prog).reduce((a,k)=>a+S.prog[k].s,0),
+      dues:srs.dues,duesBoites:srs.boites.map((n,i)=>({box:i,n,
+        libelle:i===0?'à réapprendre':(this.intervalle(i)===1?'chaque jour':'tous les '+this.intervalle(i)+' jours'),
+        pct:srs.total?Math.round(100*n/srs.total):0})),
+      duesTotalCartes:srs.total,
       isHome:S.view==='home',showQuick:this.props.quickSessions!==false,showMastery:this.props.showMastery!==false,
       isQuiz:S.view==='quiz'&&!!q,isAtlas:S.view==='atlas',isFiche:S.view==='fiche'&&!!fiche,
       isTrierPick:S.view==='trierPick',isTrierPlay:S.view==='trierPlay'&&!!critSp,isProgres:S.view==='progres',
       heroPct:heroAll.length?Math.round(100*heroK/heroAll.length):0,start:this.start,
       presets:[
-        {tag:'10 minutes',title:'Écorces d’hiver',sub:'Ligneux, photo d’écorce, QCM',go:()=>this.setState({cfg:{cat:'ligneux',mode:'apprendre',aspect:'ecorce',qtype:'photo',diff:'qcm'}},this.start)},
-        {tag:'Piège',title:'Sosies mortels',sub:'Champignons, choix entre sosies',go:()=>this.setState({cfg:{cat:'champignon',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'sosies'}},this.start)},
-        {tag:'Sans photo',title:'Deviner d’après la fiche',sub:'Toutes catégories, caractères',go:()=>this.setState({cfg:{cat:'mixte',mode:'apprendre',aspect:'tout',qtype:'fiche',diff:'qcm'}},this.start)}
+        {tag:'10 minutes',title:'Écorces d’hiver',sub:'Ligneux, photo d’écorce, QCM',go:()=>this.setState({cfg:{cat:'ligneux',aspect:'ecorce',qtype:'photo',diff:'qcm'}},this.start)},
+        {tag:'Piège',title:'Sosies mortels',sub:'Champignons, choix entre sosies',go:()=>this.setState({cfg:{cat:'champignon',aspect:'tout',qtype:'photo',diff:'sosies'}},this.start)},
+        {tag:'Sans photo',title:'Deviner d’après la fiche',sub:'Toutes catégories, caractères',go:()=>this.setState({cfg:{cat:'mixte',aspect:'tout',qtype:'fiche',diff:'qcm'}},this.start)}
       ],
       cfgCatLabel:this.label(catList,cfg.cat).toLowerCase(),cfgAspectLabel:cfg.aspect==='tout'?'tous les aspects':this.label(this.ASP,cfg.aspect).toLowerCase(),
       cfgQtypeLabel:this.label(this.QT,cfg.qtype),cfgDiffLabel:this.label(this.DF,cfg.diff),
@@ -675,13 +798,14 @@ JS += r"""
       +(V.anyOpen?'<div data-h="'+h(V.closeAll)+'" style="position:fixed;inset:0;z-index:40"></div>':'')
       +'<div style="display:flex;flex-wrap:wrap;gap:24px;padding:18px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
         +'<div><div style="font:700 22px/1 var(--font-headline-data)">'+V.poolCount+'</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:5px">espèces dans le tirage</div></div>'
+        +'<div><div style="font:700 22px/1 var(--font-headline-data)'+(V.dues?';color:var(--color-brand-red)':'')+'">'+V.dues+'</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:5px">à revoir aujourd\'hui</div></div>'
         +'<div><div style="font:700 22px/1 var(--font-headline-data)">'+V.heroPct+'%</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:5px">déjà maîtrisé</div></div>'
         +'<div><div style="font:700 22px/1 var(--font-headline-data)">'+V.best+'</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:5px">meilleure série</div></div></div>'
       +'<button class="pb" data-k="dark" data-h="'+h(V.start)+'">Lancer'+ARROW+'</button>'
       +(V.showQuick?'<div><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:10px">Ou une séance déjà réglée</div><div class="r-cats">'
         +V.presets.map(p=>'<button class="gc" style="padding:16px;display:flex;flex-direction:column;gap:8px;min-height:112px" data-h="'+h(p.go)+'"><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:var(--color-brand-red)">'+e(p.tag)+'</div><div style="font:700 16px/1.25 var(--font-body);padding-bottom:2px">'+e(p.title)+'</div><div style="font:400 13px/1.4 var(--font-body);color:var(--fg-3)">'+e(p.sub)+'</div></button>').join('')
         +'</div></div>':'')
-      +'<div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3)">Chaque mot souligné est un réglage : clique pour changer. Le mode <em>Apprendre</em> tire les espèces jamais vues, <em>Réviser</em> celles déjà acquises.</div>'
+      +'<div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3)">Chaque mot souligné est un réglage : clique pour changer. Le tirage sert d\'abord les espèces <b>à revoir</b> (les plus en retard d\'abord), puis celles jamais vues, puis les plus anciennes — une espèce ratée revient tout de suite, une espèce sue revient dans plusieurs semaines.</div>'
       +'</div>';
     }
     if(V.isQuiz){
@@ -743,7 +867,11 @@ JS += r"""
       const row=r=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap"><span style="font:600 14px/1.2 var(--font-body)">'+e(r.label)+'</span><span style="font:700 12px/1 var(--font-mono);color:var(--fg-3)">'+e(r.right)+'</span></div><div style="height:6px;margin-top:10px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:'+r.bar+';width:'+r.pct+'%"></div></div><div style="margin-top:7px;font:500 11px/1.2 var(--font-body);color:var(--fg-3)">'+e(r.acc)+'</div></div>';
       const stat=(n,l,c)=>'<div><div style="font:700 34px/1 var(--font-headline-data)'+(c?';color:'+c:'')+'">'+n+'</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:6px">'+l+'</div></div>';
       return '<div style="display:flex;flex-direction:column;gap:24px;max-width:820px">'
-      +'<div style="display:flex;flex-wrap:wrap;gap:28px;padding-bottom:22px;border-bottom:1px solid var(--border)">'+stat(V.totalKnown,'espèces maîtrisées')+stat(V.totalSeen,'espèces vues')+stat(V.totalReps,'réponses données')+stat(V.best,'meilleure série','var(--color-success)')+'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:28px;padding-bottom:22px;border-bottom:1px solid var(--border)">'+stat(V.dues,'cartes à revoir aujourd\'hui',V.dues?'var(--color-brand-red)':'')+stat(V.totalKnown,'espèces maîtrisées')+stat(V.totalSeen,'espèces vues')+stat(V.totalReps,'réponses données')+stat(V.best,'meilleure série','var(--color-success)')+'</div>'
+      +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Révision espacée — par boîte</div>'
+        +'<div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Chaque carte (une espèce × une compétence) monte d\'une boîte à chaque bonne réponse et redescend d\'une à chaque erreur. Plus la boîte est haute, plus l\'écart entre deux révisions est long. « Maîtrisée » = boîte 4 ou 5 <b>et</b> pas encore échue : la maîtrise se périme, comme la mémoire.</div>'
+        +(V.duesTotalCartes?V.duesBoites.map(b=>'<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font:600 14px/1.2 var(--font-body)">Boîte '+b.box+' <span style="font:500 12px/1.2 var(--font-body);color:var(--fg-3)">· '+e(b.libelle)+'</span></span><span style="font:700 12px/1 var(--font-mono);color:var(--fg-3)">'+b.n+'</span></div><div style="height:6px;margin-top:8px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:'+(b.box>=4?'var(--color-success)':(b.box===0?'var(--color-danger)':'var(--color-partial)'))+';width:'+b.pct+'%"></div></div></div>').join('')
+          :'<div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3)">Aucune carte encore : lance un quiz, la planification démarre à la première réponse.</div>')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Reconnaissance — par compétence</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Reconnaître une écorce, une fleur ou une fiche de caractères sont des compétences distinctes : chacune est suivie séparément.</div>'+V.skillRows.map(row).join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Critères écologiques — oui / non</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Ta fiabilité question par question.</div>'+V.critRows.map(row).join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:14px">Couverture par catégorie</div>'+V.catCards.map(c=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font:600 14px/1 var(--font-body)">'+e(c.label)+'</span><span style="font:700 12px/1 var(--font-mono);color:var(--fg-3)">'+c.n+'</span></div><div style="height:6px;margin-top:10px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-navy-900);width:'+c.pct+'%"></div></div></div>').join('')+'</div>'

@@ -5,9 +5,13 @@ champignons, faune, fougères/graminées/mousses/lichens) orienté **forêt-jard
 et écosystèmes tempérés**.
 
 - **Quiz** : reconnaître une espèce à la photo **ou** d'après sa fiche de caractères (deux
-  compétences suivies séparément), en mode *Apprendre* / *Réviser*, filtrable par aspect
-  (feuille, écorce, fruit, fleur, port), en facile (QCM) ou difficile (saisie).
+  compétences suivies séparément), filtrable par aspect (feuille, écorce, fruit, fleur,
+  port), en facile (QCM) ou difficile (saisie).
 - **Atlas** : fiche complète de chaque espèce + toutes ses photos.
+- **Révision espacée** : le tirage n'est pas aléatoire. Chaque carte (une espèce × une
+  compétence) monte d'une boîte à chaque bonne réponse et redescend d'une à chaque erreur,
+  avec des écarts de 1, 3, 7, 16 puis 35 jours. Le quiz sert d'abord les cartes **échues**
+  (les plus en retard d'abord), puis celles jamais vues, puis les plus anciennes.
 - **Progression** sauvegardée dans le navigateur, **exportable / importable** (fichier `.json`) :
   l'import **fusionne** par défaut (additionne les compteurs, pour récupérer sa progression
   depuis un autre appareil), avec un bouton séparé pour **remplacer**. Les fichiers exportés
@@ -117,6 +121,12 @@ python3 -m pytest                                # ~1 s
 Les tests couvrent la lecture des atlas (colonnes, vignettes, aspects des photos), les
 contributions (`tag` / `reassign` / `remove`), les groupes de confusion, la règle
 « Est-ce comestible ? » du mode Oui/Non, et un test de bout en bout du build du site.
+
+La **planification de la révision** est testée à part (`tests/test_revision.py`) : le JS
+réellement livré est rejoué sous node avec des dates simulées — barème des intervalles,
+séquences de bonnes et de mauvaises réponses, ordre de la file, migration des progressions
+d'avant la planification, et le numéro de jour sous cinq fuseaux (dont deux nuits de
+changement d'heure, qui ne font pas 24 h).
 Ils tournent sur chaque Pull Request, à côté de `scripts/verifier_atlas.py`.
 
 Le parsing est testé sur de **faux atlas** montés dans un dossier temporaire (le contenu

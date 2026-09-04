@@ -36,8 +36,12 @@ def bloc_js(nom="PROG"):
 
 
 def appeler(*appels):
-    """Joue des appels [nom_de_methode, arg…] et renvoie leurs résultats."""
-    js = (HARNESS.replace("__METHODES__", bloc_js())
+    """Joue des appels [nom_de_methode, arg…] et renvoie leurs résultats.
+
+    Depuis #16, progParse et progFusion s'appuient sur la planification (BOITE_MAX,
+    intervalle, migrerProg…) : le bloc SRS est chargé avec le bloc PROG.
+    """
+    js = (HARNESS.replace("__METHODES__", bloc_js("SRS") + "\n" + bloc_js())
                  .replace("__APPELS__", json.dumps(list(appels), ensure_ascii=False)))
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
@@ -53,7 +57,35 @@ PROG = {"chene|photo": {"s": 4, "c": 3}, "chene|photo:feuille": {"s": 2, "c": 2}
 def test_l_export_est_enveloppe_et_versionne():
     txt, = appeler(["progExport", PROG])
 
-    assert json.loads(txt) == {"v": 1, "app": "atlas-especes", "prog": PROG}
+    # v2 depuis #16 : les entrées portent en plus box/due/last
+    assert json.loads(txt) == {"v": 2, "app": "atlas-especes", "prog": PROG}
+
+
+def test_la_planification_survit_a_l_aller_retour():
+    planifie = {"chene|photo": {"s": 4, "c": 3, "box": 3, "due": 20400, "last": 20393}}
+
+    txt, = appeler(["progExport", planifie])
+    lu, = appeler(["progParse", txt])
+
+    assert lu["prog"] == planifie
+
+
+@pytest.mark.parametrize("carte,garde", [
+    ({"s": 2, "c": 2, "box": 3, "due": 20400, "last": 20393}, True),
+    ({"s": 2, "c": 2, "box": 3, "due": 20400}, True),          # last déduit de l'intervalle
+    ({"s": 2, "c": 2, "box": 99, "due": 20400}, False),        # boîte hors barème
+    ({"s": 2, "c": 2, "box": -1, "due": 20400}, False),
+    ({"s": 2, "c": 2, "box": 3}, False),                       # boîte sans échéance
+    ({"s": 2, "c": 2, "box": "3", "due": 20400}, False),
+])
+def test_une_planification_incoherente_est_ignoree_pas_l_entree(carte, garde):
+    """Une planification douteuse ne doit pas faire perdre les compteurs : la carte
+    repart d'une boîte déduite de sa réussite (migrerProg), elle n'est pas jetée."""
+    lu, = appeler(["progParse", json.dumps({"chene|photo": carte})])
+
+    e = lu["prog"]["chene|photo"]
+    assert (e["s"], e["c"]) == (2, 2)
+    assert ("box" in e) is garde, e
 
 
 def test_aller_retour_export_import():
@@ -161,6 +193,42 @@ def test_fusion_sur_progression_vide():
     res, = appeler(["progFusion", {}, PROG])
 
     assert res["prog"] == PROG and res["fusionnes"] == 0 and res["ajoutes"] == len(PROG)
+
+
+def test_la_fusion_garde_la_planification_la_plus_recente():
+    """Deux appareils : c'est la révision la plus récente qui dit où en est la mémoire.
+
+    Additionner les échéances n'aurait aucun sens, et prendre la plus haute boîte
+    ferait passer un vieux « je le savais » devant un échec d'hier.
+    """
+    vieux = {"chene|photo": {"s": 10, "c": 9, "box": 5, "due": 20430, "last": 20395}}
+    recent = {"chene|photo": {"s": 2, "c": 0, "box": 0, "due": 20410, "last": 20410}}
+
+    res, = appeler(["progFusion", vieux, recent])
+
+    e = res["prog"]["chene|photo"]
+    assert (e["s"], e["c"]) == (12, 9), "les compteurs, eux, s'additionnent"
+    assert (e["box"], e["due"], e["last"]) == (0, 20410, 20410)
+
+
+def test_a_egalite_de_date_la_boite_la_plus_haute_gagne():
+    a = {"chene|photo": {"s": 3, "c": 3, "box": 4, "due": 20420, "last": 20404}}
+    b = {"chene|photo": {"s": 3, "c": 2, "box": 2, "due": 20407, "last": 20404}}
+
+    res, = appeler(["progFusion", a, b])
+
+    assert res["prog"]["chene|photo"]["box"] == 4
+
+
+def test_la_fusion_avec_une_entree_non_planifiee_garde_la_planification_connue():
+    planifie = {"chene|photo": {"s": 3, "c": 3, "box": 4, "due": 20420, "last": 20404}}
+    ancien = {"chene|photo": {"s": 2, "c": 1}}
+
+    res, = appeler(["progFusion", planifie, ancien])
+
+    e = res["prog"]["chene|photo"]
+    assert (e["s"], e["c"]) == (5, 4)
+    assert e["box"] == 4, "un fichier d'avant #16 ne doit pas effacer la planification"
 
 
 # ------------------------------------------------------------------------- résumé
