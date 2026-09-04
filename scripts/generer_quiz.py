@@ -157,6 +157,30 @@ def aspect_of(path, stem):
             found.append(ASPECT_KW[tok])
     return found or ["divers"]
 
+PHOTO_EXT = (".jpg", ".jpeg", ".png")
+
+def extra_photos(stem):
+    """Photos supplémentaires d'une espèce dans img/quiz-extra/.
+
+    La convention est <stem>-<aspects>-<n>.jpg : le **séparateur est exigé**, sinon un stem
+    happe les photos de celui qu'il préfixe (« ail » prenait celles de l'ail des ours et de
+    l'ail rocambole, « chou » celles du chou de Daubenton, « poireau » celles du perpétuel).
+    Le stem nu (<stem>.jpg) est accepté : c'est une photo de l'espèce, sans aspect annoncé.
+    """
+    if not os.path.isdir(EXTRA):
+        return []
+    out = []
+    for name in sorted(os.listdir(EXTRA)):
+        if not name.startswith(stem) or not name.lower().endswith(PHOTO_EXT):
+            continue
+        rest = name[len(stem):]
+        if not (rest.startswith("-") or rest.startswith(".")):
+            continue  # « _des_ours-1.jpg » : appartient à une autre espèce
+        p = os.path.join(EXTRA, name)
+        if os.path.isfile(p):
+            out.append(p)
+    return out
+
 def parse_atlas(path, cat, seen):
     lines = open(os.path.join(BASE, path), encoding="utf-8").read().split("\n")
     header = None
@@ -185,7 +209,7 @@ def parse_atlas(path, cat, seen):
         vpath = os.path.join(IMG, m.group(1))
         if not os.path.exists(vpath):
             print("  ⚠ vignette absente :", name, m.group(1)); continue
-        paths = [vpath] + [ex for ex in sorted(glob.glob(os.path.join(EXTRA, stem + "*"))) if os.path.isfile(ex)]
+        paths = [vpath] + extra_photos(stem)
         fields = {k: v for k, v in row.items() if k not in ("name", "latin") and v and v not in ("—", "-", "")}
         sid = stem if stem not in seen else stem + "_" + cat
         seen.add(sid)

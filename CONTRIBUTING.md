@@ -29,6 +29,9 @@ format du tableau (mêmes colonnes, séparées par `|`).
    `stem-aspect-n.jpg` — où *aspect* ∈ `feuille`, `ecorce`, `fruit`, `fleur`, `port`
    (plusieurs aspects possibles avec `_`, ex. `sauge-feuille_fleur-1.jpg`).
    Exemple : `sauge-fleur-2.jpg`.
+   Le **tiret après le stem est obligatoire** : `ail_des_ours-1.jpg` est une photo de l'ail
+   des ours, pas de l'ail. Une photo qui ne suit pas la convention n'est rattachée à aucune
+   espèce — `scripts/verifier_atlas.py` la signale.
 3. Formats : **JPG**, idéalement ≤ ~1500 px de large (photos nettes, sujet bien visible).
 
 > Tu peux aussi annoter l'aspect d'une image sans la renommer, via le fichier

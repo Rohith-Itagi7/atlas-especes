@@ -6,8 +6,8 @@
 
 ## En bref
 - Plantes (ligneux + herbacées) : **187**
-- …dont **6** avec les 5 aspects, **1** sans aucun aspect taggé.
-- Manques par aspect : Feuille 37 · Écorce 156 · Fruit 107 · Fleur 36 · Port 151
+- …dont **6** avec les 5 aspects, **3** sans aucun aspect taggé.
+- Manques par aspect : Feuille 38 · Écorce 156 · Fruit 107 · Fleur 38 · Port 151
 
 ## Ligneux (73)
 
@@ -92,7 +92,7 @@
 | Espèce | 📷 | Feuille | Écorce | Fruit | Fleur | Port | À compléter |
 |---|--:|:-:|:-:|:-:|:-:|:-:|---|
 | Achillée millefeuille | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Ail | 6 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
+| Ail | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
 | Ail des ours | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Ail rocambole | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Alliaire | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
@@ -117,7 +117,7 @@
 | Carotte | 4 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Cerfeuil | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Chicorée / Endive | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
-| Chou | 10 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
+| Chou | 5 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Chou Daubenton | 6 | ✓ | ✗ | ✓ | ✓ | ✓ | Écorce |
 | Chénopode blanc | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Ciboulette | 5 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
@@ -171,7 +171,7 @@
 | Pissenlit | 4 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Plantain | 1 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Poire de terre (yacon) | 3 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
-| Poireau | 3 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
+| Poireau | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
 | Poireau perpétuel | 3 | ✗ | ✗ | ✗ | ✓ | ✗ | Feuille, Écorce, Fruit, Port |
 | Pois | 3 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Poivron / Piment | 1 | ✓ | ✗ | ✓ | ✗ | ✗ | Écorce, Fleur, Port |
