@@ -15,13 +15,15 @@ Contrôles :
   - img/quiz-extra/_aspects.tsv : aspects connus, lignes qui visent un fichier existant ;
   - img/especes : vignette utilisée par au moins une espèce ;
   - contributions/*.tsv : actions connues, fichiers et stems cibles existants ;
-  - Confusions - référence.md : stems connus, groupes qui tranchent vraiment.
+  - Confusions - référence.md : stems connus, groupes qui tranchent vraiment ;
+  - img/CREDITS.tsv : une ligne par image, pas de ligne orpheline, auteur et licence connus.
 
   python3 scripts/verifier_atlas.py
 """
 import glob, os, re, sys
 
 import atlas_data
+import credits
 
 BASE = atlas_data.BASE
 # Vocabulaire des aspects : source unique dans scripts/atlas_data.py.
@@ -265,14 +267,37 @@ def verifier_confusions(stems):
                          "rien" % (ou, cells[0].strip()))
     return errs, warns
 
+def verifier_credits():
+    """img/CREDITS.tsv : une ligne par image, et pas de ligne orpheline.
+
+    Avertissement et non erreur tant que le rattrapage n'est pas fait : les images anciennes
+    ont été récupérées sans noter l'auteur (cf. scripts/credits.py). À passer en erreur quand
+    le compte d'inconnus tombe à zéro.
+    """
+    errs, warns = [], []
+    connus, inconnus, manquants, morts = credits.rapport()
+    if manquants:
+        warns.append("img/CREDITS.tsv : %d image(s) sans crédit (%s%s) — lancer "
+                     "« python3 scripts/credits.py --init »"
+                     % (len(manquants), ", ".join(manquants[:3]),
+                        ", …" if len(manquants) > 3 else ""))
+    for f in morts:
+        warns.append("img/CREDITS.tsv : ligne « %s » sans image correspondante" % f)
+    if inconnus:
+        warns.append("img/CREDITS.tsv : %d image(s) sur %d sans auteur ni licence connus — "
+                     "les licences CC-BY exigent l'attribution"
+                     % (len(inconnus), len(connus) + len(inconnus)))
+    return errs, warns
+
 def main():
     errs, warns, stems = verifier_tableaux()
     for controle in (verifier_photos_extra, verifier_vignettes,
                      verifier_contributions, verifier_confusions):
         e, w = controle(stems)
         errs += e; warns += w
-    e, w = verifier_sidecar()
-    errs += e; warns += w
+    for controle in (verifier_sidecar, verifier_credits):
+        e, w = controle()
+        errs += e; warns += w
 
     if warns:
         print("⚠ %d avertissement(s) :" % len(warns))

@@ -81,6 +81,7 @@ Faune - référence.md              faune (auxiliaires, pollinisateurs, ravageur
 Espèces diverses - référence.md   fougères, graminées, mousses, lichens
 img/especes/                      vignette principale de chaque espèce
 img/quiz-extra/                   photos supplémentaires + _aspects.tsv (annotation des aspects)
+img/CREDITS.tsv                   crédit de chaque image : source, auteur, licence, url
 COUVERTURE.md                     carte des aspects présents/manquants par espèce (généré)
 scripts/atlas_data.py             couche de données : atlas, photos, contributions, vocabulaire
                                   des aspects (constante ASPECTS = source unique)
@@ -90,10 +91,24 @@ scripts/generer_quiz.py           build local des versions autonome / Artifact (
 scripts/couverture.py             (re)génère COUVERTURE.md
 scripts/verifier_atlas.py         validation des atlas et des photos (CI sur les PR)
 scripts/consolider_contributions.py  fait entrer les contributions dans les sources
+scripts/credits.py                crédits des images (rapport, --init, lecture des API)
 tests/                            tests pytest (CI sur les PR)
 ```
 
 ## 🖼 Crédits photos
 
-Wikimedia Commons & iNaturalist (licences libres / CC). Chaque contributeur reste responsable
-des droits des images qu'il ajoute (voir CONTRIBUTING).
+Le crédit de chaque image vit dans **[`img/CREDITS.tsv`](img/CREDITS.tsv)** :
+`fichier⇥source⇥auteur⇥licence⇥url`. Il s'affiche sous la photo, sur la fiche d'espèce et
+dans le quiz après la réponse — la plupart des licences CC (CC-BY, CC-BY-SA) l'exigent.
+
+```bash
+python3 scripts/credits.py          # combien d'images créditées, lesquelles manquent
+python3 scripts/credits.py --init   # ajoute une ligne « inconnu » par image sans crédit
+```
+
+⚠️ **État actuel : les 570 images du dépôt sont en `inconnu`.** Elles ont été récupérées
+par `scripts/fetch_aspects.py` (Wikimedia Commons) et `scripts/fetch_photos.py`
+(iNaturalist), qui ne notaient pas l'auteur et recompressaient les fichiers : la provenance
+d'une image ancienne ne peut plus être retrouvée automatiquement, elle se complète à la
+main. Les nouvelles images, elles, sont créditées au téléchargement. Chaque contributeur
+reste responsable des droits des images qu'il ajoute (voir CONTRIBUTING).

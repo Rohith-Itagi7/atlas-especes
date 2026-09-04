@@ -3,9 +3,12 @@
 """
 Télécharge des photos supplémentaires (iNaturalist) pour chaque espèce des atlas,
 les réduit (≤420 px, JPEG q70) et les range dans img/quiz-extra/<stem>-N.jpg.
+Chaque image téléchargée est créditée dans img/CREDITS.tsv (auteur, licence, page).
 Idempotent : saute les espèces qui ont déjà des extras. Relancer le générateur ensuite.
 """
 import re, os, json, time, glob, subprocess, urllib.request, urllib.parse
+
+import credits
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG = os.path.join(BASE, "img", "especes")
@@ -60,7 +63,8 @@ def taxon_photos(latin):
         p = tp.get("photo", {})
         u = p.get("medium_url") or p.get("url")
         if u:
-            urls.append(u)
+            # le crédit accompagne l'URL : iNaturalist est surtout du CC-BY / CC-BY-NC
+            urls.append((u, credits.credit_inaturalist(p)))
     return urls
 
 def dl(url, dest):
@@ -83,9 +87,10 @@ def main():
         try:
             urls = taxon_photos(latin)[:N_EXTRA]
             n = 0
-            for j, u in enumerate(urls, 1):
+            for j, (u, credit) in enumerate(urls, 1):
                 try:
-                    dl(u, os.path.join(EXTRA, "%s-%d.jpg" % (stem, j))); n += 1
+                    dest = os.path.join(EXTRA, "%s-%d.jpg" % (stem, j))
+                    dl(u, dest); credits.noter(dest, **credit); n += 1
                     time.sleep(0.5)
                 except Exception as e:
                     print("   img fail %s-%d: %s" % (stem, j, e))

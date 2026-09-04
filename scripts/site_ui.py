@@ -105,6 +105,8 @@ input{font-family:var(--font-body)}
 .cmeta{padding:12px 14px;text-align:center;flex:0 0 auto}
 .critbanner{padding:12px 14px;border-radius:10px;font:700 14px/1.35 var(--font-body);text-align:center}
 .critbanner.ok{background:var(--color-success-soft);color:var(--color-success)}
+.imgcredit{font:400 10px/1.45 var(--font-body);color:var(--fg-3);margin-top:6px}
+.imgcredit a{text-decoration:underline}
 .critbanner.no{background:var(--color-danger-soft);color:var(--color-danger)}
 """
 
@@ -121,6 +123,11 @@ function navIcon(k,sz){return '<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 
 let H=[];
 function h(fn){H.push(fn);return H.length-1;}
 function e(s){return (s==null?'':''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// Attribution d'une photo (auteur, licence) : exigée par les licences CC-BY / CC-BY-SA.
+// Vide tant que le crédit est inconnu — cf. img/CREDITS.tsv et scripts/credits.py.
+function credit(txt,url){if(!txt)return '';
+  const dedans=url?('<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer" style="color:inherit">'+e(txt)+'</a>'):e(txt);
+  return '<div class="imgcredit">'+dedans+'</div>';}
 
 class App{
   CATS=[['ligneux','Ligneux'],['herbace','Herbacées'],['champignon','Champignons'],['faune','Faune'],['divers','Diverses'],['mixte','Tout']];
@@ -381,6 +388,7 @@ class App{
       quizModeLine:this.label(this.CATS,cfg.cat)+' · '+(cfg.qtype==='photo'?('photo'+(cfg.aspect!=='tout'?' — '+this.label(this.ASP,cfg.aspect).toLowerCase():'')):'fiche')+' · '+this.label(this.DF,cfg.diff).toLowerCase(),
       isPhotoQ:!!q&&cfg.qtype==='photo',isFicheQ:!!q&&cfg.qtype==='fiche',
       qImg:q?q.img.u:'',qAspect:q?(q.img.a.map(a=>this.label(this.ASP,a)).join(' · ')||'Divers'):'',
+      qCredit:(answered&&q&&q.img.c)?q.img.c:'',qCreditUrl:(answered&&q&&q.img.cu)?q.img.cu:'',
       qFields:q?this.fieldRows(sp,!answered):[],
       hasOptions:!!q&&cfg.diff!=='saisie',isTyped:!!q&&cfg.diff==='saisie',typed:S.typed,
       onType:ev=>{this.state.typed=ev.target.value;},onTypeKey:ev=>{if(ev.key==='Enter')this.grade(this.state.typed);},submitTyped:()=>this.grade(this.state.typed),
@@ -395,6 +403,7 @@ class App{
       atlasList:this.atlasArr().slice(0,500).map(s=>{const m=this.mastery(s.id),seen=this.st(s.id,'photo').s+this.st(s.id,'fiche').s;const half=!this.knownAny(s.id)&&(this.known(s.id,'photo')||this.known(s.id,'fiche'));return{name:s.name,latin:s.latin,thumb:s.imgs[0]?s.imgs[0].u:'',pct:m,badge:this.knownAny(s.id)?'maîtrisée':(half?(this.known(s.id,'photo')?'photo OK':'fiche OK'):(seen?m+'%':(s.imgs.length>1?s.imgs.length+' photos':'1 photo'))),barColor:this.knownAny(s.id)?'#2F6B3A':'#A87B3C',go:this.openFiche(s.id)};}),
       fName:fiche?fiche.name:'',fLatin:fiche?fiche.latin:'',fCat:fiche?this.label(catList,fiche.cat):'',
       fImg:fcur?fcur.u:'',fImgAsp:fcur?('Cette photo montre : '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'divers')):'',
+      fCredit:fcur&&fcur.c?fcur.c:'',fCreditUrl:fcur&&fcur.cu?fcur.cu:'',
       fThumbs:fimgs.map((im,i)=>({u:im.u,border:i===S.fimg?'#16241C':'transparent',go:()=>this.setState({fimg:i})})),
       fFields:this.fieldRows(fiche,false),
       fHasTips:!!(fiche&&fiche.conf&&fiche.conf.length),fTips:fiche&&fiche.conf?fiche.conf.map(g=>({txt:this.clean(g.tip)})):[],
@@ -461,6 +470,7 @@ JS += r"""
         +'<span style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:'+V.fbColor+'">'+e(V.fbLabel)+'</span>'
         +'<div style="margin-top:10px;font:700 20px/1.2 var(--font-body)">'+e(V.answerName)+'</div><div style="font:italic 400 13px/1.35 var(--font-body);color:var(--fg-3)">'+e(V.answerLatin)+'</div>'
         +(V.answerNote?'<div style="margin-top:10px;font:400 14px/1.45 var(--font-body);color:var(--fg-2)">'+e(V.answerNote)+'</div>':'')
+        +credit(V.qCredit,V.qCreditUrl)
         +(V.hasTips?'<div style="margin-top:12px;padding:12px;border-radius:8px;background:var(--color-warning-soft)"><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-warning)">Ne pas confondre</div>'+V.tips.map(t=>'<div style="margin-top:8px;font:400 13px/1.45 var(--font-body);color:var(--fg-1)">'+e(t.txt)+'</div>').join('')+'</div>':'')
         +'<div style="display:flex;gap:8px;margin-top:16px"><button class="pb" style="min-height:48px;font-size:15px" data-k="dark" data-h="'+h(V.next)+'">Suivante'+ARROW+'</button><button class="ib" data-h="'+h(V.openAnswerFiche)+'">Voir la fiche</button></div></div>';
       }
@@ -476,7 +486,8 @@ JS += r"""
     if(V.isFiche){
       return '<div class="r-two"><div><div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img src="'+e(V.fImg)+'" alt="'+e(V.fName)+'" style="width:100%;max-height:64vh;object-fit:contain;display:block;background:var(--color-navy-50)"></div>'
       +'<div style="display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px">'+V.fThumbs.map(t=>'<img src="'+e(t.u)+'" alt="" loading="lazy" data-h="'+h(t.go)+'" style="width:72px;height:72px;flex:0 0 auto;object-fit:cover;border-radius:8px;border:2px solid '+t.border+';cursor:pointer;background:var(--color-navy-50)">').join('')+'</div>'
-      +'<div style="font:600 12px/1.3 var(--font-body);color:var(--fg-3)">'+e(V.fImgAsp)+'</div></div>'
+      +'<div style="font:600 12px/1.3 var(--font-body);color:var(--fg-3)">'+e(V.fImgAsp)+'</div>'
+      +credit(V.fCredit,V.fCreditUrl)+'</div>'
       +'<div><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-brand-red)">'+e(V.fCat)+'</div><div style="margin-top:10px;font:700 28px/1.12 var(--font-brand);letter-spacing:-.015em">'+e(V.fName)+'</div><div style="font:italic 400 15px/1.35 var(--font-body);color:var(--fg-3)">'+e(V.fLatin)+'</div>'
       +'<div style="margin-top:20px">'+this.fieldsHtml(V.fFields,'38%')+'</div>'
       +(V.fHasTips?'<div style="margin-top:18px;padding:14px;border-radius:8px;background:var(--color-warning-soft)"><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-warning)">Confusions fréquentes</div>'+V.fTips.map(t=>'<div style="margin-top:9px;font:400 13px/1.45 var(--font-body)">'+e(t.txt)+'</div>').join('')+'</div>':'')

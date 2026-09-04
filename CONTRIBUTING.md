@@ -30,6 +30,7 @@ des **avertissements** ⚠ (à corriger, sans bloquer).
 | Mot-clé d'aspect non reconnu dans un nom de photo (l'aspect est perdu) | ⚠ |
 | Vignette de `img/especes/` utilisée par aucune espèce | ⚠ |
 | Ligne sans tabulation dans un `.tsv`, `tag` sans aspect, groupe de confusion à une seule espèce | ⚠ |
+| `img/CREDITS.tsv` : image sans crédit, ligne sans image, auteur ou licence inconnus | ⚠ |
 
 Lance-le en local avant d'ouvrir ta PR : `python3 scripts/verifier_atlas.py`.
 
@@ -54,6 +55,15 @@ format du tableau (mêmes colonnes, séparées par `|`).
    des ours, pas de l'ail. Une photo qui ne suit pas la convention n'est rattachée à aucune
    espèce — `scripts/verifier_atlas.py` la signale.
 3. Formats : **JPG**, idéalement ≤ ~1500 px de large (photos nettes, sujet bien visible).
+4. **Crédite la photo** : ajoute une ligne dans [`img/CREDITS.tsv`](img/CREDITS.tsv)
+   (`fichier⇥source⇥auteur⇥licence⇥url`). Exemple :
+
+   ```
+   sauge-fleur-2.jpg	wikimedia	Alice Dupont	CC BY-SA 4.0	https://commons.wikimedia.org/wiki/File:…
+   ```
+
+   Pour une photo que tu as prise : `source` = `propre`, `auteur` = ton nom ou ton pseudo,
+   `licence` = celle que tu choisis (par ex. `CC BY-SA 4.0`), `url` vide ou `inconnu`.
 
 > Tu peux aussi annoter l'aspect d'une image sans la renommer, via le fichier
 > `img/quiz-extra/_aspects.tsv` (une ligne `nom_du_fichier.jpg⇥feuille,fleur`).
@@ -69,8 +79,13 @@ format du tableau (mêmes colonnes, séparées par `|`).
 ## Droits des images ⚠️
 
 N'ajoute que des photos **que tu as prises** ou sous **licence libre** (Wikimedia Commons,
-iNaturalist CC, etc.). Indique la source dans la description de ta Pull Request si ce n'est pas
-une de tes photos. Les images sans droits clairs seront retirées.
+iNaturalist CC, etc.). La source va dans [`img/CREDITS.tsv`](img/CREDITS.tsv), pas seulement
+dans la description de la Pull Request : celle-ci disparaît de la vue dès la fusion, alors que
+la plupart des licences CC **exigent** de nommer l'auteur et la licence tant que l'image est
+publiée. Les images sans droits clairs seront retirées.
+
+`python3 scripts/credits.py` dit où on en est (combien d'images créditées, lesquelles
+manquent). Les photos récupérées par les scripts sont créditées automatiquement.
 
 ## Vérifier en local (facultatif)
 

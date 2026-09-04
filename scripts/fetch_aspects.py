@@ -10,6 +10,7 @@ Idempotent (saute un aspect déjà présent). Relancer generer_quiz.py ensuite.
 import re, os, json, time, glob, subprocess, urllib.request, urllib.parse, urllib.error
 
 import atlas_data
+import credits
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXTRA = os.path.join(BASE, "img", "quiz-extra")
@@ -46,9 +47,11 @@ def clean_latin(l):
     return " ".join(l.split()[:2])
 
 def commons_photo(latin, kw):
+    """(url de la photo, crédit) — extmetadata porte l'auteur et la licence, exigés par CC-BY."""
     q = urllib.parse.urlencode({"action": "query", "generator": "search",
         "gsrsearch": '%s %s' % (latin, kw), "gsrnamespace": "6", "gsrlimit": "8",
-        "prop": "imageinfo", "iiprop": "url|mime", "iiurlwidth": "700", "format": "json"})
+        "prop": "imageinfo", "iiprop": "url|mime|extmetadata", "iiurlwidth": "700",
+        "format": "json"})
     req = urllib.request.Request("https://commons.wikimedia.org/w/api.php?" + q, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=30) as r:
         d = json.load(r)
@@ -60,7 +63,7 @@ def commons_photo(latin, kw):
             continue
         ii = p.get("imageinfo", [{}])[0]
         if ii.get("mime") in ("image/jpeg", "image/png") and ii.get("thumburl"):
-            return ii["thumburl"]
+            return ii["thumburl"], credits.credit_commons(ii)
     return None
 
 def dl(url, dest):
@@ -97,10 +100,12 @@ def main():
                 got.append(asp + "=déjà"); continue
             dest = os.path.join(EXTRA, "%s-%s-1.jpg" % (stem, asp))
             try:
-                src = with_retry(commons_photo, cl, kw)
-                if not src:
+                trouve = with_retry(commons_photo, cl, kw)
+                if not trouve:
                     got.append(asp + "=∅"); time.sleep(2.5); continue
-                dl(src, dest); got.append(asp + "=OK"); ok += 1
+                src, credit = trouve
+                dl(src, dest); credits.noter(dest, **credit)
+                got.append(asp + "=OK"); ok += 1
             except Exception:
                 got.append(asp + "=err")
             time.sleep(2.5)

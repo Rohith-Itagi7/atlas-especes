@@ -11,6 +11,7 @@ résolution). Pas de sips → tourne en CI Linux.
 import os, sys, json, shutil
 
 import atlas_data
+import credits
 import site_ui
 
 BASE = atlas_data.BASE
@@ -36,12 +37,23 @@ def conf_groups(stem, id_par_stem):
     return out
 
 def to_web_data(species):
+    cred = credits.charger()
     id_par_stem = {}
     for s in species:
         id_par_stem.setdefault(s["stem"], s["id"])
     out = []
     for s in species:
-        imgs = [{"u": enc_web(p), "a": atlas_data.aspect_of(p, s["stem"])} for p in s["paths"]]
+        imgs = []
+        for p in s["paths"]:
+            im = {"u": enc_web(p), "a": atlas_data.aspect_of(p, s["stem"])}
+            # attribution affichée sous la photo ; absente tant que le crédit est inconnu
+            attribution = credits.texte(cred.get(os.path.basename(p)))
+            if attribution:
+                im["c"] = attribution
+                url = cred[os.path.basename(p)].get("url")
+                if url and url != credits.INCONNU:
+                    im["cu"] = url
+            imgs.append(im)
         d = {
             "id": s["id"], "name": s["name"], "latin": s["latin"], "cat": s["cat"],
             "note": s["note"], "fields": s["fields"], "imgs": imgs,
