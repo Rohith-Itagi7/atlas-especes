@@ -1,0 +1,50 @@
+name: Consolider les contributions
+
+# Déclenchement manuel uniquement : ces actions renomment et suppriment des fichiers image.
+# Le résultat arrive en Pull Request, pour être relu avant d'entrer dans main.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  consolider:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Plan de consolidation (sans rien modifier)
+        run: python3 scripts/consolider_contributions.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Consolider
+        run: python3 scripts/consolider_contributions.py --apply
+
+      - name: Vérifier et régénérer la couverture
+        run: |
+          python3 scripts/verifier_atlas.py
+          python3 scripts/couverture.py
+
+      - name: Ouvrir la Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet && git diff --quiet --cached && [ -z "$(git status --porcelain)" ]; then
+            echo "Rien à consolider." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          BRANCHE="consolidation-$(date -u +%Y%m%d-%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCHE"
+          git add -A
+          git commit -m "Consolide les contributions dans les sources"
+          git push -u origin "$BRANCHE"
+          gh pr create --title "Consolidation des contributions" \
+            --body "Généré par \`scripts/consolider_contributions.py --apply\` (workflow manuel).
+          Relire les renommages et les suppressions de photos avant de fusionner." \
+            --base "${{ github.ref_name }}" --head "$BRANCHE" >> "$GITHUB_STEP_SUMMARY"

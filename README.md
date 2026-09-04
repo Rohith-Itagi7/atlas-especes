@@ -88,7 +88,8 @@ scripts/build_web.py              build du site statique (utilisé par la CI)
 scripts/site_ui.py                interface du site (CSS + app vanilla)
 scripts/generer_quiz.py           build local des versions autonome / Artifact (macOS, `sips`)
 scripts/couverture.py             (re)génère COUVERTURE.md
-scripts/verifier_atlas.py         validation des atlas (CI sur les PR)
+scripts/verifier_atlas.py         validation des atlas et des photos (CI sur les PR)
+scripts/consolider_contributions.py  fait entrer les contributions dans les sources
 tests/                            tests pytest (CI sur les PR)
 ```
 
