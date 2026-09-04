@@ -46,3 +46,30 @@ def test_groupe_sans_espece_ignore(repo):
 def test_fichier_absent_pas_de_groupe(repo):
     # Le dépôt de test n'a pas d'atlas Confusions : la fonction doit rester silencieuse.
     assert repo.atlas_data.load_confusions() == []
+
+
+# ------------------------------------------------- les critères du dépôt, tels qu'affichés
+
+def test_aucun_critere_du_depot_n_utilise_l_italique_markdown():
+    """L'app n'enlève que les « ** » (clean()) : un « *Erica* » s'afficherait avec ses
+    astérisques au milieu du critère, sur la fiche comme dans le quiz."""
+    import re
+    from conftest import BASE
+    import os
+
+    fautes = []
+    for i, ln in enumerate(open(os.path.join(BASE, "Confusions - référence.md"),
+                                encoding="utf-8"), 1):
+        if not ln.startswith("|"):
+            continue
+        for m in re.findall(r"\*[^*\n]+\*", ln.replace("**", "")):
+            fautes.append("ligne %d : %s" % (i, m))
+
+    assert not fautes, "italiques non rendues :\n  " + "\n  ".join(fautes)
+
+
+def test_chaque_groupe_du_depot_a_au_moins_deux_especes(atlas_data):
+    """Un groupe à une espèce n'a pas de sosie : le quiz n'en tire aucune distraction."""
+    seuls = [g["tip"][:50] for g in atlas_data.CONF if len(g["stems"]) < 2]
+
+    assert not seuls, seuls

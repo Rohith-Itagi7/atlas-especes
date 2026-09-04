@@ -1,0 +1,45 @@
+# Lot 1 — 20 espèces à risque de confusion n'ayant qu'une seule photo (issue #17)
+#
+#   python3 scripts/fetch_aspects.py --lot lots/lot-1-confusions.txt
+#   python3 scripts/fetch_photos.py  --lot lots/lot-1-confusions.txt
+#
+# Un stem par ligne. Priorité : les espèces dont la mauvaise identification est
+# dangereuse, ou qui apparaissent dans un groupe de confusion.
+#
+# ⚠ Après téléchargement, REGARDER chaque photo : les API se trompent, en particulier
+# sur les apiacées et les astéracées. Une photo mal attribuée sur une espèce mortelle
+# est pire que pas de photo. Puis relancer :
+#   python3 scripts/verifier_atlas.py && python3 scripts/couverture.py
+
+# mortelles ou toxiques
+cigue          # grande ciguë — mortelle, confondue avec les apiacées comestibles
+arum           # gouet — toxique, confondu avec l'ail des ours
+colchique      # mortel, confondu avec l'ail des ours
+digitale       # mortelle, confondue avec la consoude
+
+# sève phototoxique
+berce          # confusion avec la berce du Caucase (brûlures)
+panais         # sève phototoxique elle aussi, même groupe
+
+# apiacées du potager (cf. groupe « Apiacées aromatiques »)
+cerfeuil
+aneth
+fenouil
+celeri
+coriandre
+
+# crucifères de printemps
+alliaire
+cardamine
+cresson        # + risque de douve du foie
+
+# astéracées et grandes rosettes
+camomille
+bardane
+armoise
+
+# divers
+chenopode
+guimauve
+asperule
+basilic

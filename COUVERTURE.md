@@ -93,6 +93,7 @@
 
 | Espèce | 📷 | Feuille | Écorce | Fruit | Fleur | Port | À compléter |
 |---|--:|:-:|:-:|:-:|:-:|:-:|---|
+| Absinthe (armoise amère) | 1 | ✓ | ✗ | ✗ | ✗ | ✗ | Écorce, Fruit, Fleur, Port |
 | Achillée millefeuille | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Ail | 1 | ✗ | ✗ | ✗ | ✗ | ✗ | Feuille, Écorce, Fruit, Fleur, Port |
 | Ail des ours | 3 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
@@ -100,7 +101,6 @@
 | Alliaire | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Amarante | 1 | ✓ | ✗ | ✗ | ✗ | ✗ | Écorce, Fruit, Fleur, Port |
 | Aneth | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
-| Armoise / Absinthe | 1 | ✓ | ✗ | ✗ | ✗ | ✗ | Écorce, Fruit, Fleur, Port |
 | Artichaut / Cardon | 5 | ✓ | ✗ | ✗ | ✓ | ✓ | Écorce, Fruit |
 | Arum tacheté (gouet) | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Asperge | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |

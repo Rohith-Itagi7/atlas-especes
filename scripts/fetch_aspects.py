@@ -6,8 +6,12 @@ Télécharge des photos par ASPECT depuis Wikimedia Commons pour LIGNEUX et HERB
   herbacées : feuille(leaf), fleur(flower), fruit(fruit)   (pas d'écorce)
 Fichiers : img/quiz-extra/<stem>-<aspect>-1.jpg (réduits sips 420px q70).
 Idempotent (saute un aspect déjà présent). Relancer generer_quiz.py ensuite.
+
+  python3 scripts/fetch_aspects.py                        tout l'atlas
+  python3 scripts/fetch_aspects.py --lot lots/lot-1.txt   un lot (cf. #17)
+  python3 scripts/fetch_aspects.py --especes cigue,arum   quelques espèces
 """
-import re, os, json, time, glob, subprocess, urllib.request, urllib.parse, urllib.error
+import re, os, sys, json, time, glob, subprocess, urllib.request, urllib.parse, urllib.error
 
 import atlas_data
 import credits
@@ -87,8 +91,23 @@ def with_retry(fn, *a):
             raise
     return None
 
+def choisir(sp, argv):
+    """Restreint la liste au lot demandé par --lot / --especes (cf. atlas_data)."""
+    arg = None
+    for i, a in enumerate(argv):
+        if a in ("--lot", "--especes") and i + 1 < len(argv):
+            arg = argv[i + 1]
+    if not arg:
+        return sp
+    demandes = atlas_data.lire_lot(arg)
+    retenus, inconnus = atlas_data.selection([x[0] for x in sp], demandes)
+    if inconnus:
+        raise SystemExit("stem(s) inconnu(s) dans le lot : %s" % ", ".join(inconnus))
+    ordre = {s: i for i, s in enumerate(retenus)}
+    return sorted([x for x in sp if x[0] in ordre], key=lambda x: ordre[x[0]])
+
 def main():
-    sp = species_all()
+    sp = choisir(species_all(), sys.argv[1:])
     print("%d espèces (ligneux + herbacées)" % len(sp))
     ok = 0
     for i, (stem, latin, cat) in enumerate(sp):

@@ -145,6 +145,7 @@ img/especes/                      vignette principale de chaque espèce
 img/quiz-extra/                   photos supplémentaires + _aspects.tsv (annotation des aspects)
 img/CREDITS.tsv                   crédit de chaque image : source, auteur, licence, url
 COUVERTURE.md                     carte des aspects présents/manquants par espèce (généré)
+lots/                             lots d'espèces à compléter en photos (cf. CONTRIBUTING)
 scripts/atlas_data.py             couche de données : atlas, photos, contributions, vocabulaire
                                   des aspects (constante ASPECTS = source unique)
 scripts/build_web.py              build du site statique (utilisé par la CI)

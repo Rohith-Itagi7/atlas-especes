@@ -317,3 +317,34 @@ def answer_variants(name, latin=""):
             if len(epithete) >= 4 and not epithete.endswith("."):
                 add(epithete)
     return out
+
+# ---------------------------------------------------------------- lots de photos
+# Combler les manques photo se fait par lots d'une vingtaine d'espèces (cf. #17), pas en
+# une passe sur les 253 : les fetchers acceptent donc une sélection. Sans elle, compléter
+# 20 espèces obligeait à reparcourir tout l'atlas et à marteler les API pour rien.
+
+def lire_lot(arg):
+    """« a,b,c », ou le chemin d'un fichier (un stem par ligne, # = commentaire)."""
+    if not arg:
+        return []
+    if os.path.exists(arg):
+        lignes = open(arg, encoding="utf-8").read().split("\n")
+    else:
+        lignes = arg.split(",")
+    out = []
+    for ln in lignes:
+        s = ln.split("#")[0].strip()
+        if s and s not in out:
+            out.append(s)
+    return out
+
+def selection(disponibles, demandes):
+    """(retenus, inconnus) en respectant l'ordre du lot.
+
+    Un stem demandé mais absent de l'atlas est rendu à l'appelant plutôt qu'ignoré : une
+    faute de frappe doit arrêter le téléchargement, pas le laisser ne rien faire.
+    """
+    dispo = set(disponibles)
+    retenus = [s for s in demandes if s in dispo]
+    inconnus = [s for s in demandes if s not in dispo]
+    return retenus, inconnus

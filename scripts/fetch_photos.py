@@ -5,9 +5,14 @@ Télécharge des photos supplémentaires (iNaturalist) pour chaque espèce des a
 les réduit (≤420 px, JPEG q70) et les range dans img/quiz-extra/<stem>-N.jpg.
 Chaque image téléchargée est créditée dans img/CREDITS.tsv (auteur, licence, page).
 Idempotent : saute les espèces qui ont déjà des extras. Relancer le générateur ensuite.
-"""
-import re, os, json, time, glob, subprocess, urllib.request, urllib.parse
 
+  python3 scripts/fetch_photos.py                        tout l'atlas
+  python3 scripts/fetch_photos.py --lot lots/lot-1.txt   un lot (cf. #17)
+  python3 scripts/fetch_photos.py --especes cigue,arum   quelques espèces
+"""
+import re, os, sys, json, time, glob, subprocess, urllib.request, urllib.parse
+
+import atlas_data
 import credits
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -78,8 +83,23 @@ def dl(url, dest):
                     dest + ".orig", "--out", dest], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.remove(dest + ".orig")
 
+def choisir(sp, argv):
+    """Restreint la liste au lot demandé par --lot / --especes (cf. atlas_data)."""
+    arg = None
+    for i, a in enumerate(argv):
+        if a in ("--lot", "--especes") and i + 1 < len(argv):
+            arg = argv[i + 1]
+    if not arg:
+        return sp
+    demandes = atlas_data.lire_lot(arg)
+    retenus, inconnus = atlas_data.selection([x[0] for x in sp], demandes)
+    if inconnus:
+        raise SystemExit("stem(s) inconnu(s) dans le lot : %s" % ", ".join(inconnus))
+    ordre = {s: i for i, s in enumerate(retenus)}
+    return sorted([x for x in sp if x[0] in ordre], key=lambda x: ordre[x[0]])
+
 def main():
-    sp = species_list()
+    sp = choisir(species_list(), sys.argv[1:])
     ok = skip = fail = 0
     for i, (stem, latin) in enumerate(sp):
         if glob.glob(os.path.join(EXTRA, stem + "-*")):

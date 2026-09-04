@@ -104,6 +104,29 @@ licence, que tu dois renseigner dans `img/CREDITS.tsv` (ci-dessus). Si tu es l'a
 photo, indique-toi comme auteur et choisis explicitement une licence — `CC-BY-SA-4.0` ou
 `CC0-1.0` sont de bons choix.
 
+## Combler les manques photo, par lots
+
+84 plantes n'ont que leur vignette : le quiz photo ne peut alors proposer qu'une seule et
+même image, et l'espèce est apprise par cœur au lieu d'être reconnue. On comble ça par
+**lots d'une vingtaine d'espèces**, une issue par lot, en commençant par celles dont la
+mauvaise identification est dangereuse. Les lots vivent dans `lots/` :
+
+```bash
+python3 scripts/fetch_aspects.py --lot lots/lot-1-confusions.txt   # Wikimedia, par aspect
+python3 scripts/fetch_photos.py  --lot lots/lot-1-confusions.txt   # iNaturalist
+python3 scripts/fetch_aspects.py --especes cigue,arum              # ou à la main
+```
+
+Sans `--lot`, les deux scripts reparcourent les 253 espèces de l'atlas — inutile et
+pénible pour les API. Un stem mal orthographié arrête le script au lieu de le laisser ne
+rien télécharger.
+
+⚠ **Regarder chaque photo téléchargée.** Les API se trompent, en particulier sur les
+apiacées et les astéracées, et une photo mal attribuée sur une espèce mortelle est pire
+que pas de photo. Puis `verifier_atlas.py` et `couverture.py`.
+
+*(`fetch_aspects.py` redimensionne avec `sips`, donc macOS uniquement pour l'instant.)*
+
 ## Vérifier en local (facultatif)
 
 ```bash
