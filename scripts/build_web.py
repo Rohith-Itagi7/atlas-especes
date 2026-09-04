@@ -35,11 +35,14 @@ def to_web_data(species):
     out = []
     for s in species:
         imgs = [{"u": enc_web(p), "a": gq.aspect_of(p, s["stem"])} for p in s["paths"]]
-        out.append({
+        d = {
             "id": s["id"], "name": s["name"], "latin": s["latin"], "cat": s["cat"],
             "note": s["note"], "fields": s["fields"], "imgs": imgs,
             "conf": conf_tips(s["stem"]),
-        })
+        }
+        if "comestible" in s["fields"]:  # verdict du mode Oui/Non, calculé ici (cf. gq.is_edible)
+            d["edible"] = gq.is_edible(s["fields"]["comestible"])
+        out.append(d)
     return out
 
 def assemble(data):

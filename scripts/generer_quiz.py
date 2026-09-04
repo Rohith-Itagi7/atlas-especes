@@ -216,6 +216,38 @@ def load_confusions():
     return groups
 CONF = load_confusions()
 
+# Verdict oui/non dérivé de la colonne « Comestible » des atlas. La règle vivait dans le JS du
+# site ; elle est ici pour être testable, et le site consomme le champ « edible » produit au build.
+_ED_LEAD = re.compile(r"^[☠⚠*\s]+")          # décorations de tête : ☠ ⚠ ** espaces
+_ED_NO_HEAD = re.compile(r"^(non|toxique|mortel|immangeable)")
+_ED_NO_ANY = re.compile(r"toxique|mortel|☠|immangeable")
+_ED_NOT_FOOD = re.compile(r"^(fourrage|gazon|vannerie)")
+_ED_PARENS = re.compile(r"\([^)]*\)")
+
+def is_edible(value):
+    """La partie nommée est-elle comestible ?
+
+    Le verdict de tête décide : « ☠ TOXIQUE (seul l'arille rouge…) » (if) → non.
+    Un poison mis en garde entre parenthèses n'invalide pas un verdict positif :
+    « Bon (⚠ crue TOXIQUE) » (morille) → oui, alors que « baies TOXIQUES » → non,
+    parce que le poison y qualifie la partie nommée.
+    Une valeur entièrement entre parenthèses est une note, pas un verdict : « (médicinal) » → non.
+    """
+    v = (value or "").strip()
+    if not v:
+        return False
+    vl = v.lower()
+    head = _ED_LEAD.sub("", vl)
+    if _ED_NO_HEAD.match(head):
+        return False
+    if head.startswith("("):
+        return False
+    if _ED_NO_ANY.search(_ED_PARENS.sub(" ", vl)):
+        return False
+    if _ED_NOT_FOOD.match(head):
+        return False
+    return True
+
 def to_data(species, enc, cap=None):
     res = []
     for s in species:

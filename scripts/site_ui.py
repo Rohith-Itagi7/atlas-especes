@@ -132,14 +132,8 @@ class App{
     {id:'soleil', q:'Aime le plein soleil ?', has:s=>'lumiere' in s.fields, ok:s=>/☀/.test(s.fields.lumiere||'')},
     {id:'ombre', q:"Supporte l'ombre ?", has:s=>'lumiere' in s.fields, ok:s=>/☾/.test(s.fields.lumiere||'')},
     {id:'vivace', q:'Est-ce une vivace ?', has:s=>'cycle' in s.fields, ok:s=>/vivace/i.test(s.fields.cycle||'')},
-    {id:'comest', q:'Est-ce comestible ?', has:s=>'comestible' in s.fields, ok:s=>{
-      const v=(s.fields.comestible||'').trim();if(!v)return false;const vl=v.toLowerCase();
-      const head=vl.replace(/^[☠⚠*\s]+/,'');
-      if(/^(non|toxique|mortel|immangeable)/.test(head))return false;   // verdict de tête négatif
-      if(head.charAt(0)==='(')return false;                             // note entre parenthèses : (médicinal),(fourrage)…
-      if(/toxique|mortel|☠|immangeable/.test(vl.replace(/\([^)]*\)/g,' ')))return false; // toxique qui qualifie la partie nommée (ex. « baies TOXIQUES »)
-      if(/^(fourrage|gazon|vannerie)/.test(head))return false;
-      return true;}},
+    // verdict calculé au build par gq.is_edible() (testé côté Python), pas ici
+    {id:'comest', q:'Est-ce comestible ?', has:s=>'edible' in s, ok:s=>!!s.edible},
     {id:'arbre', q:'Est-ce un arbre (pas un arbuste) ?', has:s=>s.cat==='ligneux'&&'type' in s.fields, ok:s=>/^arbre/i.test(s.fields.type||'')}
   ];
   GLOSS={

@@ -52,6 +52,22 @@ Le build est en Python pur (aucune dépendance, pas de compression d'image) : il
 atlas Markdown + les images et produit `index.html` avec des liens d'images **en pleine
 résolution**. À chaque push sur `main`, GitHub Actions reconstruit et redéploie le site.
 
+## ✅ Lancer les tests
+
+```bash
+python3 -m pip install -r requirements-dev.txt   # une fois : installe pytest
+python3 -m pytest                                # ~1 s
+```
+
+Les tests couvrent la lecture des atlas (colonnes, vignettes, aspects des photos), les
+contributions (`tag` / `reassign` / `remove`), les groupes de confusion, la règle
+« Est-ce comestible ? » du mode Oui/Non, et un test de bout en bout du build du site.
+Ils tournent sur chaque Pull Request, à côté de `scripts/verifier_atlas.py`.
+
+Le parsing est testé sur de **faux atlas** montés dans un dossier temporaire (le contenu
+réel bouge à chaque contribution) ; seul `tests/test_build_smoke.py` s'appuie sur les vrais
+atlas du dépôt.
+
 ## 📁 Structure
 
 ```
@@ -68,6 +84,7 @@ scripts/site_ui.py                interface du site (CSS + app vanilla, refonte)
 scripts/generer_quiz.py           build local des versions autonome / Artifact (macOS)
 scripts/couverture.py             (re)génère COUVERTURE.md
 scripts/verifier_atlas.py         validation des atlas (CI sur les PR)
+tests/                            tests pytest (CI sur les PR)
 ```
 
 ## 🖼 Crédits photos

@@ -51,9 +51,19 @@ une de tes photos. Les images sans droits clairs seront retirées.
 ## Vérifier en local (facultatif)
 
 ```bash
+python3 scripts/verifier_atlas.py         # tableaux bien formés, vignettes présentes
 python3 scripts/build_web.py _site
 cd _site && python3 -m http.server 8000   # http://localhost:8000
 ```
+
+Si tu touches aux **scripts** (et non seulement aux données), lance aussi les tests :
+
+```bash
+python3 -m pip install -r requirements-dev.txt   # une fois
+python3 -m pytest
+```
+
+Ces deux vérifications tournent de toute façon automatiquement sur ta Pull Request.
 
 ## Sécurité / bon sens
 
