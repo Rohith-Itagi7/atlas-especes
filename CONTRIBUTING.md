@@ -12,8 +12,26 @@ Le fichier **[COUVERTURE.md](COUVERTURE.md)** liste, pour chaque espèce, les as
 (feuille, écorce, fruit, fleur, port) qui ont déjà une photo (✓) et ceux qui **manquent** (✗).
 C'est la meilleure carte des trous à combler. Il est régénéré par `scripts/couverture.py`.
 
-> À chaque Pull Request, une vérification automatique (`scripts/verifier_atlas.py`) contrôle
-> que les tableaux sont bien formés et que les vignettes existent.
+## Ce que la vérification automatique contrôle
+
+À chaque Pull Request, `scripts/verifier_atlas.py` relit tout le dépôt. Il distingue les
+**erreurs** ❌ (la PR ne passe pas : la donnée est cassée ou n'apparaîtra pas dans le site)
+des **avertissements** ⚠ (à corriger, sans bloquer).
+
+| Ce qui est contrôlé | Niveau |
+|---|---|
+| Tableaux : nombre de colonnes, vignette `![[...]]` présente et fichier existant, nom non vide | ❌ |
+| Nom latin : forme « Genre espèce » (tolère `sp.`, hybrides `×`, sous-espèces, cultivars, notes entre parenthèses, alternatives `A / B`) | ❌ |
+| Deux espèces qui partagent la même vignette (elles partageraient toutes leurs photos) | ❌ |
+| Photo de `img/quiz-extra/` rattachée à aucune espèce, ou à plusieurs | ❌ |
+| `_aspects.tsv` : aspect inconnu, ligne visant un fichier qui n'existe pas | ❌ |
+| `contributions/*.tsv` : action inconnue, fichier absent, `reassign` vers une espèce inexistante, aspect inconnu | ❌ |
+| `Confusions - référence.md` : espèce inconnue, groupe sans « ce qui tranche » | ❌ |
+| Mot-clé d'aspect non reconnu dans un nom de photo (l'aspect est perdu) | ⚠ |
+| Vignette de `img/especes/` utilisée par aucune espèce | ⚠ |
+| Ligne sans tabulation dans un `.tsv`, `tag` sans aspect, groupe de confusion à une seule espèce | ⚠ |
+
+Lance-le en local avant d'ouvrir ta PR : `python3 scripts/verifier_atlas.py`.
 
 ## 1. Ajouter / corriger une **note** ou un **champ**
 

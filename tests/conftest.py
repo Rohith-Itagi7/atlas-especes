@@ -45,6 +45,7 @@ class FakeRepo:
     def __init__(self, root, module, monkeypatch):
         self.root = str(root)
         self.atlas_data = module
+        self.monkeypatch = monkeypatch
         self.img = os.path.join(self.root, "img", "especes")
         self.extra = os.path.join(self.root, "img", "quiz-extra")
         self.contributions = os.path.join(self.root, "contributions")
@@ -89,6 +90,11 @@ class FakeRepo:
                  "|" + "|".join(["---"] * len(header)) + "|"]
         lines += ["| " + " | ".join(r) + " |" for r in rows]
         return self.write(name, "\n".join(lines) + "\n")
+
+    def use_atlases(self, *names, cat="test"):
+        """Déclare les atlas du faux dépôt comme seuls atlas connus (pour les outils qui
+        parcourent ATLASES, comme le vérificateur)."""
+        self.monkeypatch.setattr(self.atlas_data, "ATLASES", [(n, cat) for n in names])
 
     def sidecar(self, text):
         p = self.write(os.path.join("img", "quiz-extra", "_aspects.tsv"), text)
