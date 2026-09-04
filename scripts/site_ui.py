@@ -214,7 +214,7 @@ class App{
     sess:{s:0,c:0,streak:0,best:0},
     query:'', listCat:'mixte', fiche:null, fimg:0, ficheFrom:'atlas',
     crit:null, cq:[], cp:0, csess:{s:0,c:0}, cfb:null, canim:'',
-    progMsg:'', progMsgOk:true,
+    progMsg:'', progMsgOk:true, routeMsg:'',
     enLigne:(typeof navigator!=='undefined'&&'onLine' in navigator)?navigator.onLine:true,
     majPrete:false, dl:null, offMsg:'',
     prog:{}
@@ -222,9 +222,13 @@ class App{
   setState(patch,cb){Object.assign(this.state,patch);this.render();if(cb)cb.call(this);}
   mount(){
     try{const p=localStorage.getItem('atlas-v2-prog');if(p)this.state.prog=JSON.parse(p);}catch(e){}
-    this.render();
+    // L'app gère son défilement (retour de fiche) : sans « manual », le navigateur
+    // réappliquerait sa propre position mémorisée juste après, écrasant la nôtre.
+    try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){}
+    const route=this.vueDeUrl(location.hash);
+    if(!(route&&route.v!=='home'&&this.ouvrirRoute(route)))this.render();
     this.initHorsLigne();
-    try{history.replaceState(this.snapshot(),'');}catch(e){}
+    this.ecrireHistorique(true);
   }
   // progress
   key(id,qt){return id+'|'+qt;}
@@ -266,6 +270,50 @@ class App{
   // Affichage petit (grille, bandeau, carte Oui/Non) : la vignette légère produite au build
   // (cf. scripts/derives.py) ; sinon l'original. Les grandes vues gardent l'original.
   petite(im){return im?(im.t||im.u):'';}
+  // __ROUTE_DEBUT__  (bloc extrait et testé sous node par tests/test_routage.py)
+  // L'URL porte la vue : une fiche se partage, un rechargement retombe au même endroit.
+  // L'identifiant d'espèce est le « stem » (le nom de sa vignette), unique par construction.
+  urlDeVue(st){
+    const q=(o)=>{const p=Object.keys(o).filter(k=>o[k]!==''&&o[k]!=null&&o[k]!=='tout'&&o[k]!=='mixte')
+      .map(k=>encodeURIComponent(k)+'='+encodeURIComponent(o[k]));return p.length?'?'+p.join('&'):'';};
+    switch(st.v){
+      case 'atlas': return '#/atlas'+q({cat:st.cat,q:st.query});
+      case 'fiche': return st.fiche?('#/espece/'+encodeURIComponent(st.fiche)):'#/atlas';
+      case 'quiz': return '#/quiz'+q({cat:st.cfgCat,type:st.qtype,aspect:st.aspect,diff:st.diff});
+      case 'trierPick': return '#/trier';
+      case 'trierPlay': return st.crit?('#/trier/'+encodeURIComponent(st.crit)):'#/trier';
+      case 'progres': return '#/progres';
+      default: return '#/';
+    }}
+  // Lecture inverse : renvoie {v, …} ou null si le fragment n'est pas une route connue.
+  vueDeUrl(hash){
+    hash=String(hash||'').replace(/^#/,'');
+    if(!hash||hash==='/')return {v:'home',tab:'reviser'};
+    const coupe=hash.indexOf('?');
+    const chemin=(coupe<0?hash:hash.slice(0,coupe)).replace(/^\/+|\/+$/g,'');
+    const par={};
+    if(coupe>=0)hash.slice(coupe+1).split('&').forEach(bout=>{
+      if(!bout)return;const i=bout.indexOf('=');
+      const k=decodeURIComponent(i<0?bout:bout.slice(0,i));
+      par[k]=i<0?'':decodeURIComponent(bout.slice(i+1).replace(/\+/g,' '));});
+    const bouts=chemin.split('/').map(x=>decodeURIComponent(x));
+    switch(bouts[0]){
+      case '': return {v:'home',tab:'reviser'};
+      case 'atlas': return {v:'atlas',tab:'atlas',cat:par.cat||'mixte',query:par.q||''};
+      case 'espece': return bouts[1]?{v:'fiche',tab:'atlas',fiche:bouts[1],ficheFrom:'atlas'}:null;
+      case 'quiz': return {v:'quiz',tab:'reviser',cfgCat:par.cat||'',qtype:par.type||'',
+                           aspect:par.aspect||'',diff:par.diff||''};
+      case 'trier': return bouts[1]?{v:'trierPlay',tab:'trier',crit:bouts[1]}
+                                   :{v:'trierPick',tab:'trier'};
+      case 'progres': return {v:'progres',tab:'progres'};
+      default: return null;
+    }}
+  titreDeVue(v,nom){
+    const t={home:'Ma session',atlas:'Atlas des espèces',fiche:nom||'Fiche espèce',
+             quiz:'Quiz',trierPick:'Questions oui / non',trierPlay:'Questions oui / non',
+             progres:'Ma progression'}[v];
+    return (t?t+' · ':'')+'Atlas & quiz des espèces';}
+  // __ROUTE_FIN__
   // __HORSLIGNE_DEBUT__  (bloc extrait et testé sous node par tests/test_horsligne.py)
   octetsLisibles(o){o=o||0;
     if(o<900*1024)return Math.max(1,Math.round(o/1024))+' ko';
@@ -374,7 +422,11 @@ class App{
       opts=d.noms.concat([sp.name]).sort(()=>Math.random()-0.5);}
     return{sp,img,opts,conf};}
   top(){window.scrollTo(0,0);}
-  start=()=>{this._recent=[];const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,ok:false,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();this.pushNav();};
+  lancerQuiz(){this._recent=[];const q=this.buildQ();if(!q)return false;
+    this.setState({view:'quiz',tab:'reviser',q,picked:null,ok:false,typed:'',
+      sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});
+    this.top();return true;}
+  start=()=>{if(this.lancerQuiz())this.pushNav();};
   next=()=>{this.setState({q:this.buildQ(),picked:null,ok:false,typed:'',reveal:{},info:null});this.top();};
   grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.answerOk(name,q.sp);const streak=ok?sess.streak+1:0;let keys=[q.sp.id+'|'+cfg.qtype];if(cfg.qtype==='photo'&&q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));this.setState({picked:name,ok,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});
     setTimeout(()=>{const el=document.getElementById('quiz-fb');if(el&&window.innerWidth<900)el.scrollIntoView({behavior:'smooth',block:'center'});},30);}
@@ -384,19 +436,65 @@ class App{
   goAtlas=()=>{this.setState({tab:'atlas',view:'atlas'});this.top();this.pushNav();};
   goTrier=()=>{this.setState({tab:'trier',view:'trierPick',crit:null});this.top();this.pushNav();};
   goProgres=()=>{this.setState({tab:'progres',view:'progres'});this.top();this.pushNav();};
-  snapshot(){const s=this.state;return {v:s.view,tab:s.tab,fiche:s.fiche,ficheFrom:s.ficheFrom,crit:s.crit?s.crit.id:null};}
-  pushNav(){try{history.pushState(this.snapshot(),'');}catch(e){}}
+  snapshot(){const s=this.state;return {v:s.view,tab:s.tab,fiche:s.fiche,ficheFrom:s.ficheFrom,
+    crit:s.crit?s.crit.id:null,cat:s.listCat,query:s.query,
+    cfgCat:s.cfg.cat,qtype:s.cfg.qtype,aspect:s.cfg.aspect,diff:s.cfg.diff};}
+  // pushState avec URL peut être refusé (page en sandbox, ancien Artifact) : on retombe
+  // alors sur l'ancien comportement, sans URL, pour ne pas perdre le bouton Retour.
+  ecrireHistorique(remplace){const st=this.snapshot(),url=this.urlDeVue(st);
+    const f=remplace?'replaceState':'pushState';
+    try{history[f](st,'',url);}catch(e){try{history[f](st,'');}catch(e2){}}
+    this.majTitre();}
+  majTitre(){try{const sp=this.state.fiche?this.all().find(x=>x.id===this.state.fiche):null;
+    document.title=this.titreDeVue(this.state.view,sp?sp.name:'');}catch(e){}}
+  pushNav(){this.ecrireHistorique(false);}
   restore(st){const from=this.state.view;
     if(st.v==='trierPlay'&&!this.state.cq.length){this.setState({view:'trierPick',tab:'trier',crit:null});window.scrollTo(0,0);return;}
     const patch={view:st.v,tab:st.tab||'reviser',fiche:st.fiche||null,ficheFrom:st.ficheFrom||'atlas'};
     if(st.crit){const c=this.CRIT.find(x=>x.id===st.crit);if(c)patch.crit=c;}
+    if(st.cat)patch.listCat=st.cat;
+    if(typeof st.query==='string')patch.query=st.query;
     this.setState(patch);
+    this.majTitre();
     if(from==='fiche'&&(st.v==='atlas'||st.v==='quiz'))window.scrollTo(0,this._ficheScroll||0);else window.scrollTo(0,0);}
+  // Ouvre une route lue dans l'URL. Renvoie false si la route est inconnue.
+  ouvrirRoute(r){
+    if(!r)return false;
+    if(r.v==='fiche'){
+      const sp=this.all().find(x=>x.id===r.fiche);
+      if(!sp){this.setState({view:'atlas',tab:'atlas',
+        routeMsg:'Espèce inconnue : « '+r.fiche+' ». Voici l’atlas complet.'});return true;}
+      this.setState({view:'fiche',tab:'atlas',fiche:sp.id,fimg:0,ficheFrom:'atlas',routeMsg:''});
+      return true;}
+    if(r.v==='quiz'){
+      const cfg=Object.assign({},this.state.cfg);
+      ['cat','qtype','aspect','diff'].forEach((k,i)=>{const v=[r.cfgCat,r.qtype,r.aspect,r.diff][i];if(v)cfg[k]=v;});
+      this.state.cfg=cfg;
+      // une question est tirée au hasard : un lien de quiz partage les réglages, pas la question
+      if(!this.lancerQuiz())this.setState({view:'home',tab:'reviser'});
+      return true;}
+    if(r.v==='trierPlay'){
+      const c=this.CRIT.find(x=>x.id===r.crit);
+      if(!c){this.setState({view:'trierPick',tab:'trier',crit:null});return true;}
+      this.lancerCrit(c);return true;}
+    if(r.v==='atlas'){
+      this.setState({view:'atlas',tab:'atlas',listCat:r.cat||'mixte',query:r.query||'',routeMsg:''});
+      return true;}
+    this.setState({view:r.v,tab:r.tab||'reviser',routeMsg:''});
+    return true;}
+  copierLien=()=>{const url=location.href;
+    const dit=(t)=>this.setState({routeMsg:t});
+    try{navigator.clipboard.writeText(url).then(()=>dit('Lien copié : '+url),()=>dit('Lien : '+url));}
+    catch(e){dit('Lien : '+url);}};
   back=()=>{try{history.back();}catch(e){this.setState({view:'home',tab:'reviser'});}};
   openFiche(id){return ()=>{this._ficheScroll=window.scrollY;this.setState({view:'fiche',tab:'atlas',fiche:id,fimg:0,ficheFrom:'atlas'});this.top();this.pushNav();};}
   atlasArr(){const q=this.norm(this.state.query);return this.all().filter(s=>this.inCat(s,this.state.listCat)).filter(s=>!q||this.norm(s.name+s.latin+(s.fields.famille||'')).indexOf(q)>=0).slice().sort((a,b)=>a.name.localeCompare(b.name,'fr'));}
   moveFiche(d){return ()=>{const arr=this.atlasArr();const i=arr.findIndex(s=>s.id===this.state.fiche);const n=arr[(i+d+arr.length)%arr.length];if(n)this.setState({fiche:n.id,fimg:0});};}
-  startCrit(c){return ()=>{this._critBusy=false;const q=this.all().filter(s=>this.inCat(s,this.state.cfg.cat)&&c.has(s)).sort(()=>Math.random()-0.5);this.setState({view:'trierPlay',tab:'trier',crit:c,cq:q,cp:0,csess:{s:0,c:0},cfb:null,cfbOk:false,canim:''});this.top();this.pushNav();};}
+  lancerCrit(c){this._critBusy=false;
+    const q=this.all().filter(s=>this.inCat(s,this.state.cfg.cat)&&c.has(s)).sort(()=>Math.random()-0.5);
+    this.setState({view:'trierPlay',tab:'trier',crit:c,cq:q,cp:0,csess:{s:0,c:0},cfb:null,cfbOk:false,canim:''});
+    this.top();}
+  startCrit(c){return ()=>{this.lancerCrit(c);this.pushNav();};}
   critAns(yes){return ()=>{if(this._critBusy)return;const {crit,cq,cp,csess}=this.state;const sp=cq[cp];if(!sp)return;
     const truth=crit.ok(sp),ok=truth===yes;this._critBusy=true;
     this.setState({cfb:(ok?'✅ Bravo':'❌ Raté')+' — '+sp.name+' : c’était '+(truth?'oui':'non'),cfbOk:ok,csess:{s:csess.s+1,c:csess.c+(ok?1:0)},canim:yes?'flyR':'flyL',prog:this.bumpKeys(['crit|'+crit.id],ok)});
@@ -531,6 +629,7 @@ class App{
       critRows:this.CRIT.map(c=>{const x=S.prog['crit|'+c.id]||{s:0,c:0},acc=x.s?Math.round(100*x.c/x.s):0;return{label:c.q,right:x.s?x.c+' / '+x.s+' bonnes réponses':'jamais joué',acc:x.s>=6?(acc>=75?'Solide':(acc>=50?'À consolider':'Fragile')):(x.s?'Trop peu de réponses':'—'),pct:acc,bar:x.s?(acc>=75?'var(--color-success)':(acc>=50?'var(--color-partial)':'var(--color-danger)')):'var(--color-line-strong)'};}),
       catCards:catList.filter(c=>c[0]!=='mixte').map(c=>{const arr=catOf(c[0]),k=knownIn(c[0]);return{label:c[1],n:arr.length,pct:arr.length?Math.round(100*k/arr.length):0};}),
       exportProg:this.exportProg,resetProg:this.resetProg,
+      routeMsg:S.routeMsg,copierLien:this.copierLien,
       horsLigneDispo:this.horsLigneDispo()?'1':'0',horsLigne:S.enLigne?'0':'1',
       majPrete:S.majPrete?'1':'0',appliquerMaj:this.appliquerMaj,
       offMsg:S.offMsg,viderImages:this.viderImages,
@@ -604,6 +703,7 @@ JS += r"""
     if(V.isAtlas){
       return '<div style="display:flex;flex-direction:column;gap:16px">'
       +'<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:8px;flex:1 1 240px;padding:11px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);min-width:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fg-3)" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.2-4.2"></path></svg><input id="q-search" type="search" aria-label="Chercher une espèce par nom, nom latin ou famille" value="'+e(V.query)+'" data-hi="'+h(V.onSearch)+'" placeholder="Chercher un nom, un latin, une famille…" style="flex:1;border:0;outline:0;font:400 14px/1 var(--font-body);color:var(--fg-1);min-width:0;background:transparent"></div><div style="font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+V.atlasCount+' espèces</div></div>'
+      +(V.routeMsg?'<div role="status" style="padding:10px 12px;border-radius:8px;font:600 12px/1.45 var(--font-body);background:var(--color-warning-soft);color:var(--color-warning)">'+e(V.routeMsg)+'</div>':'')
       +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+V.listChips.map(c=>'<button class="ch" data-on="'+c.on+'" aria-pressed="'+(c.on==='1')+'" data-h="'+h(c.go)+'">'+e(c.label)+'</button>').join('')+'</div>'
       +'<div class="r-grid">'+V.atlasList.map(s=>'<button class="gc" data-h="'+h(s.go)+'"><div style="position:relative"><img src="'+e(s.thumb)+'" alt="" loading="lazy" style="width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--color-navy-50)"><div style="position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:999px;background:var(--overlay-light);font:700 10px/1.3 var(--font-mono);color:var(--fg-2)">'+e(s.badge)+'</div></div><div style="padding:11px 12px 13px"><div style="font:700 13px/1.25 var(--font-body)">'+e(s.name)+'</div><div style="font:italic 400 11px/1.3 var(--font-body);color:var(--fg-3)">'+e(s.latin)+'</div><div style="height:3px;margin-top:9px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:'+s.barColor+';width:'+s.pct+'%"></div></div></div></button>').join('')+'</div></div>';
     }
@@ -615,7 +715,9 @@ JS += r"""
       +'<div><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-brand-red)">'+e(V.fCat)+'</div><div style="margin-top:10px;font:700 28px/1.12 var(--font-brand);letter-spacing:-.015em">'+e(V.fName)+'</div><div style="font:italic 400 15px/1.35 var(--font-body);color:var(--fg-3)">'+e(V.fLatin)+'</div>'
       +'<div style="margin-top:20px">'+this.fieldsHtml(V.fFields,'38%')+'</div>'
       +(V.fHasTips?'<div style="margin-top:18px;padding:14px;border-radius:8px;background:var(--color-warning-soft)"><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-warning)">Confusions fréquentes</div>'+V.fTips.map(t=>'<div style="margin-top:9px;font:400 13px/1.45 var(--font-body)">'+e(t.txt)+'</div>').join('')+'</div>':'')
-      +'<div style="display:flex;gap:8px;margin-top:18px"><button class="ib" data-h="'+h(V.fPrev)+'">Précédente</button><button class="ib" data-h="'+h(V.fNext)+'">Suivante</button></div></div></div>';
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:18px"><button class="ib" data-h="'+h(V.fPrev)+'">Précédente</button><button class="ib" data-h="'+h(V.fNext)+'">Suivante</button><button class="ib" data-h="'+h(V.copierLien)+'">Copier le lien</button></div>'
+      +(V.routeMsg?'<div role="status" style="margin-top:10px;padding:10px 12px;border-radius:8px;font:600 12px/1.45 var(--font-body);background:var(--color-success-soft);color:var(--color-success);overflow-wrap:anywhere">'+e(V.routeMsg)+'</div>':'')
+      +'</div></div>';
     }
     if(V.isTrierPick){
       return '<div style="max-width:720px;display:flex;flex-direction:column;gap:18px"><div><div style="font:700 26px/1.15 var(--font-brand);letter-spacing:-.015em">Oui ou non, espèce par espèce</div><div style="font:400 14px/1.45 var(--font-body);color:var(--fg-3);max-width:54ch">Choisis une question — fixation d\'azote, exposition, comestibilité… — puis réponds oui ou non pour chaque espèce.</div></div>'
@@ -697,7 +799,15 @@ JS += r"""
   }
 }
 const APP=new App();
-window.addEventListener('popstate',ev=>{if(ev.state&&ev.state.v)APP.restore(ev.state);});
+window.addEventListener('popstate',ev=>{
+  if(ev.state&&ev.state.v){APP.restore(ev.state);return;}
+  const r=APP.vueDeUrl(location.hash);
+  if(r)APP.ouvrirRoute(r);});
+// fragment modifié à la main (ou lien interne collé) : on suit, sans boucler
+window.addEventListener('hashchange',()=>{
+  if(location.hash===APP.urlDeVue(APP.snapshot()))return;
+  const r=APP.vueDeUrl(location.hash);
+  if(r&&APP.ouvrirRoute(r))APP.ecrireHistorique(true);});
 window.addEventListener('keydown',ev=>{
   if(APP.state.view==='trierPlay'&&!APP._critBusy){
     const k=ev.key.toLowerCase();

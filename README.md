@@ -16,6 +16,22 @@ et écosystèmes tempérés**.
 Le site est **statique** : une page `index.html` + les images. Aucune donnée n'est envoyée
 nulle part ; tout reste dans ton navigateur.
 
+## 🔗 Liens partageables
+
+Chaque écran a son adresse, lisible et copiable — un bouton *Copier le lien* est là pour ça :
+
+| Adresse | Ce qu'elle ouvre |
+|---|---|
+| `#/espece/alisier` | la fiche de l'alisier torminal |
+| `#/atlas?cat=champignon&q=amanite` | l'atlas filtré sur les amanites |
+| `#/quiz?cat=ligneux&type=fiche&diff=saisie` | un quiz de fiches sur les ligneux, en saisie |
+| `#/trier/comest` | le tri Oui/Non « est-ce comestible ? » |
+| `#/progres` | ma session |
+
+F5 revient au même écran, les boutons *Précédent* / *Suivant* du navigateur suivent la
+navigation, et une espèce inconnue (fichier renommé, lien vieilli) retombe sur l'atlas
+complet avec un message plutôt qu'une page vide.
+
 ## ♿ Accessibilité et thème sombre
 
 Le site suit le **thème du système** (clair ou sombre) : toutes les couleurs passent par des
