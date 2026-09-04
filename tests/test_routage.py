@@ -162,6 +162,20 @@ def test_l_app_prend_la_main_sur_le_defilement():
     assert "'scrollRestoration' in history" in js, "navigateur ancien : à tester avant d'écrire"
 
 
+def test_le_titre_suit_toute_route_ouverte_depuis_l_url():
+    """Vu en navigateur : le titre restait celui de la fiche précédente.
+
+    Sur un changement de fragment, Chromium émet popstate AVANT hashchange : popstate
+    ouvre la route, puis hashchange se tait (l'URL colle déjà à l'état) — et lui seul
+    appelait ecrireHistorique, donc majTitre. Le titre se met donc à jour dans
+    ouvrirRoute, qui est le passage obligé des deux gestionnaires.
+    """
+    js = load_module("site_ui").JS
+
+    assert re.search(r"ouvrirRoute\(r\)\{[^\n]*majTitre\(\)", js), \
+        "ouvrirRoute doit remettre le titre à jour"
+
+
 def test_les_evenements_d_historique_sont_ecoutes():
     """Boutons Précédent/Suivant et fragment édité à la main."""
     js = load_module("site_ui").JS

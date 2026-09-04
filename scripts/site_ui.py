@@ -458,7 +458,11 @@ class App{
     this.majTitre();
     if(from==='fiche'&&(st.v==='atlas'||st.v==='quiz'))window.scrollTo(0,this._ficheScroll||0);else window.scrollTo(0,0);}
   // Ouvre une route lue dans l'URL. Renvoie false si la route est inconnue.
-  ouvrirRoute(r){
+  // Le titre est remis à jour ici, et pas seulement dans ecrireHistorique : sur un
+  // changement de fragment, le navigateur émet popstate AVANT hashchange, si bien que
+  // popstate ouvre la route et que hashchange se tait (l'URL colle déjà à l'état).
+  ouvrirRoute(r){const ok=this.appliquerRoute(r);if(ok)this.majTitre();return ok;}
+  appliquerRoute(r){
     if(!r)return false;
     if(r.v==='fiche'){
       const sp=this.all().find(x=>x.id===r.fiche);

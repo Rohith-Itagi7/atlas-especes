@@ -5,11 +5,11 @@
 > voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## En bref
-- Plantes (ligneux + herbacées) : **187**
+- Plantes (ligneux + herbacées) : **189**
 - …dont **6** avec les 5 aspects, **3** sans aucun aspect taggé.
-- Manques par aspect : Feuille 38 · Écorce 156 · Fruit 107 · Fleur 38 · Port 151
+- Manques par aspect : Feuille 38 · Écorce 158 · Fruit 109 · Fleur 38 · Port 153
 
-## Ligneux (73)
+## Ligneux (75)
 
 | Espèce | 📷 | Feuille | Écorce | Fruit | Fleur | Port | À compléter |
 |---|--:|:-:|:-:|:-:|:-:|:-:|---|
@@ -25,6 +25,8 @@
 | Aubépine | 6 | ✓ | ✓ | ✓ | ✓ | ✓ | — (complet) |
 | Aulne glutineux | 5 | ✓ | ✓ | ✓ | ✓ | ✗ | Port |
 | Bouleau verruqueux | 4 | ✓ | ✓ | ✗ | ✓ | ✓ | Fruit |
+| Bruyère cendrée | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
+| Bruyère à quatre angles | 1 | ✓ | ✗ | ✗ | ✓ | ✗ | Écorce, Fruit, Port |
 | Buis | 5 | ✓ | ✓ | ✓ | ✓ | ✓ | — (complet) |
 | Callune | 5 | ✓ | ✗ | ✓ | ✓ | ✗ | Écorce, Port |
 | Caragana (arbre à pois) | 5 | ✓ | ✓ | ✗ | ✓ | ✗ | Fruit, Port |
