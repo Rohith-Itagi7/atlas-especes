@@ -152,7 +152,7 @@ class App{
   state={
     open:null, reveal:{}, info:null, tab:'reviser', view:'home',
     cfg:{cat:'ligneux',mode:'apprendre',aspect:'tout',qtype:'photo',diff:'qcm'},
-    data:SPECIES_DATA||null, q:null, picked:null, typed:'',
+    data:SPECIES_DATA||null, q:null, picked:null, ok:false, typed:'',
     sess:{s:0,c:0,streak:0,best:0},
     query:'', listCat:'mixte', fiche:null, fimg:0, ficheFrom:'atlas',
     crit:null, cq:[], cp:0, csess:{s:0,c:0}, cfb:null, canim:'',
@@ -177,7 +177,30 @@ class App{
   aspAvail(){const cat=this.state.cfg.cat,set=new Set();this.all().forEach(s=>{if(this.inCat(s,cat))s.imgs.forEach(i=>i.a.forEach(a=>set.add(a)));});return ['feuille','ecorce','fruit','fleur','port','rameau'].filter(a=>set.has(a));}
   inCat(s,cat){return cat==='mixte'||s.cat===cat;}
   label(list,id){const f=list.find(x=>x[0]===id);return f?f[1]:id;}
+  // __MATCH_DEBUT__  (bloc extrait et test\u00e9 sous node par tests/test_saisie.py)
   norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
+  // Orthographes accept\u00e9es pour une esp\u00e8ce : le champ \u00ab alt \u00bb vient du build
+  // (atlas_data.answer_variants) ; on les normalise une fois pour toutes.
+  alts(sp){if(!sp._alt)sp._alt=((sp.alt&&sp.alt.length?sp.alt:[sp.name])).map(x=>this.norm(x)).filter(Boolean);return sp._alt;}
+  // Vrai si \u00ab v \u00bb (orthographe attendue) est \u00e0 au plus une faute de frappe de \u00ab t \u00bb.
+  // Pas de tol\u00e9rance sur les mots courts : \u00ab pois \u00bb et \u00ab poix \u00bb ne sont pas la m\u00eame r\u00e9ponse.
+  near(t,v){if(t===v)return true;if(v.length<=5)return false;
+    const lt=t.length,lv=v.length;if(Math.abs(lt-lv)>1)return false;
+    let i=0,j=0,f=0;
+    while(i<lt&&j<lv){if(t[i]===v[j]){i++;j++;continue;}
+      if(++f>1)return false;
+      if(lt>lv)i++;else if(lt<lv)j++;else{i++;j++;}}
+    return f+(lt-i)+(lv-j)<=1;}
+  // La r\u00e9ponse saisie (ou l'option cliqu\u00e9e) d\u00e9signe-t-elle bien cette esp\u00e8ce ?
+  // exact = pas de tol\u00e9rance orthographique (mode QCM, o\u00f9 les libell\u00e9s viennent des donn\u00e9es).
+  answerOk(typed,sp,exact){const t=this.norm(typed);if(!t||!sp)return false;
+    if(this.alts(sp).indexOf(t)>=0)return true;
+    if(exact)return false;
+    const autres=this.all().filter(s=>s.id!==sp.id);
+    if(autres.some(s=>this.alts(s).indexOf(t)>=0))return false;   // c'est le nom d'une autre esp\u00e8ce
+    const proche=s=>this.alts(s).some(v=>this.near(t,v));
+    return proche(sp)&&!autres.some(proche);}                     // faute de frappe non ambigu\u00eb
+  // __MATCH_FIN__
   clean(s){return (s||'').replace(/\*\*/g,'');}
   pool(){const {cfg}=this.state;const base=this.all().filter(s=>this.inCat(s,cfg.cat));const byMode=base.filter(s=>cfg.mode==='apprendre'?!this.known(s.id,cfg.qtype):this.known(s.id,cfg.qtype));let p=(byMode.length>=4?byMode:base);if(cfg.qtype==='photo'&&cfg.aspect!=='tout'){const f=p.filter(s=>s.imgs.some(i=>i.a.indexOf(cfg.aspect)>=0));if(f.length>=4)p=f;}return p;}
   buildQ(){const {cfg}=this.state;const p=this.pool();if(!p.length)return null;
@@ -189,9 +212,9 @@ class App{
     this._recent.push(sp.id);if(this._recent.length>Math.max(win,1))this._recent=this._recent.slice(-Math.max(win,1));
     let imgs=sp.imgs;if(cfg.aspect!=='tout'){const f=imgs.filter(i=>i.a.indexOf(cfg.aspect)>=0);if(f.length)imgs=f;}const img=imgs[Math.floor(Math.random()*imgs.length)]||sp.imgs[0];let opts=[];if(cfg.diff!=='saisie'){const genus=(sp.latin||'').split(' ')[0];let peers=this.all().filter(s=>s.id!==sp.id&&this.inCat(s,cfg.cat));if(cfg.diff==='sosies'){const near=peers.filter(s=>(s.latin||'').split(' ')[0]===genus||s.fields.famille===sp.fields.famille);peers=near.length>=3?near:peers;}else{const same=peers.filter(s=>s.cat===sp.cat);peers=same.length>=3?same:peers;}const shuffled=peers.slice().sort(()=>Math.random()-0.5).slice(0,3).map(s=>s.name);opts=shuffled.concat([sp.name]).sort(()=>Math.random()-0.5);}return{sp,img,opts};}
   top(){window.scrollTo(0,0);}
-  start=()=>{this._recent=[];const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();this.pushNav();};
-  next=()=>{this.setState({q:this.buildQ(),picked:null,typed:'',reveal:{},info:null});this.top();};
-  grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.norm(name)===this.norm(q.sp.name);const streak=ok?sess.streak+1:0;let keys=[q.sp.id+'|'+cfg.qtype];if(cfg.qtype==='photo'&&q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));this.setState({picked:name,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});
+  start=()=>{this._recent=[];const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,ok:false,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();this.pushNav();};
+  next=()=>{this.setState({q:this.buildQ(),picked:null,ok:false,typed:'',reveal:{},info:null});this.top();};
+  grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.answerOk(name,q.sp);const streak=ok?sess.streak+1:0;let keys=[q.sp.id+'|'+cfg.qtype];if(cfg.qtype==='photo'&&q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));this.setState({picked:name,ok,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});
     setTimeout(()=>{const el=document.getElementById('quiz-fb');if(el&&window.innerWidth<900)el.scrollIntoView({behavior:'smooth',block:'center'});},30);}
   setCfg(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg});};}
   pick(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg,open:null});};}
@@ -228,7 +251,7 @@ class App{
     const knownIn=c=>catOf(c).filter(s=>this.knownAny(s.id)).length;
     const heroAll=catOf(cfg.cat),heroK=knownIn(cfg.cat);
     const q=S.q,sp=q&&q.sp,answered=!!S.picked;
-    const correct=answered&&sp&&this.norm(S.picked)===this.norm(sp.name);
+    const correct=answered&&!!S.ok;   // verdict posé par grade() (cf. answerOk)
     const fiche=all.find(s=>s.id===S.fiche);
     const fimgs=fiche?fiche.imgs:[];const fcur=fimgs[S.fimg]||fimgs[0];
     const critSp=S.cq[S.cp];
@@ -270,7 +293,7 @@ class App{
       qFields:q?this.fieldRows(sp,!answered):[],
       hasOptions:!!q&&cfg.diff!=='saisie',isTyped:!!q&&cfg.diff==='saisie',typed:S.typed,
       onType:ev=>{this.state.typed=ev.target.value;},onTypeKey:ev=>{if(ev.key==='Enter')this.grade(this.state.typed);},submitTyped:()=>this.grade(this.state.typed),
-      options:q?q.opts.map(o=>({label:o,hint:'',s:!answered?'':(this.norm(o)===this.norm(sp.name)?'ok':(o===S.picked?'no':'dim')),go:()=>this.grade(o)})):[],
+      options:q?q.opts.map(o=>({label:o,hint:'',s:!answered?'':(this.answerOk(o,sp,true)?'ok':(o===S.picked?'no':'dim')),go:()=>this.grade(o)})):[],
       answered,fbColor:correct?'#2F6B3A':'#A33A2B',fbLabel:correct?'Bonne réponse':'Raté',
       answerName:sp?sp.name:'',answerLatin:sp?sp.latin:'',answerNote:sp?this.clean(sp.note==='—'?(sp.fields.repartition||''):sp.note):'',
       hasTips:!!(sp&&sp.conf&&sp.conf.length),tips:sp&&sp.conf?sp.conf.map(t=>({txt:this.clean(t)})):[],

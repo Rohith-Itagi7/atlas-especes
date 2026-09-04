@@ -228,7 +228,7 @@ _ED_LEAD = re.compile(r"^[☠⚠*\s]+")          # décorations de tête : ☠ �
 _ED_NO_HEAD = re.compile(r"^(non|toxique|mortel|immangeable)")
 _ED_NO_ANY = re.compile(r"toxique|mortel|☠|immangeable")
 _ED_NOT_FOOD = re.compile(r"^(fourrage|gazon|vannerie)")
-_ED_PARENS = re.compile(r"\([^)]*\)")
+_PARENS = re.compile(r"\([^)]*\)")   # note entre parenthèses, dans un nom ou un verdict
 
 def is_edible(value):
     """La partie nommée est-elle comestible ?
@@ -248,8 +248,46 @@ def is_edible(value):
         return False
     if head.startswith("("):
         return False
-    if _ED_NO_ANY.search(_ED_PARENS.sub(" ", vl)):
+    if _ED_NO_ANY.search(_PARENS.sub(" ", vl)):
         return False
     if _ED_NOT_FOOD.match(head):
         return False
     return True
+
+def answer_variants(name, latin=""):
+    """Orthographes acceptées comme réponse de quiz pour une espèce.
+
+    Le nom canonique d'abord, puis ce qu'un apprenant tape légitimement — sans quoi le mode
+    « saisie » compte faux une bonne réponse :
+      « Chalef / Olivier de Bohême »            → « Chalef », « Olivier de Bohême »
+      « Caragana (arbre à pois) »               → « Caragana », « arbre à pois »
+      « Chèvrefeuille comestible (camérisier) » → …, « camérisier »
+      latin « Allium ursinum »                  → « Allium ursinum », « ursinum »
+    Dans les atlas, tout ce qui est entre parenthèses dans un nom d'espèce est un **autre
+    nom commun** (gouet, poirée, lombric, faux-acacia…), donc une réponse valable.
+
+    Les variantes sortent telles quelles : c'est le site qui les normalise (casse, accents,
+    ponctuation) avec la même fonction que la saisie de l'utilisateur, pour n'avoir qu'une
+    seule implémentation de la normalisation.
+    """
+    out = []
+
+    def add(x):
+        x = re.sub(r"\s+", " ", (x or "").strip()).strip(" -–—")
+        if x and x not in out:
+            out.append(x)
+
+    add(name)
+    for part in re.split(r"\s*/\s*", name or ""):
+        add(part)
+        add(_PARENS.sub(" ", part))                  # le nom sans sa parenthèse
+        for note in re.findall(r"\(([^)]*)\)", part):
+            add(note)                                # et le nom qui était dans la parenthèse
+    for part in re.split(r"\s*/\s*", _PARENS.sub(" ", latin or "")):
+        add(part)
+        mots = part.split()
+        if len(mots) >= 2:
+            epithete = mots[1].lstrip("×x")          # « Allium ursinum » → « ursinum »
+            if len(epithete) >= 4 and not epithete.endswith("."):
+                add(epithete)
+    return out

@@ -33,6 +33,8 @@ def to_web_data(species):
             "id": s["id"], "name": s["name"], "latin": s["latin"], "cat": s["cat"],
             "note": s["note"], "fields": s["fields"], "imgs": imgs,
             "conf": conf_tips(s["stem"]),
+            # orthographes acceptées en mode saisie (cf. atlas_data.answer_variants)
+            "alt": atlas_data.answer_variants(s["name"], s["latin"]),
         }
         if "comestible" in s["fields"]:  # verdict du mode Oui/Non, calculé ici (cf. atlas_data.is_edible)
             d["edible"] = atlas_data.is_edible(s["fields"]["comestible"])
