@@ -1,3 +1,7 @@
 # Dépendances de développement (tests). Les scripts du dépôt tournent, eux, sans aucune
 # dépendance : `python3 scripts/build_web.py _site` fonctionne avec Python seul.
 pytest>=8
+
+# Optionnelle, mais utilisée par le build du site pour produire les vignettes légères
+# (scripts/derives.py) : sans elle, le site est construit avec les images d'origine.
+Pillow>=10

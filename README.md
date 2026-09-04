@@ -51,9 +51,19 @@ python3 scripts/build_web.py _site        # construit le site dans _site/
 cd _site && python3 -m http.server 8000   # puis ouvrir http://localhost:8000
 ```
 
-Le build est en Python pur (aucune dépendance, pas de compression d'image) : il lit les
-atlas Markdown + les images et produit `index.html` avec des liens d'images **en pleine
-résolution**. À chaque push sur `main`, GitHub Actions reconstruit et redéploie le site.
+Le build lit les atlas Markdown + les images et produit `index.html`. Les photos sont
+copiées telles quelles (le quiz et la fiche les affichent en pleine résolution), et le build
+produit en plus **une vignette de 320 px par image** pour les affichages petits — grille de
+l'atlas, bandeau de la fiche, cartes Oui/Non. Le premier écran de l'atlas passe ainsi de
+~2,1 Mo à ~0,5 Mo.
+
+Les vignettes demandent **Pillow** (`pip install Pillow`), seule dépendance du build, et
+seulement pour cette étape : sans elle, `build_web.py` fonctionne comme avant et sert les
+originaux, avec un avertissement. Les vignettes déjà à jour ne sont pas régénérées (un
+manifeste dans le dossier de sortie compare date et taille des sources), donc un rebuild
+local est instantané.
+
+À chaque push sur `main`, GitHub Actions reconstruit et redéploie le site.
 
 ## ✅ Lancer les tests
 

@@ -3,8 +3,9 @@
 """
 Build du site statique (GitHub Pages) — interface actuelle.
 Lit les atlas via scripts/atlas_data.py, transforme les données au format attendu par
-l'app (site_ui) et écrit un index.html autonome (images en chemins relatifs, pleine
-résolution). Pas de sips → tourne en CI Linux.
+l'app (site_ui) et écrit un index.html autonome. Les photos sont copiées telles quelles,
+plus une vignette légère par image pour les affichages petits (cf. scripts/derives.py,
+Pillow optionnel). Pas de sips → tourne en CI Linux.
 
   python3 scripts/build_web.py [dossier_sortie]   (défaut : _site)
 """
@@ -12,6 +13,7 @@ import os, sys, json, shutil
 
 import atlas_data
 import credits
+import derives
 import site_ui
 
 BASE = atlas_data.BASE
@@ -36,7 +38,9 @@ def conf_groups(stem, id_par_stem):
         out.append({"tip": g["tip"], "ids": ids})
     return out
 
-def to_web_data(species):
+def to_web_data(species, deriveur=None):
+    """Données injectées dans le site. Avec un `deriveur`, chaque photo reçoit sa vignette
+    légère (« t ») et ses dimensions (« w », « h ») — cf. scripts/derives.py."""
     cred = credits.charger()
     id_par_stem = {}
     for s in species:
@@ -45,7 +49,15 @@ def to_web_data(species):
     for s in species:
         imgs = []
         for p in s["paths"]:
-            im = {"u": enc_web(p), "a": atlas_data.aspect_of(p, s["stem"])}
+            rel = enc_web(p)
+            im = {"u": rel, "a": atlas_data.aspect_of(p, s["stem"])}
+            if deriveur is not None:
+                thumb = deriveur.thumb(p, rel)
+                if thumb != rel:
+                    im["t"] = thumb
+                wh = derives.dimensions(p)
+                if wh:                      # dimensions connues = pas de saut de page
+                    im["w"], im["h"] = wh
             # attribution affichée sous la photo ; absente tant que le crédit est inconnu
             attribution = credits.texte(cred.get(os.path.basename(p)))
             if attribution:
@@ -87,8 +99,9 @@ def main():
         print("%-38s : %d espèces" % (path, len(got)))
         species += got
     species = atlas_data.apply_corrections(species)
-    data = to_web_data(species)
     os.makedirs(OUTDIR, exist_ok=True)
+    deriveur = derives.Deriveur(OUTDIR)
+    data = to_web_data(species, deriveur)
     with open(os.path.join(OUTDIR, "index.html"), "w", encoding="utf-8") as f:
         f.write(assemble(data))
     # copie uniquement les images réellement référencées
@@ -102,9 +115,12 @@ def main():
             copied += 1
         else:
             print("  ⚠ image absente :", rel)
+    deriveur.cloturer()
     open(os.path.join(OUTDIR, ".nojekyll"), "w").close()
     sz = os.path.getsize(os.path.join(OUTDIR, "index.html")) / 1e6
-    print("TOTAL : %d espèces, %d images -> %s (index.html %.1f Mo)" % (len(species), copied, OUTDIR, sz))
+    print("TOTAL : %d espèces, %d images -> %s (index.html %.1f Mo)"
+          % (len(species), copied, OUTDIR, sz))
+    print("       %s" % deriveur.resume())
 
 if __name__ == "__main__":
     main()

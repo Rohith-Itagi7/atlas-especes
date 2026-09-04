@@ -125,6 +125,8 @@ function h(fn){H.push(fn);return H.length-1;}
 function e(s){return (s==null?'':''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 // Attribution d'une photo (auteur, licence) : exigée par les licences CC-BY / CC-BY-SA.
 // Vide tant que le crédit est inconnu — cf. img/CREDITS.tsv et scripts/credits.py.
+// width/height déclarés : le navigateur réserve la place, la page ne saute pas au chargement
+function dim(w,h){return (w&&h)?(' width="'+w+'" height="'+h+'"'):'';}
 function credit(txt,url){if(!txt)return '';
   const dedans=url?('<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer" style="color:inherit">'+e(txt)+'</a>'):e(txt);
   return '<div class="imgcredit">'+dedans+'</div>';}
@@ -211,6 +213,9 @@ class App{
     return proche(sp)&&!autres.some(proche);}                     // faute de frappe non ambigu\u00eb
   // __MATCH_FIN__
   clean(s){return (s||'').replace(/\*\*/g,'');}
+  // Affichage petit (grille, bandeau, carte Oui/Non) : la vignette légère produite au build
+  // (cf. scripts/derives.py) ; sinon l'original. Les grandes vues gardent l'original.
+  petite(im){return im?(im.t||im.u):'';}
   // « Ne pas confondre » du quiz : en mode sosies, le critère du groupe qui a fourni les
   // distracteurs ; sinon tous les critères de l'espèce.
   quizTips(q,sp){if(!sp||!sp.conf||!sp.conf.length)return [];
@@ -387,7 +392,7 @@ class App{
       poolCount:this.pool().length,
       quizModeLine:this.label(this.CATS,cfg.cat)+' · '+(cfg.qtype==='photo'?('photo'+(cfg.aspect!=='tout'?' — '+this.label(this.ASP,cfg.aspect).toLowerCase():'')):'fiche')+' · '+this.label(this.DF,cfg.diff).toLowerCase(),
       isPhotoQ:!!q&&cfg.qtype==='photo',isFicheQ:!!q&&cfg.qtype==='fiche',
-      qImg:q?q.img.u:'',qAspect:q?(q.img.a.map(a=>this.label(this.ASP,a)).join(' · ')||'Divers'):'',
+      qImg:q?q.img.u:'',qW:q&&q.img.w?q.img.w:'',qH:q&&q.img.h?q.img.h:'',qAspect:q?(q.img.a.map(a=>this.label(this.ASP,a)).join(' · ')||'Divers'):'',
       qCredit:(answered&&q&&q.img.c)?q.img.c:'',qCreditUrl:(answered&&q&&q.img.cu)?q.img.cu:'',
       qFields:q?this.fieldRows(sp,!answered):[],
       hasOptions:!!q&&cfg.diff!=='saisie',isTyped:!!q&&cfg.diff==='saisie',typed:S.typed,
@@ -400,18 +405,18 @@ class App{
       sessLine:S.sess.c+' / '+S.sess.s+' cette session',sessPct:S.sess.s?Math.round(100*S.sess.c/S.sess.s):0,
       query:S.query,onSearch:ev=>{this.state.query=ev.target.value;this.render();},atlasCount:this.atlasArr().length,
       listChips:catList.map(c=>({label:c[1],on:S.listCat===c[0]?'1':'0',go:()=>this.setState({listCat:c[0]})})),
-      atlasList:this.atlasArr().slice(0,500).map(s=>{const m=this.mastery(s.id),seen=this.st(s.id,'photo').s+this.st(s.id,'fiche').s;const half=!this.knownAny(s.id)&&(this.known(s.id,'photo')||this.known(s.id,'fiche'));return{name:s.name,latin:s.latin,thumb:s.imgs[0]?s.imgs[0].u:'',pct:m,badge:this.knownAny(s.id)?'maîtrisée':(half?(this.known(s.id,'photo')?'photo OK':'fiche OK'):(seen?m+'%':(s.imgs.length>1?s.imgs.length+' photos':'1 photo'))),barColor:this.knownAny(s.id)?'#2F6B3A':'#A87B3C',go:this.openFiche(s.id)};}),
+      atlasList:this.atlasArr().slice(0,500).map(s=>{const m=this.mastery(s.id),seen=this.st(s.id,'photo').s+this.st(s.id,'fiche').s;const half=!this.knownAny(s.id)&&(this.known(s.id,'photo')||this.known(s.id,'fiche'));return{name:s.name,latin:s.latin,thumb:this.petite(s.imgs[0]),pct:m,badge:this.knownAny(s.id)?'maîtrisée':(half?(this.known(s.id,'photo')?'photo OK':'fiche OK'):(seen?m+'%':(s.imgs.length>1?s.imgs.length+' photos':'1 photo'))),barColor:this.knownAny(s.id)?'#2F6B3A':'#A87B3C',go:this.openFiche(s.id)};}),
       fName:fiche?fiche.name:'',fLatin:fiche?fiche.latin:'',fCat:fiche?this.label(catList,fiche.cat):'',
-      fImg:fcur?fcur.u:'',fImgAsp:fcur?('Cette photo montre : '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'divers')):'',
+      fImg:fcur?fcur.u:'',fW:fcur&&fcur.w?fcur.w:'',fH:fcur&&fcur.h?fcur.h:'',fImgAsp:fcur?('Cette photo montre : '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'divers')):'',
       fCredit:fcur&&fcur.c?fcur.c:'',fCreditUrl:fcur&&fcur.cu?fcur.cu:'',
-      fThumbs:fimgs.map((im,i)=>({u:im.u,border:i===S.fimg?'#16241C':'transparent',go:()=>this.setState({fimg:i})})),
+      fThumbs:fimgs.map((im,i)=>({u:this.petite(im),border:i===S.fimg?'#16241C':'transparent',go:()=>this.setState({fimg:i})})),
       fFields:this.fieldRows(fiche,false),
       fHasTips:!!(fiche&&fiche.conf&&fiche.conf.length),fTips:fiche&&fiche.conf?fiche.conf.map(g=>({txt:this.clean(g.tip)})):[],
       fPrev:this.moveFiche(-1),fNext:this.moveFiche(1),
       catChips:catList.map(c=>({label:c[1],on:cfg.cat===c[0]?'1':'0',go:this.setCfg('cat',c[0])})),
       criteria:this.CRIT.map(c=>({q:c.q,n:all.filter(s=>this.inCat(s,cfg.cat)&&c.has(s)).length,go:this.startCrit(c)})).filter(x=>x.n>=4),
-      critQ:S.crit?S.crit.q:'',critTopImg:critSp?critSp.imgs[0].u:'',critTopName:critSp?critSp.name:'',critTopLatin:critSp?critSp.latin:'',
-      critHasBack:!!S.cq[S.cp+1],critBackImg:S.cq[S.cp+1]?S.cq[S.cp+1].imgs[0].u:'',critBackName:S.cq[S.cp+1]?S.cq[S.cp+1].name:'',
+      critQ:S.crit?S.crit.q:'',critTopImg:critSp?this.petite(critSp.imgs[0]):'',critTopName:critSp?critSp.name:'',critTopLatin:critSp?critSp.latin:'',
+      critHasBack:!!S.cq[S.cp+1],critBackImg:S.cq[S.cp+1]?this.petite(S.cq[S.cp+1].imgs[0]):'',critBackName:S.cq[S.cp+1]?S.cq[S.cp+1].name:'',
       critAnim:S.canim,critHasFb:!!S.cfb,critFb:S.cfb||'',critFbOk:!!S.cfbOk,
       critYes:this.critAns(true),critNo:this.critAns(false),critScore:S.csess.c+' / '+S.csess.s+' · carte '+(S.cp+1)+' sur '+S.cq.length,
       skillRows:this.ASP.map(a=>{const st=this.aspStat(a[0]);return{label:a[0]==='tout'?'Photo — vue d’ensemble':'Photo — '+a[1].toLowerCase(),n:st.n,right:st.k+' / '+st.n+' maîtrisées',acc:st.reps?st.acc+'% de réussite · '+st.reps+(st.reps>1?' réponses':' réponse'):'jamais travaillé',pct:st.pct,bar:st.reps?'#2F6B3A':'#C8D2C6'};}).filter(r=>r.n>0).concat([(f=>({label:'Fiche de caractères (sans photo)',right:f.k+' / '+f.n+' maîtrisées',n:f.n,acc:f.reps?f.acc+'% de réussite · '+f.reps+(f.reps>1?' réponses':' réponse'):'jamais travaillé',pct:f.pct,bar:f.reps?'#2F6B3A':'#C8D2C6'}))(this.ficheStat())]),
@@ -459,7 +464,7 @@ JS += r"""
     }
     if(V.isQuiz){
       let left='';
-      if(V.isPhotoQ) left='<div style="position:relative;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img class="qphoto" src="'+e(V.qImg)+'" alt="espèce à identifier"><div style="position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:999px;background:rgba(14,23,48,.82);font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:#fff">'+e(V.qAspect)+'</div></div>';
+      if(V.isPhotoQ) left='<div style="position:relative;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img class="qphoto" src="'+e(V.qImg)+'"'+dim(V.qW,V.qH)+' alt="espèce à identifier"><div style="position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:999px;background:rgba(14,23,48,.82);font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:#fff">'+e(V.qAspect)+'</div></div>';
       else left='<div style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:20px"><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:var(--color-brand-red)">Fiche de caractères</div><div style="margin-top:14px">'+this.fieldsHtml(V.qFields,'40%')+'</div><div style="margin-top:12px;font:italic 400 12px/1.4 var(--font-body);color:var(--fg-3)">Deux lignes sont floutées : elles trahissent l\'espèce. Clique dessus pour l\'indice. Le « i » explique les abréviations.</div></div>';
       left+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px"><div style="font:600 12px/1 var(--font-body);color:var(--fg-3)">'+e(V.sessLine)+'</div><div style="font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+V.sessPct+'%</div></div><div style="height:3px;margin-top:8px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-brand-red);width:'+V.sessPct+'%"></div></div>';
       let right='';
@@ -484,7 +489,7 @@ JS += r"""
       +'<div class="r-grid">'+V.atlasList.map(s=>'<button class="gc" data-h="'+h(s.go)+'"><div style="position:relative"><img src="'+e(s.thumb)+'" alt="" loading="lazy" style="width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--color-navy-50)"><div style="position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.94);font:700 10px/1.3 var(--font-mono);color:var(--fg-2)">'+e(s.badge)+'</div></div><div style="padding:11px 12px 13px"><div style="font:700 13px/1.25 var(--font-body)">'+e(s.name)+'</div><div style="font:italic 400 11px/1.3 var(--font-body);color:var(--fg-3)">'+e(s.latin)+'</div><div style="height:3px;margin-top:9px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:'+s.barColor+';width:'+s.pct+'%"></div></div></div></button>').join('')+'</div></div>';
     }
     if(V.isFiche){
-      return '<div class="r-two"><div><div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img src="'+e(V.fImg)+'" alt="'+e(V.fName)+'" style="width:100%;max-height:64vh;object-fit:contain;display:block;background:var(--color-navy-50)"></div>'
+      return '<div class="r-two"><div><div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img src="'+e(V.fImg)+'"'+dim(V.fW,V.fH)+' alt="'+e(V.fName)+'" style="width:100%;max-height:64vh;object-fit:contain;display:block;background:var(--color-navy-50)"></div>'
       +'<div style="display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px">'+V.fThumbs.map(t=>'<img src="'+e(t.u)+'" alt="" loading="lazy" data-h="'+h(t.go)+'" style="width:72px;height:72px;flex:0 0 auto;object-fit:cover;border-radius:8px;border:2px solid '+t.border+';cursor:pointer;background:var(--color-navy-50)">').join('')+'</div>'
       +'<div style="font:600 12px/1.3 var(--font-body);color:var(--fg-3)">'+e(V.fImgAsp)+'</div>'
       +credit(V.fCredit,V.fCreditUrl)+'</div>'
