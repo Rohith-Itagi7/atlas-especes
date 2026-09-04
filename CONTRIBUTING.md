@@ -93,16 +93,16 @@ En ouvrant une Pull Request, tu acceptes que ta contribution soit publiée sous 
 de la partie que tu touches (détail et explications : section **Licences** du
 [README](README.md)) :
 
-- **code** (`scripts/`, `tests/`, `.github/`) → [PolyForm Noncommercial 1.0.0](LICENSE-CODE) ;
-- **contenu rédigé** (atlas, confusions, docs, `.tsv`) → [CC BY-NC-SA 4.0](LICENSE).
+- **code** (`scripts/`, `tests/`, `.github/`) → [MIT](LICENSE) ;
+- **contenu rédigé** (atlas, confusions, docs, `.tsv`) → [CC BY-SA 4.0](LICENSE-CONTENT).
 
-Les deux interdisent l'**usage commercial** : c'est le choix du projet, à connaître avant de
-contribuer. Tu gardes le droit d'auteur sur ce que tu écris.
+Les deux sont des licences **libres** : ta contribution restera réutilisable par tout le
+monde, y compris commercialement. Tu gardes le droit d'auteur sur ce que tu écris.
 
 Une **photo**, en revanche, n'est jamais relicenciée par le dépôt : elle reste sous **sa**
 licence, que tu dois renseigner dans `img/CREDITS.tsv` (ci-dessus). Si tu es l'auteur de la
 photo, indique-toi comme auteur et choisis explicitement une licence — `CC-BY-SA-4.0` ou
-`CC0-1.0` sont de bons choix, et rien n'oblige à la restreindre au non commercial.
+`CC0-1.0` sont de bons choix.
 
 ## Vérifier en local (facultatif)
 
