@@ -65,34 +65,34 @@ def test_chaque_espece_du_site_a_le_minimum_vital(tmp_path):
 def test_le_verdict_comestible_est_calcule_au_build():
     """Le mode Oui/Non lit le champ « edible » : il doit exister exactement pour les espèces
     dont l'atlas renseigne « Comestible » (côté JS, c'est le test `has` du critère)."""
-    gq = load_module("generer_quiz")
+    atlas_data = load_module("atlas_data")
     bw = load_module("build_web")
 
     especes, seen = [], set()
-    for path, cat in gq.ATLASES:
-        especes += gq.parse_atlas(path, cat, seen)
-    data = bw.to_web_data(gq.apply_corrections(especes))
+    for path, cat in atlas_data.ATLASES:
+        especes += atlas_data.parse_atlas(path, cat, seen)
+    data = bw.to_web_data(atlas_data.apply_corrections(especes))
 
     avec_colonne = [s for s in data if "comestible" in s["fields"]]
     assert avec_colonne, "aucune espèce avec une colonne « Comestible »"
     for s in data:
         assert ("edible" in s) == ("comestible" in s["fields"]), s["name"]
         if "edible" in s:
-            assert s["edible"] == gq.is_edible(s["fields"]["comestible"])
+            assert s["edible"] == atlas_data.is_edible(s["fields"]["comestible"])
     # Le quiz Oui/Non n'a d'intérêt que si les deux réponses existent.
     verdicts = {s["edible"] for s in avec_colonne}
     assert verdicts == {True, False}
 
 
 def test_les_astuces_de_confusion_sont_injectees():
-    gq = load_module("generer_quiz")
+    atlas_data = load_module("atlas_data")
     bw = load_module("build_web")
 
     especes, seen = [], set()
-    for path, cat in gq.ATLASES:
-        especes += gq.parse_atlas(path, cat, seen)
-    data = bw.to_web_data(gq.apply_corrections(especes))
+    for path, cat in atlas_data.ATLASES:
+        especes += atlas_data.parse_atlas(path, cat, seen)
+    data = bw.to_web_data(atlas_data.apply_corrections(especes))
 
-    assert gq.CONF, "aucun groupe de confusion lu"
+    assert atlas_data.CONF, "aucun groupe de confusion lu"
     avec_conf = [s for s in data if s["conf"]]
     assert avec_conf, "aucune espèce ne porte d'astuce « Ne pas confondre »"

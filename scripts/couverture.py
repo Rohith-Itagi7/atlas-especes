@@ -6,12 +6,11 @@ ont au moins une photo, et lesquels manquent. Sert à repérer où contribuer.
 
   python3 scripts/couverture.py            # écrit COUVERTURE.md à la racine du dépôt
 """
-import os, importlib.util
+import os
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-spec = importlib.util.spec_from_file_location("gq", os.path.join(BASE, "scripts", "generer_quiz.py"))
-gq = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(gq)
+import atlas_data
+
+BASE = atlas_data.BASE
 
 OUT = os.path.join(BASE, "COUVERTURE.md")
 ASPECTS = [("feuille", "Feuille"), ("ecorce", "Écorce"), ("fruit", "Fruit"), ("fleur", "Fleur"), ("port", "Port")]
@@ -22,7 +21,7 @@ PLANT_CATS = ("ligneux", "herbace")  # seules catégories où les aspects ont du
 def aspects_present(sp):
     got = set()
     for p in sp["paths"]:
-        for a in gq.aspect_of(p, sp["stem"]):
+        for a in atlas_data.aspect_of(p, sp["stem"]):
             got.add(a)
     got.discard("divers")
     return got
@@ -30,9 +29,9 @@ def aspects_present(sp):
 def main():
     seen = set()
     species = []
-    for path, cat in gq.ATLASES:
-        species += gq.parse_atlas(path, cat, seen)
-    species = gq.apply_corrections(species)
+    for path, cat in atlas_data.ATLASES:
+        species += atlas_data.parse_atlas(path, cat, seen)
+    species = atlas_data.apply_corrections(species)
     by_cat = {}
     for sp in species:
         by_cat.setdefault(sp["cat"], []).append(sp)

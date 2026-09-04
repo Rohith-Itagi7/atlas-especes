@@ -27,48 +27,48 @@ import pytest
     ("chene-bizarre-1.jpg", ["divers"]),
 ])
 def test_aspect_depuis_le_nom_de_fichier(repo, fichier, attendu):
-    assert repo.gq.aspect_of(fichier, "chene") == attendu
+    assert repo.atlas_data.aspect_of(fichier, "chene") == attendu
 
 
 def test_aspect_dedoublonne_et_garde_l_ordre_du_nom(repo):
-    assert repo.gq.aspect_of("chene-feuille_feuilles_fleur-1.jpg", "chene") == ["feuille", "fleur"]
+    assert repo.atlas_data.aspect_of("chene-feuille_feuilles_fleur-1.jpg", "chene") == ["feuille", "fleur"]
 
 
 def test_le_sidecar_ecrase_le_nom_de_fichier(repo):
     repo.sidecar("fichier\taspects\nchene-1.jpg\tfeuille,fleur\n")
 
-    assert repo.gq.aspect_of("chene-1.jpg", "chene") == ["feuille", "fleur"]
+    assert repo.atlas_data.aspect_of("chene-1.jpg", "chene") == ["feuille", "fleur"]
 
 
 def test_le_sidecar_accepte_le_point_virgule(repo):
     repo.sidecar("chene-1.jpg\tfeuille;port\n")
 
-    assert repo.gq.aspect_of("chene-1.jpg", "chene") == ["feuille", "port"]
+    assert repo.atlas_data.aspect_of("chene-1.jpg", "chene") == ["feuille", "port"]
 
 
 def test_le_sidecar_peut_tagger_une_vignette(repo):
     # Cas courant : la vignette img/especes/chene.jpg montre en fait une feuille.
     repo.sidecar("chene.jpg\tfeuille\n")
 
-    assert repo.gq.aspect_of("chene.jpg", "chene") == ["feuille"]
+    assert repo.atlas_data.aspect_of("chene.jpg", "chene") == ["feuille"]
 
 
 def test_sidecar_valeur_vide_retombe_sur_divers(repo):
     repo.sidecar("chene-1.jpg\t\n")
 
     # Ligne sans valeur exploitable : la photo reste « divers », elle n'est pas perdue.
-    assert repo.gq.aspect_of("chene-1.jpg", "chene") == ["divers"]
+    assert repo.atlas_data.aspect_of("chene-1.jpg", "chene") == ["divers"]
 
 
 def test_sidecar_ignore_entete_et_commentaires(repo):
     repo.sidecar("fichier\taspects\n# chene-1.jpg\tfeuille\nchene-2.jpg\tport\n")
 
-    assert "chene-1.jpg" not in repo.gq.SIDE
-    assert repo.gq.SIDE["chene-2.jpg"] == ["port"]
+    assert "chene-1.jpg" not in repo.atlas_data.SIDE
+    assert repo.atlas_data.SIDE["chene-2.jpg"] == ["port"]
 
 
 def test_les_tags_de_contribution_ecrasent_le_sidecar(repo):
     repo.sidecar("chene-1.jpg\tfeuille\n")
     repo.contribution("app-test.tsv", "action\tfichier\tvaleur\ntag\tchene-1.jpg\tfleur,port\n")
 
-    assert repo.gq.aspect_of("chene-1.jpg", "chene") == ["fleur", "port"]
+    assert repo.atlas_data.aspect_of("chene-1.jpg", "chene") == ["fleur", "port"]

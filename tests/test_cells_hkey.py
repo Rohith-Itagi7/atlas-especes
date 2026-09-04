@@ -4,18 +4,18 @@
 import pytest
 
 
-def test_cells_of_decoupe_et_nettoie(gq):
-    assert gq.cells_of("| a | b  |   c |") == ["a", "b", "c"]
+def test_cells_of_decoupe_et_nettoie(atlas_data):
+    assert atlas_data.cells_of("| a | b  |   c |") == ["a", "b", "c"]
 
 
-def test_cells_of_restitue_les_pipes_echappes(gq):
+def test_cells_of_restitue_les_pipes_echappes(atlas_data):
     # Les vignettes s'écrivent ![[stem.jpg\|200]] : le pipe échappé ne doit pas couper la cellule.
-    cells = gq.cells_of(r"| ![[chene.jpg\|200]] | Chêne | Quercus robur |")
+    cells = atlas_data.cells_of(r"| ![[chene.jpg\|200]] | Chêne | Quercus robur |")
     assert cells == ["![[chene.jpg|200]]", "Chêne", "Quercus robur"]
 
 
-def test_cells_of_conserve_les_cellules_vides(gq):
-    assert gq.cells_of("| a |  | c |") == ["a", "", "c"]
+def test_cells_of_conserve_les_cellules_vides(atlas_data):
+    assert atlas_data.cells_of("| a |  | c |") == ["a", "", "c"]
 
 
 @pytest.mark.parametrize("entete,attendu", [
@@ -44,15 +44,15 @@ def test_cells_of_conserve_les_cellules_vides(gq):
     ("Répartition", "repartition"),
     ("Notes", "notes"),
 ])
-def test_hkey_reconnait_les_colonnes_des_atlas(gq, entete, attendu):
-    assert gq.hkey(entete) == attendu
+def test_hkey_reconnait_les_colonnes_des_atlas(atlas_data, entete, attendu):
+    assert atlas_data.hkey(entete) == attendu
 
 
-def test_hkey_normalise_les_entetes_inconnues(gq):
+def test_hkey_normalise_les_entetes_inconnues(atlas_data):
     # Accents retirés, minuscules, points supprimés — mais la colonne reste exploitable.
-    assert gq.hkey("  Densité max. ") == "densite max"
+    assert atlas_data.hkey("  Densité max. ") == "densite max"
 
 
-def test_hkey_prefixes_insensibles_a_la_casse_et_aux_accents(gq):
-    assert gq.hkey("COMESTIBILITÉ") == "comestible"
-    assert gq.hkey("Écologie fine") == "ecologie"
+def test_hkey_prefixes_insensibles_a_la_casse_et_aux_accents(atlas_data):
+    assert atlas_data.hkey("COMESTIBILITÉ") == "comestible"
+    assert atlas_data.hkey("Écologie fine") == "ecologie"

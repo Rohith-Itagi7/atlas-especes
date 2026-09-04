@@ -10,7 +10,7 @@ def test_lit_les_groupes(repo):
         ["Chênes", "chene_sessile,chene_pedoncule", "Pétiole long chez le sessile"],
     ])
 
-    groups = repo.gq.load_confusions()
+    groups = repo.atlas_data.load_confusions()
 
     assert len(groups) == 2
     assert groups[0]["stems"] == ["ail_des_ours", "colchique", "muguet"]
@@ -21,28 +21,28 @@ def test_lit_les_groupes(repo):
 def test_ignore_entete_et_separateur(repo):
     repo.confusions([["Chênes", "chene_sessile,chene_pedoncule", "Pétiole long chez le sessile"]])
 
-    assert len(repo.gq.load_confusions()) == 1   # ni la ligne d'en-tête ni le |---| ne comptent
+    assert len(repo.atlas_data.load_confusions()) == 1   # ni la ligne d'en-tête ni le |---| ne comptent
 
 
 def test_accepte_le_point_virgule_comme_separateur(repo):
     repo.confusions([["Chênes", "chene_sessile; chene_pedoncule", "Pétiole long"]])
 
-    assert repo.gq.load_confusions()[0]["stems"] == ["chene_sessile", "chene_pedoncule"]
+    assert repo.atlas_data.load_confusions()[0]["stems"] == ["chene_sessile", "chene_pedoncule"]
 
 
 def test_groupe_sans_critere_ignore(repo):
     # Un groupe sans « ce qui tranche » n'apprend rien : il est écarté.
     repo.confusions([["Chênes", "chene_sessile,chene_pedoncule", ""]])
 
-    assert repo.gq.load_confusions() == []
+    assert repo.atlas_data.load_confusions() == []
 
 
 def test_groupe_sans_espece_ignore(repo):
     repo.confusions([["Chênes", "", "Pétiole long chez le sessile"]])
 
-    assert repo.gq.load_confusions() == []
+    assert repo.atlas_data.load_confusions() == []
 
 
 def test_fichier_absent_pas_de_groupe(repo):
     # Le dépôt de test n'a pas d'atlas Confusions : la fonction doit rester silencieuse.
-    assert repo.gq.load_confusions() == []
+    assert repo.atlas_data.load_confusions() == []

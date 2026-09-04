@@ -10,7 +10,7 @@ def ligne(vignette, name, latin, type_="arbre", famille="Fagacées", comestible=
 
 def test_lit_les_especes_et_leurs_champs(repo):
     repo.vignette("chene.jpg")
-    repo.atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus", notes="note libre")])
+    repo.write_atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus", notes="note libre")])
 
     got = repo.parse("Test.md", "ligneux")
 
@@ -26,7 +26,7 @@ def test_lit_les_especes_et_leurs_champs(repo):
 
 def test_exclut_le_nom_le_latin_et_la_photo_des_champs(repo):
     repo.vignette("chene.jpg")
-    repo.atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus")])
+    repo.write_atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus")])
 
     fields = repo.parse("Test.md")[0]["fields"]
 
@@ -35,7 +35,7 @@ def test_exclut_le_nom_le_latin_et_la_photo_des_champs(repo):
 
 def test_ignore_les_cellules_vides_et_les_tirets(repo):
     repo.vignette("chene.jpg")
-    repo.atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus",
+    repo.write_atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus",
                                  famille="", comestible="—", notes="-")])
 
     fields = repo.parse("Test.md")[0]["fields"]
@@ -47,14 +47,14 @@ def test_ignore_les_cellules_vides_et_les_tirets(repo):
 
 def test_saute_une_ligne_sans_nom(repo):
     repo.vignette("chene.jpg")
-    repo.atlas("Test.md", [ligne("chene.jpg", "", "Quercus testus")])
+    repo.write_atlas("Test.md", [ligne("chene.jpg", "", "Quercus testus")])
 
     assert repo.parse("Test.md") == []
 
 
 def test_saute_une_ligne_dont_la_vignette_est_absente(repo, capsys):
     # Pas de repo.vignette(...) : le fichier n'existe pas.
-    repo.atlas("Test.md", [ligne("fantome.jpg", "Espèce fantôme", "Nihil nihil")])
+    repo.write_atlas("Test.md", [ligne("fantome.jpg", "Espèce fantôme", "Nihil nihil")])
 
     got = repo.parse("Test.md")
 
@@ -64,7 +64,7 @@ def test_saute_une_ligne_dont_la_vignette_est_absente(repo, capsys):
 
 def test_ignore_les_lignes_hors_tableau(repo):
     repo.vignette("chene.jpg")
-    repo.atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus")])
+    repo.write_atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus")])
     with open(repo.root + "/Test.md", "a", encoding="utf-8") as f:
         f.write("\n> [!note] Une callout Obsidian avec le mot latin dedans.\n\ntexte libre\n")
 
@@ -76,7 +76,7 @@ def test_attache_les_photos_supplementaires(repo):
     repo.extra_photo("chene-feuille-1.jpg")
     repo.extra_photo("chene-ecorce-1.jpg")
     repo.extra_photo("autre-feuille-1.jpg")
-    repo.atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus")])
+    repo.write_atlas("Test.md", [ligne("chene.jpg", "Chêne test", "Quercus testus")])
 
     paths = [p.rsplit("/", 1)[-1] for p in repo.parse("Test.md")[0]["paths"]]
 
@@ -87,8 +87,8 @@ def test_attache_les_photos_supplementaires(repo):
 
 def test_un_stem_deja_vu_est_suffixe_par_la_categorie(repo):
     repo.vignette("sureau.jpg")
-    repo.atlas("Ligneux.md", [ligne("sureau.jpg", "Sureau noir", "Sambucus nigra")])
-    repo.atlas("Herbacees.md", [ligne("sureau.jpg", "Sureau yèble", "Sambucus ebulus")])
+    repo.write_atlas("Ligneux.md", [ligne("sureau.jpg", "Sureau noir", "Sambucus nigra")])
+    repo.write_atlas("Herbacees.md", [ligne("sureau.jpg", "Sureau yèble", "Sambucus ebulus")])
 
     seen = set()
     a = repo.parse("Ligneux.md", "ligneux", seen)

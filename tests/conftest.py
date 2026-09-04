@@ -8,10 +8,14 @@ servir de référence. Seul `test_build_smoke.py` s'appuie sur les vrais atlas.
 """
 import importlib.util
 import os
+import sys
 
 import pytest
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPTS = os.path.join(BASE, "scripts")
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)   # les scripts s'importent entre eux par leur nom
 
 # En-tête par défaut des atlas de test : couvre les colonnes utiles au parseur.
 HEADER = ["Photo", "Espèce", "Nom latin", "Type", "Famille", "Comestible", "Notes"]
@@ -26,13 +30,13 @@ def load_module(name):
 
 
 @pytest.fixture
-def gq():
-    """Le module de données (parseur des atlas), rechargé pour chaque test.
+def atlas_data():
+    """La couche de données (scripts/atlas_data.py), rechargée pour chaque test.
 
     Le module lit le dépôt à l'import (CORR/SIDE/CONF) : une instance neuve par test évite
     que la fixture `repo` d'un test fuite dans le suivant.
     """
-    return load_module("generer_quiz")
+    return load_module("atlas_data")
 
 
 class FakeRepo:
@@ -40,7 +44,7 @@ class FakeRepo:
 
     def __init__(self, root, module, monkeypatch):
         self.root = str(root)
-        self.gq = module
+        self.atlas_data = module
         self.img = os.path.join(self.root, "img", "especes")
         self.extra = os.path.join(self.root, "img", "quiz-extra")
         self.contributions = os.path.join(self.root, "contributions")
@@ -53,9 +57,9 @@ class FakeRepo:
 
     def reload(self):
         """Recharge les données annexes après écriture d'un sidecar / d'une contribution."""
-        self.gq.CORR = self.gq.load_corrections()
-        self.gq.SIDE = self.gq.load_sidecar()
-        self.gq.CONF = self.gq.load_confusions()
+        self.atlas_data.CORR = self.atlas_data.load_corrections()
+        self.atlas_data.SIDE = self.atlas_data.load_sidecar()
+        self.atlas_data.CONF = self.atlas_data.load_confusions()
 
     def write(self, rel, text):
         p = os.path.join(self.root, rel)
@@ -78,7 +82,7 @@ class FakeRepo:
     def extra_photo(self, filename):
         return self.photo(os.path.join("img", "quiz-extra", filename))
 
-    def atlas(self, name, rows, header=None):
+    def write_atlas(self, name, rows, header=None):
         """Écrit un atlas Markdown. `rows` = listes de cellules (la 1re est la vignette)."""
         header = header or HEADER
         lines = ["# Atlas de test", "", "| " + " | ".join(header) + " |",
@@ -104,12 +108,12 @@ class FakeRepo:
         return p
 
     def parse(self, name, cat="test", seen=None):
-        return self.gq.parse_atlas(name, cat, set() if seen is None else seen)
+        return self.atlas_data.parse_atlas(name, cat, set() if seen is None else seen)
 
 
 @pytest.fixture
-def repo(tmp_path, gq, monkeypatch):
-    return FakeRepo(tmp_path, gq, monkeypatch)
+def repo(tmp_path, atlas_data, monkeypatch):
+    return FakeRepo(tmp_path, atlas_data, monkeypatch)
 
 
 def vignette_cell(filename):

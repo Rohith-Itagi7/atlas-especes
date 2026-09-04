@@ -10,7 +10,7 @@ from conftest import load_module
 def va(repo, monkeypatch):
     """Le vérificateur, branché sur le faux dépôt de la fixture `repo`."""
     module = load_module("verifier_atlas")
-    monkeypatch.setattr(module, "gq", repo.gq)
+    monkeypatch.setattr(module, "atlas_data", repo.atlas_data)
     return module
 
 

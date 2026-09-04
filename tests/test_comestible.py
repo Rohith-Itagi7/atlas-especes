@@ -10,15 +10,15 @@ import pytest
 
 # --------------------------------------------------------------- cas nommés (régressions)
 
-def test_morille_est_comestible(gq):
+def test_morille_est_comestible(atlas_data):
     # Champignons - référence.md : le poison est une **mise en garde** entre parenthèses,
     # le verdict de tête (« Bon ») reste positif.
-    assert gq.is_edible("Bon (⚠ crue TOXIQUE)") is True
+    assert atlas_data.is_edible("Bon (⚠ crue TOXIQUE)") is True
 
 
-def test_if_n_est_pas_comestible(gq):
+def test_if_n_est_pas_comestible(atlas_data):
     # Espèces - référence.md : verdict de tête négatif, malgré une exception entre parenthèses.
-    assert gq.is_edible("☠ TOXIQUE (seul l'arille rouge est sans danger)") is False
+    assert atlas_data.is_edible("☠ TOXIQUE (seul l'arille rouge est sans danger)") is False
 
 
 # ------------------------------------------------------------------- verdicts négatifs
@@ -47,8 +47,8 @@ def test_if_n_est_pas_comestible(gq):
     "   ",
     None,
 ])
-def test_valeurs_non_comestibles(gq, valeur):
-    assert gq.is_edible(valeur) is False
+def test_valeurs_non_comestibles(atlas_data, valeur):
+    assert atlas_data.is_edible(valeur) is False
 
 
 # ------------------------------------------------------------------- verdicts positifs
@@ -68,17 +68,17 @@ def test_valeurs_non_comestibles(gq, valeur):
     "**fruits**",
     "⚠ fruits (bien mûrs)",
 ])
-def test_valeurs_comestibles(gq, valeur):
-    assert gq.is_edible(valeur) is True
+def test_valeurs_comestibles(atlas_data, valeur):
+    assert atlas_data.is_edible(valeur) is True
 
 
 # ------------------------------------------------------------------------- cohérence
 
-def test_toutes_les_valeurs_reelles_donnent_un_booleen(gq):
+def test_toutes_les_valeurs_reelles_donnent_un_booleen(atlas_data):
     especes, seen = [], set()
-    for path, cat in gq.ATLASES:
-        especes += gq.parse_atlas(path, cat, seen)
+    for path, cat in atlas_data.ATLASES:
+        especes += atlas_data.parse_atlas(path, cat, seen)
     valeurs = {s["fields"]["comestible"] for s in especes if "comestible" in s["fields"]}
 
     assert valeurs, "aucune valeur « Comestible » lue dans les atlas"
-    assert all(isinstance(gq.is_edible(v), bool) for v in valeurs)
+    assert all(isinstance(atlas_data.is_edible(v), bool) for v in valeurs)

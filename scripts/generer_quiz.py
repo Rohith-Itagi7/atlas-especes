@@ -1,132 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Générateur LOCAL des versions autonome / Artifact du quiz (macOS : dépend de `sips`).
+
+Ce n'est PAS le build du site publié : celui-ci est scripts/build_web.py (interface actuelle,
+tourne en CI Linux). Ce script produit :
+  « Quiz especes.html »           autonome, images en base64 pleine résolution
+  « Quiz especes.artifact.html »  sans <html>/<head>/<body>, images recompressées, < 16 Mo
+  « Quiz especes - a partager.html »
+La lecture des atlas vient de scripts/atlas_data.py (source unique, testée).
 """
-Générateur du quiz / atlas connecté des espèces.
-Sorties : « Quiz especes.html » (autonome pleine résolution) et « Quiz especes.artifact.html »
-          (sans <html>/<head>/<body>, images recompressées, < 16 Mo).
-Lit TOUTES les colonnes des atlas (via l'en-tête) → fiche complète affichée dans l'app.
-Aspects des photos : nom de fichier <stem>-<aspect>-<n>.jpg  (+ sidecar img/quiz-extra/_aspects.tsv
-                     « fichier<TAB>aspect1,aspect2 » qui OVERRIDE, non destructif, pour tagger les vignettes).
-"""
-import re, json, base64, glob, os, subprocess, tempfile, unicodedata
+import base64, json, os, subprocess, tempfile
+
+from atlas_data import ATLASES, CONF, SIDE, apply_corrections, aspect_of, parse_atlas
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-IMG = os.path.join(BASE, "img", "especes")
-EXTRA = os.path.join(BASE, "img", "quiz-extra")
+
 OUT = os.path.join(BASE, "Quiz especes.html")
 OUT_ART = os.path.join(BASE, "Quiz especes.artifact.html")
 OUT_SHARE = os.path.join(BASE, "Quiz especes - a partager.html")
 TMP = tempfile.mktemp(suffix=".jpg")
-ATLASES = [("Espèces - référence.md", "ligneux"), ("Espèces herbacées - référence.md", "herbace"),
-           ("Champignons - référence.md", "champignon"), ("Faune - référence.md", "faune"),
-           ("Espèces diverses - référence.md", "divers")]
-IMG_RE = re.compile(r"!\[\[(?:[^\]\|]*/)?([^\]\|]+\.(?:jpg|jpeg|png))", re.I)
-ASPECT_KW = {"feuille": "feuille", "feuilles": "feuille", "ecorce": "ecorce", "fruit": "fruit",
-             "fruits": "fruit", "fleur": "fleur", "fleurs": "fleur", "rameau": "rameau",
-             "rameaux": "rameau", "bourgeon": "rameau", "hiver": "rameau", "port": "port", "silhouette": "port"}
-
-def load_corrections():
-    """Actions de contribution (depuis l'app ou à la main) : img/quiz-extra/_corrections.tsv
-    + contributions/*.tsv. Format : action<TAB>fichier<TAB>valeur, action ∈ tag|reassign|remove.
-      tag      fichier  feuille,fleur   → force les aspects d'une photo
-      reassign fichier  stem_correct    → la photo appartient à cette autre espèce
-      remove   fichier                  → retire la photo (mauvaise attribution)"""
-    tags, reassign, remove = {}, {}, set()
-    files = []
-    fp0 = os.path.join(EXTRA, "_corrections.tsv")
-    if os.path.exists(fp0):
-        files.append(fp0)
-    cdir = os.path.join(BASE, "contributions")
-    if os.path.isdir(cdir):
-        files += sorted(glob.glob(os.path.join(cdir, "*.tsv")))
-    for fp in files:
-        for line in open(fp, encoding="utf-8"):
-            line = line.rstrip("\n")
-            if not line or line.startswith("#") or "\t" not in line:
-                continue
-            parts = line.split("\t")
-            act = parts[0].strip().lower()
-            if act in ("action", "type"):  # en-tête
-                continue
-            fn = parts[1].strip() if len(parts) > 1 else ""
-            val = parts[2].strip() if len(parts) > 2 else ""
-            if not fn:
-                continue
-            if act == "tag":
-                tags[fn] = [a.strip() for a in re.split(r"[,;]", val) if a.strip()]
-            elif act == "reassign" and val:
-                reassign[fn] = val; remove.discard(fn)
-            elif act == "remove":
-                remove.add(fn)
-    return tags, reassign, remove
-CORR = load_corrections()
-
-def load_sidecar():
-    """Aspects : img/quiz-extra/_aspects.tsv (fichier<TAB>aspects) + tags des contributions."""
-    d = {}
-    p = os.path.join(EXTRA, "_aspects.tsv")
-    if os.path.exists(p):
-        for line in open(p, encoding="utf-8"):
-            line = line.rstrip("\n")
-            if not line or line.startswith("#") or "\t" not in line:
-                continue
-            fn, asp = line.split("\t", 1)
-            if fn.strip().lower() in ("fichier", "file"):  # ligne d'en-tête
-                continue
-            d[fn.strip()] = [a.strip() for a in re.split(r"[,;]", asp) if a.strip()]
-    d.update(CORR[0])  # les tags de contribution écrasent
-    return d
-SIDE = load_sidecar()
-
-def apply_corrections(species):
-    """Applique reassign/remove : retire les photos signalées, déplace les reclassées."""
-    _tags, reassign, remove = CORR
-    if reassign or remove:
-        by_stem = {}
-        for s in species:
-            by_stem.setdefault(s["stem"], s)
-        moved = {}
-        for s in species:
-            keep = []
-            for p in s["paths"]:
-                b = os.path.basename(p)
-                if b in remove:
-                    continue
-                if b in reassign:
-                    moved.setdefault(reassign[b], []).append(p)
-                    continue
-                keep.append(p)
-            s["paths"] = keep
-        for tgt, ps in moved.items():
-            if tgt in by_stem:
-                for p in ps:
-                    if p not in by_stem[tgt]["paths"]:
-                        by_stem[tgt]["paths"].append(p)
-    kept = []
-    for s in species:
-        if s["paths"]:
-            kept.append(s)
-        else:
-            print("  ⚠ espèce sans photo après corrections, retirée du quiz :", s["name"])
-    return kept
-
-def cells_of(line):
-    return [c.strip().replace("\x01", "|") for c in line.replace("\\|", "\x01").split("|")][1:-1]
-
-def hkey(h):
-    h = "".join(c for c in unicodedata.normalize("NFD", h.strip().lower()) if unicodedata.category(c) != "Mn").replace(".", "")
-    for pre, k in [("photo", "photo"), ("esp", "name"), ("plante", "name"), ("champignon", "name"),
-                   ("animal", "name"), ("groupe", "groupe"), ("type", "type"), ("fam", "famille"), ("fix", "fixn"),
-                   ("mycor", "mycorhize"), ("lum", "lumiere"), ("succ", "succession"), ("cycle", "cycle"),
-                   ("strate", "strate"), ("fonction", "fonction"), ("comest", "comestible"),
-                   ("ecolog", "ecologie"), ("arbre", "hote"), ("substrat", "hote"), ("hote", "hote"),
-                   ("saison", "saison"), ("habitat", "habitat"), ("role", "role"), ("regime", "regime"),
-                   ("repart", "repartition"), ("note", "notes")]:
-        if h.startswith(pre):
-            return k
-    if "latin" in h:
-        return "latin"
-    return h
 
 def b64_asis(path):
     ext = path.rsplit(".", 1)[-1].lower()
@@ -144,133 +36,6 @@ def b64_small(path, maxpx=340, q=60):
     ext = path.rsplit(".", 1)[-1].lower()
     mime = "image/png" if ext == "png" else "image/jpeg"
     return "data:%s;base64,%s" % (mime, base64.b64encode(orig).decode())
-
-def aspect_of(path, stem):
-    base = os.path.basename(path)
-    if base in SIDE:
-        return SIDE[base] or ["divers"]
-    fn = os.path.splitext(base.lower())[0]
-    suffix = fn[len(stem):] if fn.startswith(stem) else fn
-    found = []
-    for tok in re.split(r"[-_ ]+", suffix):
-        if tok in ASPECT_KW and ASPECT_KW[tok] not in found:
-            found.append(ASPECT_KW[tok])
-    return found or ["divers"]
-
-PHOTO_EXT = (".jpg", ".jpeg", ".png")
-
-def extra_photos(stem):
-    """Photos supplémentaires d'une espèce dans img/quiz-extra/.
-
-    La convention est <stem>-<aspects>-<n>.jpg : le **séparateur est exigé**, sinon un stem
-    happe les photos de celui qu'il préfixe (« ail » prenait celles de l'ail des ours et de
-    l'ail rocambole, « chou » celles du chou de Daubenton, « poireau » celles du perpétuel).
-    Le stem nu (<stem>.jpg) est accepté : c'est une photo de l'espèce, sans aspect annoncé.
-    """
-    if not os.path.isdir(EXTRA):
-        return []
-    out = []
-    for name in sorted(os.listdir(EXTRA)):
-        if not name.startswith(stem) or not name.lower().endswith(PHOTO_EXT):
-            continue
-        rest = name[len(stem):]
-        if not (rest.startswith("-") or rest.startswith(".")):
-            continue  # « _des_ours-1.jpg » : appartient à une autre espèce
-        p = os.path.join(EXTRA, name)
-        if os.path.isfile(p):
-            out.append(p)
-    return out
-
-def parse_atlas(path, cat, seen):
-    lines = open(os.path.join(BASE, path), encoding="utf-8").read().split("\n")
-    header = None
-    for ln in lines:
-        s = ln.lstrip()
-        if s.startswith("|") and not s.startswith("| ![") and "latin" in ln.lower():
-            header = [hkey(c) for c in cells_of(ln)]
-            break
-    out = []
-    for ln in lines:
-        if not ln.lstrip().startswith("| !["):
-            continue
-        m = IMG_RE.search(ln)
-        if not m:
-            continue
-        cells = cells_of(ln)
-        row = {}
-        for i, val in enumerate(cells):
-            k = header[i] if (header and i < len(header)) else None
-            if k and k not in ("photo", "search", "🔍"):
-                row[k] = val
-        name = row.get("name", "")
-        if not name:
-            continue
-        stem = os.path.splitext(m.group(1))[0]
-        vpath = os.path.join(IMG, m.group(1))
-        if not os.path.exists(vpath):
-            print("  ⚠ vignette absente :", name, m.group(1)); continue
-        paths = [vpath] + extra_photos(stem)
-        fields = {k: v for k, v in row.items() if k not in ("name", "latin") and v and v not in ("—", "-", "")}
-        sid = stem if stem not in seen else stem + "_" + cat
-        seen.add(sid)
-        out.append({"id": sid, "stem": stem, "name": name, "latin": row.get("latin", ""),
-                    "note": row.get("notes", ""), "cat": cat, "fields": fields, "paths": paths})
-    return out
-
-def load_confusions():
-    """Groupes de sosies depuis « Confusions - référence.md » : | Groupe | Espèces (stems) | Ce qui tranche |"""
-    p = os.path.join(BASE, "Confusions - référence.md")
-    groups = []
-    if not os.path.exists(p):
-        return groups
-    for ln in open(p, encoding="utf-8"):
-        if not ln.lstrip().startswith("|"):
-            continue
-        cells = cells_of(ln)
-        if len(cells) < 3:
-            continue
-        if cells[1].strip().lower().startswith("esp"):  # en-tête
-            continue
-        if set(cells[0].strip()) <= set("-: "):  # séparateur
-            continue
-        stems = [x.strip() for x in re.split(r"[,;]", cells[1]) if x.strip()]
-        tip = cells[2].strip()
-        if stems and tip:
-            groups.append({"stems": stems, "tip": tip})
-    return groups
-CONF = load_confusions()
-
-# Verdict oui/non dérivé de la colonne « Comestible » des atlas. La règle vivait dans le JS du
-# site ; elle est ici pour être testable, et le site consomme le champ « edible » produit au build.
-_ED_LEAD = re.compile(r"^[☠⚠*\s]+")          # décorations de tête : ☠ ⚠ ** espaces
-_ED_NO_HEAD = re.compile(r"^(non|toxique|mortel|immangeable)")
-_ED_NO_ANY = re.compile(r"toxique|mortel|☠|immangeable")
-_ED_NOT_FOOD = re.compile(r"^(fourrage|gazon|vannerie)")
-_ED_PARENS = re.compile(r"\([^)]*\)")
-
-def is_edible(value):
-    """La partie nommée est-elle comestible ?
-
-    Le verdict de tête décide : « ☠ TOXIQUE (seul l'arille rouge…) » (if) → non.
-    Un poison mis en garde entre parenthèses n'invalide pas un verdict positif :
-    « Bon (⚠ crue TOXIQUE) » (morille) → oui, alors que « baies TOXIQUES » → non,
-    parce que le poison y qualifie la partie nommée.
-    Une valeur entièrement entre parenthèses est une note, pas un verdict : « (médicinal) » → non.
-    """
-    v = (value or "").strip()
-    if not v:
-        return False
-    vl = v.lower()
-    head = _ED_LEAD.sub("", vl)
-    if _ED_NO_HEAD.match(head):
-        return False
-    if head.startswith("("):
-        return False
-    if _ED_NO_ANY.search(_ED_PARENS.sub(" ", vl)):
-        return False
-    if _ED_NOT_FOOD.match(head):
-        return False
-    return True
 
 def to_data(species, enc, cap=None):
     res = []
@@ -797,3 +562,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
