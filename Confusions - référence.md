@@ -21,6 +21,7 @@
 | Argentés : argousier / chalef | argousier, chalef | Argousier : **épineux**, baies **orange** acides, feuilles étroites argentées. Chalef (olivier de Bohême) : peu ou pas épineux, petits fruits argentés. |
 | Fabacées jaunes de lande | genet, ajonc | Ajonc : **très épineux** (rameaux en épines), fleur toute l'année. Genêt à balais : **sans épines**, rameaux verts souples. |
 | Lande acide : myrtille / callune | myrtille, callune | Myrtille : feuilles caduques, **baies bleu-noir** comestibles. Callune (bruyère) : minuscules feuilles en écailles, fleurs roses, non comestible. |
+| Bruyères de lande : callune et Erica | callune, bruyere-4-angles, bruyere-cendree | Callune : feuilles très petites en écailles, opposées et imbriquées ; Bruyère à quatre angles : feuilles en verticilles de quatre, fleurs roses en clochettes, milieux humides ; Bruyère cendrée : feuilles étroites en verticilles de trois, fleurs rose foncé à violettes, landes sèches. |
 | Rubus : ronce / framboisier | ronce, framboisier | Ronce : mûres **noires** adhérentes, tiges arquées très épineuses. Framboisier : fruits **rouges** qui se détachent du réceptacle, tiges peu épineuses. |
 | Malvacées : mauve / guimauve | mauve, guimauve | Guimauve : tout **velouté-blanchâtre**, milieux humides/salés. Mauve : plus verte, fleurs veinées, lieux rudéraux. |
 | Lamiacées odorantes | menthe, melisse | Froisser : menthe = **odeur mentholée** ; mélisse = **odeur citronnée**. |
