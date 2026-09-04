@@ -755,7 +755,12 @@ JS += r"""
         +(V.dlEnCours==='1'?'<div style="margin-top:12px"><div style="font:600 12px/1.4 var(--font-body);color:var(--fg-2)">'+e(V.dlLibelle)+'</div><div style="height:6px;margin-top:6px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;width:'+V.dlPct+'%;background:var(--color-success)"></div></div></div>':'')
         +(V.offMsg?'<div role="status" style="margin-top:12px;padding:10px 12px;border-radius:8px;font:600 12px/1.45 var(--font-body);background:var(--color-success-soft);color:var(--color-success)">'+e(V.offMsg)+'</div>':'')
         +'</div>':'')
-      +'<div style="font:400 11px/1.5 var(--font-body);color:var(--fg-4);padding-top:8px;border-top:1px solid var(--border)">Photos : Wikimedia Commons &amp; iNaturalist (licences libres / CC). <a href="https://github.com/iribarnesy/atlas-especes" target="_blank" rel="noopener">Contribuer sur GitHub</a></div>'
+      // Le pied de page ne prête aucune licence aux photos : chacune garde la sienne
+      // (img/CREDITS.tsv), le dépôt ne peut pas les relicencier. Cf. #11.
+      +'<div style="font:400 11px/1.5 var(--font-body);color:var(--fg-4);padding-top:8px;border-top:1px solid var(--border)">'
+      +'Atlas et code sous licence <b>non commerciale</b> (CC BY-NC-SA 4.0 · PolyForm NC). '
+      +'Photos : Wikimedia Commons &amp; iNaturalist, <b>chacune sous sa propre licence</b>, à retrouver dans <code>img/CREDITS.tsv</code>. '
+      +'<a href="https://github.com/iribarnesy/atlas-especes" target="_blank" rel="noopener">Le dépôt et ses licences sur GitHub</a></div>'
       +'</div>';
     }
     return '';

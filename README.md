@@ -166,3 +166,33 @@ par `scripts/fetch_aspects.py` (Wikimedia Commons) et `scripts/fetch_photos.py`
 d'une image ancienne ne peut plus être retrouvée automatiquement, elle se complète à la
 main. Les nouvelles images, elles, sont créditées au téléchargement. Chaque contributeur
 reste responsable des droits des images qu'il ajoute (voir CONTRIBUTING).
+
+## ⚖️ Licences
+
+Le dépôt mélange trois natures de contenu, qui ne relèvent pas de la même licence.
+
+| Ce que c'est | Où | Licence |
+|---|---|---|
+| **Code** | `scripts/`, `tests/`, `.github/` | [PolyForm Noncommercial 1.0.0](LICENSE-CODE) |
+| **Contenu rédigé** | `*.md` (atlas, confusions, docs), `*.tsv` du dépôt | [CC BY-NC-SA 4.0](LICENSE) |
+| **Photos** | `img/especes/`, `img/quiz-extra/` | **chacune sa licence d'origine** — voir [`img/CREDITS.tsv`](img/CREDITS.tsv) |
+
+**En clair.** Réutilise, modifie, republie, enseigne avec — librement, à condition de
+**citer la source** et de **ne pas en faire un usage commercial**. Le contenu rédigé se
+repartage aux **mêmes conditions** (partage à l'identique). Pour un usage commercial,
+demander au mainteneur.
+
+⚠️ **Les photos ne sont pas relicenciées par ce dépôt** et ne le peuvent pas : elles
+viennent de Wikimedia Commons et d'iNaturalist, chacune sous sa propre licence (souvent
+CC-BY ou CC-BY-SA). Un réutilisateur doit s'y référer **image par image** dans
+`img/CREDITS.tsv`, où l'attribution est aujourd'hui à compléter (voir ci-dessus).
+
+Deux conséquences à connaître :
+
+- La clause **non commerciale** fait sortir le projet de la définition « open source » (OSI)
+  et de la « culture libre » : c'est un choix assumé du mainteneur, pas un oubli.
+- Les informations des atlas sont des **faits** (tendances écologiques, familles, caractères),
+  qui ne s'approprient pas ; la licence porte sur leur **rédaction et leur agencement**. Un
+  passage recopié mot pour mot d'une source sous CC-BY-SA resterait sous cette licence-là —
+  raison de plus pour reformuler et pour recouper avec une flore, comme le rappelle l'en-tête
+  de chaque atlas.

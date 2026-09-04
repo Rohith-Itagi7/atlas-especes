@@ -87,6 +87,23 @@ publiée. Les images sans droits clairs seront retirées.
 `python3 scripts/credits.py` dit où on en est (combien d'images créditées, lesquelles
 manquent). Les photos récupérées par les scripts sont créditées automatiquement.
 
+## Sous quelle licence ta contribution est-elle publiée ?
+
+En ouvrant une Pull Request, tu acceptes que ta contribution soit publiée sous la licence
+de la partie que tu touches (détail et explications : section **Licences** du
+[README](README.md)) :
+
+- **code** (`scripts/`, `tests/`, `.github/`) → [PolyForm Noncommercial 1.0.0](LICENSE-CODE) ;
+- **contenu rédigé** (atlas, confusions, docs, `.tsv`) → [CC BY-NC-SA 4.0](LICENSE).
+
+Les deux interdisent l'**usage commercial** : c'est le choix du projet, à connaître avant de
+contribuer. Tu gardes le droit d'auteur sur ce que tu écris.
+
+Une **photo**, en revanche, n'est jamais relicenciée par le dépôt : elle reste sous **sa**
+licence, que tu dois renseigner dans `img/CREDITS.tsv` (ci-dessus). Si tu es l'auteur de la
+photo, indique-toi comme auteur et choisis explicitement une licence — `CC-BY-SA-4.0` ou
+`CC0-1.0` sont de bons choix, et rien n'oblige à la restreindre au non commercial.
+
 ## Vérifier en local (facultatif)
 
 ```bash
