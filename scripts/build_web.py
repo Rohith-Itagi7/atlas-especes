@@ -9,11 +9,12 @@ Pillow optionnel). Pas de sips → tourne en CI Linux.
 
   python3 scripts/build_web.py [dossier_sortie]   (défaut : _site)
 """
-import os, sys, json, shutil
+import hashlib, json, os, shutil, sys
 
 import atlas_data
 import credits
 import derives
+import site_sw
 import site_ui
 
 BASE = atlas_data.BASE
@@ -78,16 +79,45 @@ def to_web_data(species, deriveur=None):
         out.append(d)
     return out
 
+def offline_web(data, outdir):
+    """Poids des photos par catégorie, pour annoncer la taille d'un téléchargement hors ligne.
+
+    Le client ne peut pas connaître la taille des fichiers sans les télécharger : c'est le
+    build qui la mesure (original + vignette de chaque photo de la catégorie).
+    """
+    par_cat = {}
+    for s in data:
+        e = par_cat.setdefault(s["cat"], {"n": 0, "o": 0})
+        for im in s["imgs"]:
+            for rel, racine in ((im["u"], BASE), (im.get("t"), outdir)):
+                if not rel:
+                    continue
+                chemin = os.path.join(racine, rel)
+                if os.path.exists(chemin):
+                    e["n"] += 1
+                    e["o"] += os.path.getsize(chemin)
+    return par_cat
+
+def empreinte(data):
+    """Version du build : change dès que la page ou les données changent (cf. service worker)."""
+    brut = (json.dumps(data, ensure_ascii=False, sort_keys=True)
+            + site_ui.CSS + site_ui.JS + site_ui.BODY)
+    return hashlib.sha256(brut.encode("utf-8")).hexdigest()[:12]
+
 def aspects_web():
     """Vocabulaire des aspects pour le site (l'app n'en garde aucune copie en dur)."""
     return [{"id": a.id, "label": a.label, "emoji": a.emoji, "cible": a.cible}
             for a in atlas_data.ASPECTS]
 
-def assemble(data):
+def assemble(data, offline=None):
     js = (site_ui.JS.replace("/*__DATA__*/", json.dumps(data, ensure_ascii=False))
-                    .replace("/*__ASPECTS__*/", json.dumps(aspects_web(), ensure_ascii=False)))
+                    .replace("/*__ASPECTS__*/", json.dumps(aspects_web(), ensure_ascii=False))
+                    .replace("/*__OFFLINE__*/", json.dumps(offline or {}, ensure_ascii=False)))
     head = ('<meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
+            '<meta name="theme-color" content="#16241C">'
+            '<link rel="manifest" href="' + site_sw.MANIFESTE + '">'
+            '<link rel="apple-touch-icon" href="apple-touch-icon.png">'
             '<title>Atlas des espèces</title><style>' + site_ui.CSS + '</style>')
     return ("<!doctype html><html lang=\"fr\"><head>" + head + "</head><body>"
             + site_ui.BODY + "<script>" + js + "</script></body></html>")
@@ -102,8 +132,10 @@ def main():
     os.makedirs(OUTDIR, exist_ok=True)
     deriveur = derives.Deriveur(OUTDIR)
     data = to_web_data(species, deriveur)
+    offline = {"cats": offline_web(data, OUTDIR), "cache": site_sw.CACHE_IMAGES}
     with open(os.path.join(OUTDIR, "index.html"), "w", encoding="utf-8") as f:
-        f.write(assemble(data))
+        f.write(assemble(data, offline))
+    png = site_sw.ecrire(OUTDIR, empreinte(data))
     # copie uniquement les images réellement référencées
     refs = {im["u"] for s in data for im in s["imgs"]}
     copied = 0
@@ -121,6 +153,9 @@ def main():
     print("TOTAL : %d espèces, %d images -> %s (index.html %.1f Mo)"
           % (len(species), copied, OUTDIR, sz))
     print("       %s" % deriveur.resume())
+    print("       hors ligne : service worker + manifeste%s, %.1f Mo de photos téléchargeables"
+          % ("" if png else " (icônes PNG sautées : Pillow absent)",
+             sum(c["o"] for c in offline["cats"].values()) / 1e6))
 
 if __name__ == "__main__":
     main()

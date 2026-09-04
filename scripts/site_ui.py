@@ -105,6 +105,10 @@ input{font-family:var(--font-body)}
 .cmeta{padding:12px 14px;text-align:center;flex:0 0 auto}
 .critbanner{padding:12px 14px;border-radius:10px;font:700 14px/1.35 var(--font-body);text-align:center}
 .critbanner.ok{background:var(--color-success-soft);color:var(--color-success)}
+.etat{padding:9px 14px;font:600 12px/1.4 var(--font-body);text-align:center}
+.etat-off{background:var(--color-warning-soft);color:var(--color-warning)}
+.etat-maj{background:var(--color-navy-900);color:#fff}
+.etat .lien{background:none;border:0;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;padding:0 2px}
 .imgcredit{font:400 10px/1.45 var(--font-body);color:var(--fg-3);margin-top:6px}
 .imgcredit a{text-decoration:underline}
 .critbanner.no{background:var(--color-danger-soft);color:var(--color-danger)}
@@ -116,6 +120,8 @@ JS = r"""
 const SPECIES_DATA = /*__DATA__*/;
 // Vocabulaire des aspects, injecté au build depuis scripts/atlas_data.py (source unique)
 const ASPECTS_DATA = /*__ASPECTS__*/;
+// Poids des photos par catégorie + nom du cache d'images (cf. scripts/site_sw.py)
+const OFFLINE_DATA = /*__OFFLINE__*/;
 const CHEV='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>';
 const ARROW='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h13M12 5l7 7-7 7"></path></svg>';
 const ICONS={reviser:'<circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3.5"></circle>',atlas:'<rect x="3.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1"></rect>',trier:'<path d="M4 5h16l-6 7v7l-4-2v-5z"></path>',progres:'<path d="M4 20V11M10 20V4M16 20v-6M2 20h20"></path>'};
@@ -168,12 +174,15 @@ class App{
     query:'', listCat:'mixte', fiche:null, fimg:0, ficheFrom:'atlas',
     crit:null, cq:[], cp:0, csess:{s:0,c:0}, cfb:null, canim:'',
     progMsg:'', progMsgOk:true,
+    enLigne:(typeof navigator!=='undefined'&&'onLine' in navigator)?navigator.onLine:true,
+    majPrete:false, dl:null, offMsg:'',
     prog:{}
   };
   setState(patch,cb){Object.assign(this.state,patch);this.render();if(cb)cb.call(this);}
   mount(){
     try{const p=localStorage.getItem('atlas-v2-prog');if(p)this.state.prog=JSON.parse(p);}catch(e){}
     this.render();
+    this.initHorsLigne();
     try{history.replaceState(this.snapshot(),'');}catch(e){}
   }
   // progress
@@ -216,6 +225,60 @@ class App{
   // Affichage petit (grille, bandeau, carte Oui/Non) : la vignette légère produite au build
   // (cf. scripts/derives.py) ; sinon l'original. Les grandes vues gardent l'original.
   petite(im){return im?(im.t||im.u):'';}
+  // __HORSLIGNE_DEBUT__  (bloc extrait et testé sous node par tests/test_horsligne.py)
+  octetsLisibles(o){o=o||0;
+    if(o<900*1024)return Math.max(1,Math.round(o/1024))+' ko';
+    return (o/1048576).toFixed(o<10*1048576?1:0).replace('.',',')+' Mo';}
+  // Toutes les images d'une catégorie (original + vignette), sans doublon : ce qu'il faut
+  // télécharger pour consulter cette catégorie hors ligne.
+  urlsCategorie(cat){const vu={},out=[];
+    this.all().forEach(s=>{if(cat!=='mixte'&&s.cat!==cat)return;
+      s.imgs.forEach(im=>[im.u,im.t].forEach(u=>{if(u&&!vu[u]){vu[u]=1;out.push(u);}}));});
+    return out;}
+  // __HORSLIGNE_FIN__
+  horsLigneDispo(){return typeof navigator!=='undefined'&&'serviceWorker' in navigator&&typeof caches!=='undefined';}
+  initHorsLigne(){
+    if(typeof window==='undefined')return;
+    window.addEventListener('online',()=>this.setState({enLigne:true}));
+    window.addEventListener('offline',()=>this.setState({enLigne:false}));
+    if(!this.horsLigneDispo())return;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{if(this._recharge)location.reload();});
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      const voir=()=>{if(reg.waiting&&navigator.serviceWorker.controller)this.setState({majPrete:true});};
+      voir();
+      reg.addEventListener('updatefound',()=>{const sw=reg.installing;
+        if(sw)sw.addEventListener('statechange',voir);});
+    }).catch(()=>{});
+  }
+  appliquerMaj=()=>{this._recharge=true;
+    navigator.serviceWorker.getRegistration().then(reg=>{
+      if(reg&&reg.waiting)reg.waiting.postMessage({type:'ACTIVER'});else location.reload();
+    }).catch(()=>location.reload());};
+  telecharger(cat){return async ()=>{
+    if(this.state.dl||!this.horsLigneDispo())return;
+    const urls=this.urlsCategorie(cat);
+    this.setState({dl:{cat,fait:0,total:urls.length,echecs:0},offMsg:''});
+    let cache;
+    try{cache=await caches.open(OFFLINE_DATA.cache);}
+    catch(e){this.setState({dl:null,offMsg:'Cache indisponible dans ce navigateur.'});return;}
+    for(let i=0;i<urls.length;i++){
+      try{
+        if(!(await cache.match(urls[i]))){          // déjà là = rien à retélécharger
+          const rep=await fetch(urls[i]);
+          if(rep&&rep.ok)await cache.put(urls[i],rep.clone());else this.state.dl.echecs++;
+        }
+      }catch(e){this.state.dl.echecs++;}
+      this.state.dl.fait=i+1;
+      if((i+1)%8===0||i+1===urls.length)this.render();
+    }
+    const d=this.state.dl;
+    this.setState({dl:null,offMsg:d.total+' photo'+(d.total>1?'s':'')+' disponible'+(d.total>1?'s':'')+' hors ligne'
+      +(d.echecs?' ('+d.echecs+' échec'+(d.echecs>1?'s':'')+')':'')+'.'});};}
+  viderImages=async ()=>{
+    if(!this.horsLigneDispo())return;
+    if(!confirm('Vider les photos gardées hors ligne ? Elles seront retéléchargées à la demande.'))return;
+    try{await caches.delete(OFFLINE_DATA.cache);this.setState({offMsg:'Photos hors ligne effacées.'});}
+    catch(e){this.setState({offMsg:'Effacement impossible.'});}};
   // « Ne pas confondre » du quiz : en mode sosies, le critère du groupe qui a fourni les
   // distracteurs ; sinon tous les critères de l'espèce.
   quizTips(q,sp){if(!sp||!sp.conf||!sp.conf.length)return [];
@@ -423,6 +486,17 @@ class App{
       critRows:this.CRIT.map(c=>{const x=S.prog['crit|'+c.id]||{s:0,c:0},acc=x.s?Math.round(100*x.c/x.s):0;return{label:c.q,right:x.s?x.c+' / '+x.s+' bonnes réponses':'jamais joué',acc:x.s>=6?(acc>=75?'Solide':(acc>=50?'À consolider':'Fragile')):(x.s?'Trop peu de réponses':'—'),pct:acc,bar:x.s?(acc>=75?'#2F6B3A':(acc>=50?'#A87B3C':'#A33A2B')):'#C8D2C6'};}),
       catCards:catList.filter(c=>c[0]!=='mixte').map(c=>{const arr=catOf(c[0]),k=knownIn(c[0]);return{label:c[1],n:arr.length,pct:arr.length?Math.round(100*k/arr.length):0};}),
       exportProg:this.exportProg,resetProg:this.resetProg,
+      horsLigneDispo:this.horsLigneDispo()?'1':'0',horsLigne:S.enLigne?'0':'1',
+      majPrete:S.majPrete?'1':'0',appliquerMaj:this.appliquerMaj,
+      offMsg:S.offMsg,viderImages:this.viderImages,
+      dlEnCours:S.dl?'1':'0',
+      dlLibelle:S.dl?(this.label(this.CATS,S.dl.cat)+' — '+S.dl.fait+' / '+S.dl.total+' photos'):'',
+      dlPct:S.dl&&S.dl.total?Math.round(100*S.dl.fait/S.dl.total):0,
+      offCats:Object.keys(OFFLINE_DATA.cats||{}).map(c=>({
+        label:this.label(this.CATS,c),
+        taille:this.octetsLisibles((OFFLINE_DATA.cats[c]||{}).o),
+        n:(OFFLINE_DATA.cats[c]||{}).n||0,
+        go:this.telecharger(c)})),
       importProg:this.pickImport(false),replaceProg:this.pickImport(true),
       onImportFile:this.onImportFile,progMsg:S.progMsg,progMsgOk:S.progMsgOk?'1':'0'
     };
@@ -522,6 +596,13 @@ JS += r"""
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Critères écologiques — oui / non</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Ta fiabilité question par question.</div>'+V.critRows.map(row).join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:14px">Couverture par catégorie</div>'+V.catCards.map(c=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font:600 14px/1 var(--font-body)">'+e(c.label)+'</span><span style="font:700 12px/1 var(--font-mono);color:var(--fg-3)">'+c.n+'</span></div><div style="height:6px;margin-top:10px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-navy-900);width:'+c.pct+'%"></div></div></div>').join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:12px">Sauvegarde</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:56ch;margin-bottom:14px">La progression reste dans ce navigateur. Exporte un fichier pour la garder ou changer d\'appareil.</div><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="ib" data-h="'+h(V.exportProg)+'">Exporter ma progression</button><button class="ib" data-h="'+h(V.importProg)+'">Importer un fichier</button><button class="ib" data-h="'+h(V.replaceProg)+'">Remplacer par un fichier…</button><button class="ib" data-h="'+h(V.resetProg)+'" style="color:var(--color-brand-red)">Réinitialiser</button></div><input id="prog-file" type="file" accept="application/json,.json" data-hc="'+h(V.onImportFile)+'" style="display:none">'+(V.progMsg?'<div role="status" style="margin-top:12px;padding:10px 12px;border-radius:8px;font:600 12px/1.45 var(--font-body);background:'+(V.progMsgOk==='1'?'var(--color-success-soft);color:var(--color-success)':'var(--color-warning-soft);color:var(--color-warning)')+'">'+e(V.progMsg)+'</div>':'')+'</div>'
+      +(V.horsLigneDispo==='1'?'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:12px">Hors ligne</div>'
+        +'<div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:56ch;margin-bottom:14px">L\'app fonctionne sans réseau une fois ouverte, et garde les photos déjà vues. Pour partir sur le terrain, télécharge les photos d\'une catégorie à l\'avance.</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:8px">'+V.offCats.map(c=>'<button class="ib" data-h="'+h(c.go)+'"'+(V.dlEnCours==='1'?' disabled':'')+'>'+e(c.label)+' · '+e(c.taille)+'</button>').join('')
+        +'<button class="ib" data-h="'+h(V.viderImages)+'" style="color:var(--color-brand-red)">Vider les photos</button></div>'
+        +(V.dlEnCours==='1'?'<div style="margin-top:12px"><div style="font:600 12px/1.4 var(--font-body);color:var(--fg-2)">'+e(V.dlLibelle)+'</div><div style="height:6px;margin-top:6px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;width:'+V.dlPct+'%;background:var(--color-success)"></div></div></div>':'')
+        +(V.offMsg?'<div role="status" style="margin-top:12px;padding:10px 12px;border-radius:8px;font:600 12px/1.45 var(--font-body);background:var(--color-success-soft);color:var(--color-success)">'+e(V.offMsg)+'</div>':'')
+        +'</div>':'')
       +'<div style="font:400 11px/1.5 var(--font-body);color:var(--fg-4);padding-top:8px;border-top:1px solid var(--border)">Photos : Wikimedia Commons &amp; iNaturalist (licences libres / CC). <a href="https://github.com/iribarnesy/atlas-especes" target="_blank" rel="noopener">Contribuer sur GitHub</a></div>'
       +'</div>';
     }
@@ -555,9 +636,15 @@ JS += r"""
       top.addEventListener('pointermove',ev=>{if(!drag)return;dx=ev.clientX-x0;top.style.transform='translateX('+dx+'px) rotate('+(dx/22)+'deg)';top.style.opacity=String(1-Math.min(Math.abs(dx)/480,.4));});
       top.addEventListener('pointerup',()=>{if(!drag)return;drag=false;if(Math.abs(dx)>70){self.critAns(dx>0)();}else{top.style.transition='transform .15s,opacity .15s';top.style.transform='';top.style.opacity='1';setTimeout(()=>{top.style.transition='';},160);}dx=0;});}
   }
+  // Bandeaux d'état : sans réseau (l'app marche quand même) et nouvelle version prête.
+  bandeaux(V){let out='';
+    if(V.horsLigne==='1')out+='<div class="etat etat-off" role="status">Hors ligne — l\'atlas et les photos déjà vues restent disponibles.</div>';
+    if(V.majPrete==='1')out+='<div class="etat etat-maj" role="status">Nouvelle version téléchargée. <button class="lien" data-h="'+h(V.appliquerMaj)+'">Recharger</button></div>';
+    return out;}
   render(){
     const ae=document.activeElement,aid=ae&&ae.id,asel=(ae&&ae.selectionStart!=null)?ae.selectionStart:null;
-    H=[];const V=this.renderVals();document.getElementById('app').innerHTML=this.tpl(V);this.bind();
+    H=[];const V=this.renderVals();
+    document.getElementById('app').innerHTML=this.bandeaux(V)+this.tpl(V);this.bind();
     if(aid){const el=document.getElementById(aid);if(el){el.focus();try{if(asel!=null)el.setSelectionRange(asel,asel);}catch(e){}}}
   }
 }

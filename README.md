@@ -16,6 +16,20 @@ et écosystèmes tempérés**.
 Le site est **statique** : une page `index.html` + les images. Aucune donnée n'est envoyée
 nulle part ; tout reste dans ton navigateur.
 
+## 📴 Hors ligne
+
+L'atlas sert sur le terrain, là où il n'y a pas de réseau. Une fois la page ouverte une
+première fois, elle **redémarre sans connexion** (service worker), et toute photo consultée
+reste consultable. Le site s'**installe** aussi sur l'écran d'accueil (Android, iOS).
+
+Les 33 Mo de photos ne sont **pas** téléchargés d'office : dans *Progrès → Hors ligne*, un
+bouton par catégorie annonce sa taille et télécharge ses photos à la demande
+(ligneux ~19 Mo, herbacées ~16 Mo, champignons ~2,9 Mo, faune ~2,1 Mo, diverses ~2,0 Mo),
+avec une barre de progression et un bouton pour tout effacer.
+
+Quand une nouvelle version est publiée, elle est téléchargée en arrière-plan et un bandeau
+propose de **recharger** — rien ne change sous les pieds pendant une session de quiz.
+
 ## 🌐 Site en ligne
 
 Publié via **GitHub Pages** (voir l'URL dans l'onglet *Settings → Pages* du dépôt).
@@ -97,6 +111,8 @@ scripts/atlas_data.py             couche de données : atlas, photos, contributi
                                   des aspects (constante ASPECTS = source unique)
 scripts/build_web.py              build du site statique (utilisé par la CI)
 scripts/site_ui.py                interface du site (CSS + app vanilla)
+scripts/site_sw.py                hors ligne : service worker, manifeste, icônes
+scripts/derives.py                vignettes légères produites au build (Pillow optionnel)
 scripts/generer_quiz.py           build local des versions autonome / Artifact (macOS, `sips`)
 scripts/couverture.py             (re)génère COUVERTURE.md
 scripts/verifier_atlas.py         validation des atlas et des photos (CI sur les PR)
