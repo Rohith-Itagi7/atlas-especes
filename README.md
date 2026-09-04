@@ -16,6 +16,18 @@ et écosystèmes tempérés**.
 Le site est **statique** : une page `index.html` + les images. Aucune donnée n'est envoyée
 nulle part ; tout reste dans ton navigateur.
 
+## ♿ Accessibilité et thème sombre
+
+Le site suit le **thème du système** (clair ou sombre) : toutes les couleurs passent par des
+jetons CSS, aucune n'est écrite en dur, et `tests/test_contraste.py` vérifie les rapports de
+contraste WCAG AA des deux thèmes à chaque exécution des tests.
+
+Tout est utilisable **au clavier seul** (navigation, grille, fiche, quiz, Oui/Non avec
+`←`/`N` et `→`/`O`), avec un anneau de focus visible. Les photos ont des alternatives
+textuelles qui nomment l'espèce et l'aspect — sauf dans le quiz avant la réponse, où
+l'alternative ne dit que l'aspect pour ne pas donner la solution. Les résultats sont annoncés
+aux lecteurs d'écran, et `prefers-reduced-motion` désactive les animations de cartes.
+
 ## 📴 Hors ligne
 
 L'atlas sert sur le terrain, là où il n'y a pas de réseau. Une fois la page ouverte une

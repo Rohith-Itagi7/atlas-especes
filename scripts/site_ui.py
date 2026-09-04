@@ -5,15 +5,25 @@ Les données sont injectées via window.SPECIES_DATA (généré depuis les atlas
 
 CSS = r"""
 :root{
- --color-navy-900:#16241C;--color-navy-800:#22362A;--color-navy-700:#31463A;--color-navy-500:#6E7F72;
+ --color-navy-900:#16241C;--color-navy-800:#22362A;--color-navy-700:#31463A;--color-navy-500:#606F63;
  --color-navy-300:#A9B6AC;--color-navy-200:#C8D2C6;--color-navy-100:#E2E6DD;--color-navy-50:#F1F3EC;
  --color-brand-red:#2F6B3A;--color-brand-red-deep:#245430;--color-brand-red-soft:#E4EFDF;
  --color-line:#E2E6DD;--color-line-strong:#C8D2C6;--color-off:#F6F6F1;--color-white:#fff;
  --color-yellow:#E3B45C;--color-success:#2F6B3A;--color-success-soft:#E4EFDF;
- --color-danger:#A33A2B;--color-danger-soft:#F6E2DD;--color-warning:#8E6413;--color-warning-soft:#F4EAD3;
+ --color-danger:#A33A2B;--color-danger-soft:#F6E2DD;--color-warning:#80590F;--color-warning-soft:#F4EAD3;
  --bg-canvas:var(--color-white);--bg-surface:var(--color-off);
- --fg-1:#16241C;--fg-2:#31463A;--fg-3:#6E7F72;--fg-4:#A9B6AC;--fg-accent:#2F6B3A;--fg-link:#2F6B3A;
+ --fg-1:#16241C;--fg-2:#31463A;--fg-3:#606F63;--fg-4:#A9B6AC;--fg-accent:#2F6B3A;--fg-link:#2F6B3A;
  --border:var(--color-line);--border-strong:var(--color-line-strong);
+ --bg-card:var(--color-white);          /* surfaces : cartes, menus, champs */
+ --accent-bg:var(--color-navy-900);     /* fond des éléments actifs (nav, chips) */
+ --fg-on-accent:#fff;                   /* texte posé sur --accent-bg ou sur l'accent */
+ --color-partial:#A87B3C;               /* progression partielle */
+ --focus:#2F6B3A;                       /* anneau de focus, visible sur les deux thèmes */
+ --overlay-dark:rgba(14,23,48,.82);     /* pastille posée sur une photo */
+ --overlay-light:rgba(255,255,255,.94);
+ --panel-dark-bg:var(--color-navy-900);  /* panneaux sombres dans les DEUX thèmes */
+ --panel-dark-bg-hover:var(--color-navy-800);
+ --panel-dark-fg:#fff;
  --shadow-2:0 4px 12px rgba(22,36,28,.08),0 1px 2px rgba(22,36,28,.06);
  --shadow-3:0 12px 32px rgba(22,36,28,.14),0 2px 6px rgba(22,36,28,.07);
  --font-brand:"Betclic","Helvetica Neue",Arial,sans-serif;
@@ -22,8 +32,31 @@ CSS = r"""
  --font-headline-data:"Aptos Display","Segoe UI",Arial,sans-serif;
  --font-mono:"Aptos Mono","JetBrains Mono","Consolas",monospace;
 }
+@media (prefers-color-scheme: dark){
+ :root{
+  --bg-canvas:#131A15;--bg-surface:#0E140F;--bg-card:#1B241D;
+  --fg-1:#E9EEE7;--fg-2:#CDD8CB;--fg-3:#A7B8A9;--fg-4:#87978A;
+  --color-line:#2C382E;--color-line-strong:#3E4D40;
+  --color-navy-50:#1B241D;--color-navy-100:#2C382E;--color-navy-200:#3E4D40;--color-navy-300:#87978A;
+  --color-navy-900:#0B120C;--color-navy-800:#16241C;--color-navy-700:#22362A;--color-navy-500:#A7B8A9;
+  --color-white:#1B241D;--color-off:#0E140F;
+  --color-success:#8FC98F;--color-success-soft:#1D2B1F;
+  --color-danger:#F0A79A;--color-danger-soft:#33211E;
+  --color-warning:#E7C173;--color-warning-soft:#2C2517;
+  --color-yellow:#E7C173;
+  --color-brand-red:#8FC98F;--color-brand-red-deep:#B9DDB3;--color-brand-red-soft:#1D2B1F;
+  --fg-accent:#8FC98F;--fg-link:#9FD39F;
+  --accent-bg:#8FC98F;--fg-on-accent:#101710;
+  --color-partial:#D9AE6A;
+  --focus:#9FD39F;
+  --overlay-dark:rgba(6,10,7,.78);--overlay-light:rgba(20,28,22,.92);
+  --panel-dark-bg:#0B120C;--panel-dark-bg-hover:#16241C;--panel-dark-fg:#EAF0E9;
+  --shadow-2:0 4px 12px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.35);
+  --shadow-3:0 12px 32px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);
+ }
+}
 *{box-sizing:border-box}
-html{font-family:var(--font-body);color:var(--fg-1);background:var(--bg-canvas)}
+html{font-family:var(--font-body);color:var(--fg-1);background:var(--bg-canvas);color-scheme:light dark}
 body{margin:0;background:var(--color-off);font-family:var(--font-body);color:var(--fg-1);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
 a{color:var(--fg-link);text-decoration:none}a:hover{color:var(--color-brand-red-deep)}
 img{display:block}
@@ -46,59 +79,66 @@ em{font-style:italic}
 }
 .nb{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-radius:8px;background:transparent;color:var(--fg-3);font:600 14px/1 var(--font-body);cursor:pointer;text-align:left;transition:background 120ms,color 120ms}
 .nb:hover{background:var(--color-navy-50);color:var(--fg-1)}
-.nb[data-on="1"]{background:var(--color-navy-900);color:#fff}
+.nb[data-on="1"]{background:var(--accent-bg);color:var(--fg-on-accent)}
 .tb{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;padding:9px 0 7px;border:0;background:transparent;color:var(--fg-3);font:600 10px/1 var(--font-body);cursor:pointer;letter-spacing:.02em;min-height:56px}
 .tb[data-on="1"]{color:var(--color-brand-red)}
-.ch{padding:7px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--fg-2);font:600 13px/1 var(--font-body);cursor:pointer;white-space:nowrap;transition:all 120ms}
+.ch{padding:7px 12px;border:1px solid var(--border);border-radius:999px;background:var(--bg-card);color:var(--fg-2);font:600 13px/1 var(--font-body);cursor:pointer;white-space:nowrap;transition:all 120ms}
 .ch:hover{border-color:var(--color-navy-300)}
-.ch[data-on="1"]{background:var(--color-navy-900);border-color:var(--color-navy-900);color:#fff}
+.ch[data-on="1"]{background:var(--accent-bg);border-color:var(--accent-bg);color:var(--fg-on-accent)}
 .dd{position:relative;display:inline-block;vertical-align:middle;z-index:50}
 .ch.sel{display:inline-flex;align-items:center;gap:7px;font-size:24px;font-weight:700;padding:4px 10px 4px 14px;border-radius:8px;border-color:var(--color-navy-200);color:var(--fg-1)}
 .ch.sel svg{opacity:.5}
-.menu{position:absolute;top:calc(100% + 6px);left:0;z-index:60;min-width:200px;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;padding:6px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-3);animation:pop 140ms cubic-bezier(.16,1,.3,1) both}
+.menu{position:absolute;top:calc(100% + 6px);left:0;z-index:60;min-width:200px;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;padding:6px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-3);animation:pop 140ms cubic-bezier(.16,1,.3,1) both}
 .mi{display:block;width:100%;padding:9px 12px;border:0;border-radius:6px;background:transparent;color:var(--fg-2);font:600 15px/1.2 var(--font-body);text-align:left;cursor:pointer;white-space:nowrap}
 .mi:hover{background:var(--color-navy-50);color:var(--fg-1)}
 .mi[data-on="1"]{background:var(--color-brand-red-soft);color:var(--color-brand-red-deep)}
-.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--fg-1);font:600 15px/1.25 var(--font-body);cursor:pointer;text-align:left;min-height:52px;transition:border-color 120ms,transform 90ms}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--fg-1);font:600 15px/1.25 var(--font-body);cursor:pointer;text-align:left;min-height:52px;transition:border-color 120ms,transform 90ms}
 .opt:hover{border-color:var(--color-navy-500)}
 .opt:active{transform:scale(.99)}
 .opt[data-s="ok"]{border-color:var(--color-success);background:var(--color-success-soft)}
 .opt[data-s="no"]{border-color:var(--color-danger);background:var(--color-danger-soft)}
 .opt[data-s="dim"]{opacity:.45}
-.gc{display:block;width:100%;padding:0;border:1px solid var(--border);border-radius:8px;background:#fff;overflow:hidden;cursor:pointer;text-align:left;transition:box-shadow 140ms,transform 140ms,border-color 140ms}
+.gc{display:block;width:100%;padding:0;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);overflow:hidden;cursor:pointer;text-align:left;transition:box-shadow 140ms,transform 140ms,border-color 140ms}
 .gc:hover{box-shadow:var(--shadow-2);transform:translateY(-2px);border-color:var(--color-navy-200)}
-.ib{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--fg-2);font:600 13px/1 var(--font-body);cursor:pointer;transition:all 120ms}
+.ib{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--fg-2);font:600 13px/1 var(--font-body);cursor:pointer;transition:all 120ms}
 .ib:hover{border-color:var(--color-navy-500);color:var(--fg-1)}
-.pb{width:100%;padding:16px 20px;border:0;border-radius:8px;background:var(--color-brand-red);color:#fff;font:700 16px/1 var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background 120ms,transform 90ms;min-height:56px}
+.pb{width:100%;padding:16px 20px;border:0;border-radius:8px;background:var(--color-brand-red);color:var(--fg-on-accent);font:700 16px/1 var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background 120ms,transform 90ms;min-height:56px}
 .pb:hover{background:var(--color-brand-red-deep)}
 .pb:active{transform:scale(.985)}
-.pb[data-k="dark"]{background:var(--color-navy-900)}
-.pb[data-k="dark"]:hover{background:var(--color-navy-800)}
+.pb[data-k="dark"]{background:var(--panel-dark-bg);color:var(--panel-dark-fg)}
+.pb[data-k="dark"]:hover{background:var(--panel-dark-bg-hover)}
 .fv{font:400 13px/1.35 var(--font-body);color:var(--fg-1)}
-.fv[data-b="1"]{filter:blur(5px);background:#E8EBE3;border-radius:4px;cursor:pointer;user-select:none;color:var(--fg-2)}
-.inf{width:16px;height:16px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--color-navy-200);border-radius:999px;background:#fff;color:var(--fg-3);font:700 10px/1 var(--font-body);cursor:pointer}
+.fv[data-b="1"]{filter:blur(5px);background:var(--color-navy-100);border-radius:4px;cursor:pointer;user-select:none;color:var(--fg-2)}
+.inf{width:16px;height:16px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--color-navy-200);border-radius:999px;background:var(--bg-card);color:var(--fg-3);font:700 10px/1 var(--font-body);cursor:pointer}
 .inf:hover{border-color:var(--color-brand-red);color:var(--color-brand-red)}
-.inf[data-on="true"]{background:var(--color-navy-900);border-color:var(--color-navy-900);color:#fff}
+.inf[data-on="true"]{background:var(--accent-bg);border-color:var(--accent-bg);color:var(--fg-on-accent)}
 .gloss{margin:8px 0 2px;padding:10px 12px;border-radius:6px;background:var(--color-navy-50);font:400 12px/1.5 var(--font-body);color:var(--fg-2);animation:pop 140ms cubic-bezier(.16,1,.3,1) both}
 input{font-family:var(--font-body)}
 :focus-visible{outline:2px solid var(--color-brand-red);outline-offset:2px}
 @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes flyL{to{transform:translateX(-130%) rotate(-14deg);opacity:0}}
 @keyframes flyR{to{transform:translateX(130%) rotate(14deg);opacity:0}}
+a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{
+ outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){
+ *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+  transition-duration:.01ms!important;scroll-behavior:auto!important}
+ .critcard{transition:none!important}
+}
 .anim{animation:pop 220ms cubic-bezier(.16,1,.3,1) both}
 .flyL{animation:flyL 260ms cubic-bezier(.65,0,.35,1) both}
 .flyR{animation:flyR 260ms cubic-bezier(.65,0,.35,1) both}
 .quizwrap{background:var(--color-brand-red-soft);border:1px solid var(--color-line-strong);border-radius:14px;padding:16px}
 @media(min-width:900px){.quizwrap{padding:22px}}
-.quizbar{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding:11px 15px;border-radius:10px;background:var(--color-navy-900)}
+.quizbar{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding:11px 15px;border-radius:10px;background:var(--panel-dark-bg);color:var(--panel-dark-fg)}
 .quizbar .qt{font:700 10px/1.1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-yellow)}
-.quizbar .ql{font:700 15px/1.2 var(--font-body);color:#fff;margin-top:3px}
+.quizbar .ql{font:700 15px/1.2 var(--font-body);color:var(--panel-dark-fg);margin-top:3px}
 .dd[data-open="1"]{z-index:200}
 .qphoto{width:100%;max-height:42vh;object-fit:contain;display:block;background:var(--color-navy-50)}
 @media(min-width:900px){.qphoto{max-height:66vh}}
 .critstack{position:relative;height:52vh;min-height:240px;margin:2px 0 4px}
 @media(min-width:900px){.critstack{height:44vh;min-height:280px}}
-.critcard{position:absolute;inset:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;will-change:transform,opacity}
+.critcard{position:absolute;inset:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg-card);will-change:transform,opacity}
 .critcard.critback{transform:scale(.96);opacity:.55;pointer-events:none}
 .cimg{flex:1 1 auto;min-height:0;background:var(--color-navy-50);overflow:hidden}
 .cimg img{width:100%;height:100%;object-fit:cover;display:block}
@@ -107,8 +147,9 @@ input{font-family:var(--font-body)}
 .critbanner.ok{background:var(--color-success-soft);color:var(--color-success)}
 .etat{padding:9px 14px;font:600 12px/1.4 var(--font-body);text-align:center}
 .etat-off{background:var(--color-warning-soft);color:var(--color-warning)}
-.etat-maj{background:var(--color-navy-900);color:#fff}
+.etat-maj{background:var(--accent-bg);color:var(--fg-on-accent)}
 .etat .lien{background:none;border:0;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;padding:0 2px}
+kbd{font:600 11px/1 var(--font-mono);padding:2px 5px;border:1px solid var(--border-strong);border-radius:4px;background:var(--bg-card);color:var(--fg-2)}
 .imgcredit{font:400 10px/1.45 var(--font-body);color:var(--fg-3);margin-top:6px}
 .imgcredit a{text-decoration:underline}
 .critbanner.no{background:var(--color-danger-soft);color:var(--color-danger)}
@@ -125,7 +166,7 @@ const OFFLINE_DATA = /*__OFFLINE__*/;
 const CHEV='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>';
 const ARROW='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h13M12 5l7 7-7 7"></path></svg>';
 const ICONS={reviser:'<circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3.5"></circle>',atlas:'<rect x="3.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1"></rect>',trier:'<path d="M4 5h16l-6 7v7l-4-2v-5z"></path>',progres:'<path d="M4 20V11M10 20V4M16 20v-6M2 20h20"></path>'};
-function navIcon(k,sz){return '<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">'+ICONS[k]+'</svg>';}
+function navIcon(k,sz){return '<svg aria-hidden="true" focusable="false" width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">'+ICONS[k]+'</svg>';}
 let H=[];
 function h(fn){H.push(fn);return H.length-1;}
 function e(s){return (s==null?'':''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -456,23 +497,27 @@ class App{
       quizModeLine:this.label(this.CATS,cfg.cat)+' · '+(cfg.qtype==='photo'?('photo'+(cfg.aspect!=='tout'?' — '+this.label(this.ASP,cfg.aspect).toLowerCase():'')):'fiche')+' · '+this.label(this.DF,cfg.diff).toLowerCase(),
       isPhotoQ:!!q&&cfg.qtype==='photo',isFicheQ:!!q&&cfg.qtype==='fiche',
       qImg:q?q.img.u:'',qW:q&&q.img.w?q.img.w:'',qH:q&&q.img.h?q.img.h:'',qAspect:q?(q.img.a.map(a=>this.label(this.ASP,a)).join(' · ')||'Divers'):'',
+      // l'alternative textuelle ne doit pas donner la réponse avant validation
+      qAlt:q?((answered?sp.name:'Espèce à identifier')+' — '+(q.img.a.map(a=>this.label(this.ASP,a)).join(', ')||'vue d’ensemble')):'',
       qCredit:(answered&&q&&q.img.c)?q.img.c:'',qCreditUrl:(answered&&q&&q.img.cu)?q.img.cu:'',
       qFields:q?this.fieldRows(sp,!answered):[],
       hasOptions:!!q&&cfg.diff!=='saisie',isTyped:!!q&&cfg.diff==='saisie',typed:S.typed,
       onType:ev=>{this.state.typed=ev.target.value;},onTypeKey:ev=>{if(ev.key==='Enter')this.grade(this.state.typed);},submitTyped:()=>this.grade(this.state.typed),
       options:q?q.opts.map(o=>({label:o,hint:'',s:!answered?'':(this.answerOk(o,sp,true)?'ok':(o===S.picked?'no':'dim')),go:()=>this.grade(o)})):[],
-      answered,fbColor:correct?'#2F6B3A':'#A33A2B',fbLabel:correct?'Bonne réponse':'Raté',
+      answered,fbColor:correct?'var(--color-success)':'var(--color-danger)',fbLabel:correct?'Bonne réponse':'Raté',
       answerName:sp?sp.name:'',answerLatin:sp?sp.latin:'',answerNote:sp?this.clean(sp.note==='—'?(sp.fields.repartition||''):sp.note):'',
       hasTips:!!(sp&&sp.conf&&sp.conf.length),tips:this.quizTips(q,sp),
       next:this.next,openAnswerFiche:()=>{this._ficheScroll=window.scrollY;this.setState({view:'fiche',tab:'atlas',fiche:sp.id,fimg:0,ficheFrom:'quiz'});this.top();this.pushNav();},
       sessLine:S.sess.c+' / '+S.sess.s+' cette session',sessPct:S.sess.s?Math.round(100*S.sess.c/S.sess.s):0,
       query:S.query,onSearch:ev=>{this.state.query=ev.target.value;this.render();},atlasCount:this.atlasArr().length,
       listChips:catList.map(c=>({label:c[1],on:S.listCat===c[0]?'1':'0',go:()=>this.setState({listCat:c[0]})})),
-      atlasList:this.atlasArr().slice(0,500).map(s=>{const m=this.mastery(s.id),seen=this.st(s.id,'photo').s+this.st(s.id,'fiche').s;const half=!this.knownAny(s.id)&&(this.known(s.id,'photo')||this.known(s.id,'fiche'));return{name:s.name,latin:s.latin,thumb:this.petite(s.imgs[0]),pct:m,badge:this.knownAny(s.id)?'maîtrisée':(half?(this.known(s.id,'photo')?'photo OK':'fiche OK'):(seen?m+'%':(s.imgs.length>1?s.imgs.length+' photos':'1 photo'))),barColor:this.knownAny(s.id)?'#2F6B3A':'#A87B3C',go:this.openFiche(s.id)};}),
+      atlasList:this.atlasArr().slice(0,500).map(s=>{const m=this.mastery(s.id),seen=this.st(s.id,'photo').s+this.st(s.id,'fiche').s;const half=!this.knownAny(s.id)&&(this.known(s.id,'photo')||this.known(s.id,'fiche'));return{name:s.name,latin:s.latin,thumb:this.petite(s.imgs[0]),pct:m,badge:this.knownAny(s.id)?'maîtrisée':(half?(this.known(s.id,'photo')?'photo OK':'fiche OK'):(seen?m+'%':(s.imgs.length>1?s.imgs.length+' photos':'1 photo'))),barColor:this.knownAny(s.id)?'var(--color-success)':'var(--color-partial)',go:this.openFiche(s.id)};}),
       fName:fiche?fiche.name:'',fLatin:fiche?fiche.latin:'',fCat:fiche?this.label(catList,fiche.cat):'',
-      fImg:fcur?fcur.u:'',fW:fcur&&fcur.w?fcur.w:'',fH:fcur&&fcur.h?fcur.h:'',fImgAsp:fcur?('Cette photo montre : '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'divers')):'',
+      fImg:fcur?fcur.u:'',fW:fcur&&fcur.w?fcur.w:'',fH:fcur&&fcur.h?fcur.h:'',
+      fAlt:fiche&&fcur?(fiche.name+' — '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'vue d’ensemble')):'',
+      fImgAsp:fcur?('Cette photo montre : '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'divers')):'',
       fCredit:fcur&&fcur.c?fcur.c:'',fCreditUrl:fcur&&fcur.cu?fcur.cu:'',
-      fThumbs:fimgs.map((im,i)=>({u:this.petite(im),border:i===S.fimg?'#16241C':'transparent',go:()=>this.setState({fimg:i})})),
+      fThumbs:fimgs.map((im,i)=>({u:this.petite(im),border:i===S.fimg?'var(--fg-1)':'transparent',go:()=>this.setState({fimg:i})})),
       fFields:this.fieldRows(fiche,false),
       fHasTips:!!(fiche&&fiche.conf&&fiche.conf.length),fTips:fiche&&fiche.conf?fiche.conf.map(g=>({txt:this.clean(g.tip)})):[],
       fPrev:this.moveFiche(-1),fNext:this.moveFiche(1),
@@ -482,8 +527,8 @@ class App{
       critHasBack:!!S.cq[S.cp+1],critBackImg:S.cq[S.cp+1]?this.petite(S.cq[S.cp+1].imgs[0]):'',critBackName:S.cq[S.cp+1]?S.cq[S.cp+1].name:'',
       critAnim:S.canim,critHasFb:!!S.cfb,critFb:S.cfb||'',critFbOk:!!S.cfbOk,
       critYes:this.critAns(true),critNo:this.critAns(false),critScore:S.csess.c+' / '+S.csess.s+' · carte '+(S.cp+1)+' sur '+S.cq.length,
-      skillRows:this.ASP.map(a=>{const st=this.aspStat(a[0]);return{label:a[0]==='tout'?'Photo — vue d’ensemble':'Photo — '+a[1].toLowerCase(),n:st.n,right:st.k+' / '+st.n+' maîtrisées',acc:st.reps?st.acc+'% de réussite · '+st.reps+(st.reps>1?' réponses':' réponse'):'jamais travaillé',pct:st.pct,bar:st.reps?'#2F6B3A':'#C8D2C6'};}).filter(r=>r.n>0).concat([(f=>({label:'Fiche de caractères (sans photo)',right:f.k+' / '+f.n+' maîtrisées',n:f.n,acc:f.reps?f.acc+'% de réussite · '+f.reps+(f.reps>1?' réponses':' réponse'):'jamais travaillé',pct:f.pct,bar:f.reps?'#2F6B3A':'#C8D2C6'}))(this.ficheStat())]),
-      critRows:this.CRIT.map(c=>{const x=S.prog['crit|'+c.id]||{s:0,c:0},acc=x.s?Math.round(100*x.c/x.s):0;return{label:c.q,right:x.s?x.c+' / '+x.s+' bonnes réponses':'jamais joué',acc:x.s>=6?(acc>=75?'Solide':(acc>=50?'À consolider':'Fragile')):(x.s?'Trop peu de réponses':'—'),pct:acc,bar:x.s?(acc>=75?'#2F6B3A':(acc>=50?'#A87B3C':'#A33A2B')):'#C8D2C6'};}),
+      skillRows:this.ASP.map(a=>{const st=this.aspStat(a[0]);return{label:a[0]==='tout'?'Photo — vue d’ensemble':'Photo — '+a[1].toLowerCase(),n:st.n,right:st.k+' / '+st.n+' maîtrisées',acc:st.reps?st.acc+'% de réussite · '+st.reps+(st.reps>1?' réponses':' réponse'):'jamais travaillé',pct:st.pct,bar:st.reps?'var(--color-success)':'var(--color-line-strong)'};}).filter(r=>r.n>0).concat([(f=>({label:'Fiche de caractères (sans photo)',right:f.k+' / '+f.n+' maîtrisées',n:f.n,acc:f.reps?f.acc+'% de réussite · '+f.reps+(f.reps>1?' réponses':' réponse'):'jamais travaillé',pct:f.pct,bar:f.reps?'var(--color-success)':'var(--color-line-strong)'}))(this.ficheStat())]),
+      critRows:this.CRIT.map(c=>{const x=S.prog['crit|'+c.id]||{s:0,c:0},acc=x.s?Math.round(100*x.c/x.s):0;return{label:c.q,right:x.s?x.c+' / '+x.s+' bonnes réponses':'jamais joué',acc:x.s>=6?(acc>=75?'Solide':(acc>=50?'À consolider':'Fragile')):(x.s?'Trop peu de réponses':'—'),pct:acc,bar:x.s?(acc>=75?'var(--color-success)':(acc>=50?'var(--color-partial)':'var(--color-danger)')):'var(--color-line-strong)'};}),
       catCards:catList.filter(c=>c[0]!=='mixte').map(c=>{const arr=catOf(c[0]),k=knownIn(c[0]);return{label:c[1],n:arr.length,pct:arr.length?Math.round(100*k/arr.length):0};}),
       exportProg:this.exportProg,resetProg:this.resetProg,
       horsLigneDispo:this.horsLigneDispo()?'1':'0',horsLigne:S.enLigne?'0':'1',
@@ -538,14 +583,14 @@ JS += r"""
     }
     if(V.isQuiz){
       let left='';
-      if(V.isPhotoQ) left='<div style="position:relative;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img class="qphoto" src="'+e(V.qImg)+'"'+dim(V.qW,V.qH)+' alt="espèce à identifier"><div style="position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:999px;background:rgba(14,23,48,.82);font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:#fff">'+e(V.qAspect)+'</div></div>';
-      else left='<div style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:20px"><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:var(--color-brand-red)">Fiche de caractères</div><div style="margin-top:14px">'+this.fieldsHtml(V.qFields,'40%')+'</div><div style="margin-top:12px;font:italic 400 12px/1.4 var(--font-body);color:var(--fg-3)">Deux lignes sont floutées : elles trahissent l\'espèce. Clique dessus pour l\'indice. Le « i » explique les abréviations.</div></div>';
-      left+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px"><div style="font:600 12px/1 var(--font-body);color:var(--fg-3)">'+e(V.sessLine)+'</div><div style="font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+V.sessPct+'%</div></div><div style="height:3px;margin-top:8px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-brand-red);width:'+V.sessPct+'%"></div></div>';
+      if(V.isPhotoQ) left='<div style="position:relative;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img class="qphoto" src="'+e(V.qImg)+'"'+dim(V.qW,V.qH)+' alt="'+e(V.qAlt)+'"><div style="position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:999px;background:var(--overlay-dark);font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:var(--panel-dark-fg)">'+e(V.qAspect)+'</div></div>';
+      else left='<div style="border:1px solid var(--border);border-radius:12px;background:var(--bg-card);padding:20px"><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:var(--color-brand-red)">Fiche de caractères</div><div style="margin-top:14px">'+this.fieldsHtml(V.qFields,'40%')+'</div><div style="margin-top:12px;font:italic 400 12px/1.4 var(--font-body);color:var(--fg-3)">Deux lignes sont floutées : elles trahissent l\'espèce. Clique dessus pour l\'indice. Le « i » explique les abréviations.</div></div>';
+      left+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px"><div role="status" aria-live="polite" style="font:600 12px/1 var(--font-body);color:var(--fg-3)">'+e(V.sessLine)+'</div><div style="font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+V.sessPct+'%</div></div><div style="height:3px;margin-top:8px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-brand-red);width:'+V.sessPct+'%"></div></div>';
       let right='';
-      if(V.isTyped) right+='<div style="display:flex;gap:8px"><input id="q-typed" value="'+e(V.typed)+'" data-hi="'+h(V.onType)+'" data-hk="'+h(V.onTypeKey)+'" placeholder="Tape le nom de l\'espèce…" style="flex:1;padding:14px 16px;border:1px solid var(--border);border-radius:8px;font:400 15px/1 var(--font-body);color:var(--fg-1);min-width:0"><button class="ib" style="padding:12px 18px" data-h="'+h(V.submitTyped)+'">Valider</button></div>';
+      if(V.isTyped) right+='<div style="display:flex;gap:8px"><input id="q-typed" aria-label="Nom de l’espèce" value="'+e(V.typed)+'" data-hi="'+h(V.onType)+'" data-hk="'+h(V.onTypeKey)+'" placeholder="Tape le nom de l\'espèce…" style="flex:1;padding:14px 16px;border:1px solid var(--border);border-radius:8px;font:400 15px/1 var(--font-body);color:var(--fg-1);min-width:0"><button class="ib" style="padding:12px 18px" data-h="'+h(V.submitTyped)+'">Valider</button></div>';
       if(V.hasOptions) right+=V.options.map(o=>'<button class="opt" data-s="'+o.s+'" data-h="'+h(o.go)+'"><span>'+e(o.label)+'</span></button>').join('');
       if(V.answered){
-        right+='<div class="anim" id="quiz-fb" style="margin-top:6px;border:1px solid var(--border);border-left:3px solid '+V.fbColor+';border-radius:8px;background:#fff;padding:16px">'
+        right+='<div class="anim" id="quiz-fb" role="status" aria-live="polite" style=""margin-top:6px;border:1px solid var(--border);border-left:3px solid '+V.fbColor+';border-radius:8px;background:var(--bg-card);padding:16px">'
         +'<span style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:'+V.fbColor+'">'+e(V.fbLabel)+'</span>'
         +'<div style="margin-top:10px;font:700 20px/1.2 var(--font-body)">'+e(V.answerName)+'</div><div style="font:italic 400 13px/1.35 var(--font-body);color:var(--fg-3)">'+e(V.answerLatin)+'</div>'
         +(V.answerNote?'<div style="margin-top:10px;font:400 14px/1.45 var(--font-body);color:var(--fg-2)">'+e(V.answerNote)+'</div>':'')
@@ -553,18 +598,18 @@ JS += r"""
         +(V.hasTips?'<div style="margin-top:12px;padding:12px;border-radius:8px;background:var(--color-warning-soft)"><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-warning)">Ne pas confondre</div>'+V.tips.map(t=>'<div style="margin-top:8px;font:400 13px/1.45 var(--font-body);color:var(--fg-1)">'+e(t.txt)+'</div>').join('')+'</div>':'')
         +'<div style="display:flex;gap:8px;margin-top:16px"><button class="pb" style="min-height:48px;font-size:15px" data-k="dark" data-h="'+h(V.next)+'">Suivante'+ARROW+'</button><button class="ib" data-h="'+h(V.openAnswerFiche)+'">Voir la fiche</button></div></div>';
       }
-      const bar='<div class="quizbar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E3B45C" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3.5"></circle></svg><div><div class="qt">Quiz — identifie l\'espèce</div><div class="ql">'+e(V.quizModeLine)+'</div></div></div>';
+      const bar='<div class="quizbar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-yellow)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3.5"></circle></svg><div><div class="qt">Quiz — identifie l\'espèce</div><div class="ql">'+e(V.quizModeLine)+'</div></div></div>';
       return '<div class="quizwrap">'+bar+'<div class="r-quiz"><div>'+left+'</div><div style="display:flex;flex-direction:column;gap:10px">'+right+'</div></div></div>';
     }
     if(V.isAtlas){
       return '<div style="display:flex;flex-direction:column;gap:16px">'
-      +'<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:8px;flex:1 1 240px;padding:11px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;min-width:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E7F72" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.2-4.2"></path></svg><input id="q-search" value="'+e(V.query)+'" data-hi="'+h(V.onSearch)+'" placeholder="Chercher un nom, un latin, une famille…" style="flex:1;border:0;outline:0;font:400 14px/1 var(--font-body);color:var(--fg-1);min-width:0;background:transparent"></div><div style="font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+V.atlasCount+' espèces</div></div>'
-      +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+V.listChips.map(c=>'<button class="ch" data-on="'+c.on+'" data-h="'+h(c.go)+'">'+e(c.label)+'</button>').join('')+'</div>'
-      +'<div class="r-grid">'+V.atlasList.map(s=>'<button class="gc" data-h="'+h(s.go)+'"><div style="position:relative"><img src="'+e(s.thumb)+'" alt="" loading="lazy" style="width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--color-navy-50)"><div style="position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.94);font:700 10px/1.3 var(--font-mono);color:var(--fg-2)">'+e(s.badge)+'</div></div><div style="padding:11px 12px 13px"><div style="font:700 13px/1.25 var(--font-body)">'+e(s.name)+'</div><div style="font:italic 400 11px/1.3 var(--font-body);color:var(--fg-3)">'+e(s.latin)+'</div><div style="height:3px;margin-top:9px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:'+s.barColor+';width:'+s.pct+'%"></div></div></div></button>').join('')+'</div></div>';
+      +'<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:8px;flex:1 1 240px;padding:11px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);min-width:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fg-3)" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.2-4.2"></path></svg><input id="q-search" type="search" aria-label="Chercher une espèce par nom, nom latin ou famille" value="'+e(V.query)+'" data-hi="'+h(V.onSearch)+'" placeholder="Chercher un nom, un latin, une famille…" style="flex:1;border:0;outline:0;font:400 14px/1 var(--font-body);color:var(--fg-1);min-width:0;background:transparent"></div><div style="font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+V.atlasCount+' espèces</div></div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+V.listChips.map(c=>'<button class="ch" data-on="'+c.on+'" aria-pressed="'+(c.on==='1')+'" data-h="'+h(c.go)+'">'+e(c.label)+'</button>').join('')+'</div>'
+      +'<div class="r-grid">'+V.atlasList.map(s=>'<button class="gc" data-h="'+h(s.go)+'"><div style="position:relative"><img src="'+e(s.thumb)+'" alt="" loading="lazy" style="width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--color-navy-50)"><div style="position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:999px;background:var(--overlay-light);font:700 10px/1.3 var(--font-mono);color:var(--fg-2)">'+e(s.badge)+'</div></div><div style="padding:11px 12px 13px"><div style="font:700 13px/1.25 var(--font-body)">'+e(s.name)+'</div><div style="font:italic 400 11px/1.3 var(--font-body);color:var(--fg-3)">'+e(s.latin)+'</div><div style="height:3px;margin-top:9px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:'+s.barColor+';width:'+s.pct+'%"></div></div></div></button>').join('')+'</div></div>';
     }
     if(V.isFiche){
-      return '<div class="r-two"><div><div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img src="'+e(V.fImg)+'"'+dim(V.fW,V.fH)+' alt="'+e(V.fName)+'" style="width:100%;max-height:64vh;object-fit:contain;display:block;background:var(--color-navy-50)"></div>'
-      +'<div style="display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px">'+V.fThumbs.map(t=>'<img src="'+e(t.u)+'" alt="" loading="lazy" data-h="'+h(t.go)+'" style="width:72px;height:72px;flex:0 0 auto;object-fit:cover;border-radius:8px;border:2px solid '+t.border+';cursor:pointer;background:var(--color-navy-50)">').join('')+'</div>'
+      return '<div class="r-two"><div><div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--color-navy-50)"><img src="'+e(V.fImg)+'"'+dim(V.fW,V.fH)+' alt="'+e(V.fAlt)+'" style="width:100%;max-height:64vh;object-fit:contain;display:block;background:var(--color-navy-50)"></div>'
+      +'<div style="display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px">'+V.fThumbs.map(t=>'<button type="button" aria-label="Voir : '+e(t.alt)+'" aria-current="'+t.courant+'" data-h="'+h(t.go)+'" style="padding:0;border:2px solid '+t.border+';border-radius:8px;background:none;cursor:pointer;flex:0 0 auto"><img src="'+e(t.u)+'" alt="" loading="lazy" width="72" height="72" style="width:72px;height:72px;object-fit:cover;border-radius:6px;display:block;background:var(--color-navy-50)"></button>').join('')+'</div>'
       +'<div style="font:600 12px/1.3 var(--font-body);color:var(--fg-3)">'+e(V.fImgAsp)+'</div>'
       +credit(V.fCredit,V.fCreditUrl)+'</div>'
       +'<div><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-brand-red)">'+e(V.fCat)+'</div><div style="margin-top:10px;font:700 28px/1.12 var(--font-brand);letter-spacing:-.015em">'+e(V.fName)+'</div><div style="font:italic 400 15px/1.35 var(--font-body);color:var(--fg-3)">'+e(V.fLatin)+'</div>'
@@ -574,24 +619,25 @@ JS += r"""
     }
     if(V.isTrierPick){
       return '<div style="max-width:720px;display:flex;flex-direction:column;gap:18px"><div><div style="font:700 26px/1.15 var(--font-brand);letter-spacing:-.015em">Oui ou non, espèce par espèce</div><div style="font:400 14px/1.45 var(--font-body);color:var(--fg-3);max-width:54ch">Choisis une question — fixation d\'azote, exposition, comestibilité… — puis réponds oui ou non pour chaque espèce.</div></div>'
-      +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+V.catChips.map(c=>'<button class="ch" data-on="'+c.on+'" data-h="'+h(c.go)+'">'+e(c.label)+'</button>').join('')+'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+V.catChips.map(c=>'<button class="ch" data-on="'+c.on+'" aria-pressed="'+(c.on==='1')+'" data-h="'+h(c.go)+'">'+e(c.label)+'</button>').join('')+'</div>'
       +'<div style="display:flex;flex-direction:column;gap:8px">'+(V.criteria.length?V.criteria.map(c=>'<button class="opt" data-h="'+h(c.go)+'"><span>'+e(c.q)+'</span><span style="font:600 11px/1 var(--font-mono);color:var(--fg-3)">'+c.n+' espèces</span></button>').join(''):'<div style="font:400 14px/1.5 var(--font-body);color:var(--fg-3)">Aucune question applicable à cette catégorie — change de catégorie ci-dessus.</div>')+'</div></div>';
     }
     if(V.isTrierPlay){
       return '<div style="max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:12px"><div style="text-align:center;font:700 19px/1.3 var(--font-body)">'+e(V.critQ)+'</div>'
       +'<div class="critstack">'
         +(V.critHasBack?'<div class="critcard critback"><div class="cimg"><img src="'+e(V.critBackImg)+'" alt=""></div><div class="cmeta"><div style="font:700 17px/1.2 var(--font-body)">'+e(V.critBackName)+'</div></div></div>':'')
-        +'<div class="critcard '+V.critAnim+'" data-drag="1"><div class="cimg"><img src="'+e(V.critTopImg)+'" alt=""></div><div class="cmeta"><div style="font:700 17px/1.2 var(--font-body)">'+e(V.critTopName)+'</div><div style="font:italic 400 12px/1.3 var(--font-body);color:var(--fg-3);margin-top:3px">'+e(V.critTopLatin)+'</div></div></div>'
+        +'<div class="critcard '+V.critAnim+'" data-drag="1" tabindex="0" role="group" aria-label="'+e(V.critTopName)+' — répondre par les flèches, O pour oui, N pour non"><div class="cimg"><img src="'+e(V.critTopImg)+'" alt=""></div><div class="cmeta"><div style="font:700 17px/1.2 var(--font-body)">'+e(V.critTopName)+'</div><div style="font:italic 400 12px/1.3 var(--font-body);color:var(--fg-3);margin-top:3px">'+e(V.critTopLatin)+'</div></div></div>'
       +'</div>'
-      +(V.critHasFb?'<div class="critbanner '+(V.critFbOk?'ok':'no')+'">'+e(V.critFb)+'</div>':'<div style="font:400 12px/1.4 var(--font-body);color:var(--fg-3);text-align:center">Swipe la carte ← non &nbsp;·&nbsp; oui → (ou les boutons)</div>')
-      +'<div style="display:flex;gap:10px"><button class="opt" style="justify-content:center" data-h="'+h(V.critNo)+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A33A2B" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>Non</button><button class="opt" style="justify-content:center" data-h="'+h(V.critYes)+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6B3A" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"></path></svg>Oui</button></div>'
-      +'<div style="text-align:center;font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+e(V.critScore)+'</div></div>';
+      +'<div role="status" aria-live="polite">'+(V.critHasFb?'<div class="critbanner '+(V.critFbOk?'ok':'no')+'">'+e(V.critFb)+'</div>':'')+'</div>'
+      +(V.critHasFb?'':'<div style="font:400 12px/1.4 var(--font-body);color:var(--fg-3);text-align:center">Swipe la carte, ou les boutons, ou au clavier : <kbd>←</kbd> / <kbd>N</kbd> non &nbsp;·&nbsp; <kbd>→</kbd> / <kbd>O</kbd> oui</div>')
+      +'<div style="display:flex;gap:10px"><button class="opt" style="justify-content:center" data-h="'+h(V.critNo)+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>Non</button><button class="opt" style="justify-content:center" data-h="'+h(V.critYes)+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"></path></svg>Oui</button></div>'
+      +'<div role="status" aria-live="polite" style="text-align:center;font:600 12px/1 var(--font-mono);color:var(--fg-3)">'+e(V.critScore)+'</div></div>';
     }
     if(V.isProgres){
       const row=r=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap"><span style="font:600 14px/1.2 var(--font-body)">'+e(r.label)+'</span><span style="font:700 12px/1 var(--font-mono);color:var(--fg-3)">'+e(r.right)+'</span></div><div style="height:6px;margin-top:10px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:'+r.bar+';width:'+r.pct+'%"></div></div><div style="margin-top:7px;font:500 11px/1.2 var(--font-body);color:var(--fg-3)">'+e(r.acc)+'</div></div>';
       const stat=(n,l,c)=>'<div><div style="font:700 34px/1 var(--font-headline-data)'+(c?';color:'+c:'')+'">'+n+'</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:6px">'+l+'</div></div>';
       return '<div style="display:flex;flex-direction:column;gap:24px;max-width:820px">'
-      +'<div style="display:flex;flex-wrap:wrap;gap:28px;padding-bottom:22px;border-bottom:1px solid var(--border)">'+stat(V.totalKnown,'espèces maîtrisées')+stat(V.totalSeen,'espèces vues')+stat(V.totalReps,'réponses données')+stat(V.best,'meilleure série','#2F6B3A')+'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:28px;padding-bottom:22px;border-bottom:1px solid var(--border)">'+stat(V.totalKnown,'espèces maîtrisées')+stat(V.totalSeen,'espèces vues')+stat(V.totalReps,'réponses données')+stat(V.best,'meilleure série','var(--color-success)')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Reconnaissance — par compétence</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Reconnaître une écorce, une fleur ou une fiche de caractères sont des compétences distinctes : chacune est suivie séparément.</div>'+V.skillRows.map(row).join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Critères écologiques — oui / non</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Ta fiabilité question par question.</div>'+V.critRows.map(row).join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:14px">Couverture par catégorie</div>'+V.catCards.map(c=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font:600 14px/1 var(--font-body)">'+e(c.label)+'</span><span style="font:700 12px/1 var(--font-mono);color:var(--fg-3)">'+c.n+'</span></div><div style="height:6px;margin-top:10px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-navy-900);width:'+c.pct+'%"></div></div></div>').join('')+'</div>'
@@ -608,19 +654,21 @@ JS += r"""
     }
     return '';
   }
-  navBtn(cls,key,label,onKey,goKey,V,sz){return '<button class="'+cls+'" data-on="'+V[onKey]+'" data-h="'+h(V[goKey])+'">'+navIcon(key,sz)+label+'</button>';}
+  navBtn(cls,key,label,onKey,goKey,V,sz){const actif=V[onKey]==='1';
+    return '<button class="'+cls+'" data-on="'+V[onKey]+'"'+(actif?' aria-current="page"':'')
+      +' data-h="'+h(V[goKey])+'">'+navIcon(key,sz)+label+'</button>';}
   tpl(V){
-    const rail='<aside class="r-rail" style="flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;padding:24px 16px;background:#fff;border-right:1px solid var(--border)">'
+    const rail='<aside class="r-rail" style="flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;padding:24px 16px;background:var(--bg-card);border-right:1px solid var(--border)">'
       +'<div style="display:flex;align-items:center;gap:10px;padding:0 4px 22px"><div style="width:4px;height:34px;background:var(--color-brand-red)"></div><div><div style="font:800 15px/1.05 var(--font-brand);letter-spacing:-.01em">Atlas des espèces</div><div style="font:700 9px/1.4 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3)">Forêt-jardin · tempéré</div></div></div>'
       +this.navBtn('nb','reviser','Réviser','onReviser','goReviser',V,18)+this.navBtn('nb','atlas','Atlas','onAtlas','goAtlas',V,18)+this.navBtn('nb','trier','Oui / Non','onTrier','goTrier',V,18)+this.navBtn('nb','progres','Progrès','onProgres','goProgres',V,18)
       +'<div style="flex:1"></div>'
       +(V.showMastery?'<div style="padding:14px;border:1px solid var(--border);border-radius:8px;background:var(--color-navy-50)"><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3)">Maîtrisées</div><div style="display:flex;align-items:baseline;gap:6px;margin-top:6px"><span style="font:700 26px/1 var(--font-headline-data)">'+V.totalKnown+'</span><span style="font:600 13px/1 var(--font-body);color:var(--fg-3)">/ '+V.totalCount+' espèces</span></div><div style="margin-top:6px;font:500 10px/1.35 var(--font-body);color:var(--fg-3)">photo <em>et</em> fiche acquises</div><div style="height:4px;margin-top:10px;background:var(--color-navy-200);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-brand-red);width:'+V.totalPct+'%"></div></div></div>':'')
       +'</aside>';
-    const header='<header style="position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:10px;min-width:0">'
+    const header='<header style="position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:var(--bg-card);border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:10px;min-width:0">'
       +(V.showBack?'<button class="ib" style="padding:8px 12px" data-h="'+h(V.back)+'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"></path></svg>Retour</button>':'')
       +'<div style="min-width:0"><div style="font:700 9px/1.3 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--color-brand-red)">'+e(V.crumb)+'</div><div style="font:700 15px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(V.title)+'</div></div></div>'
-      +'<div style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--color-navy-900)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E3B45C" stroke-width="2" stroke-linecap="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"></path></svg><span style="font:700 13px/1 var(--font-mono);color:#fff">'+V.streak+'</span><span style="font:600 11px/1 var(--font-body);color:var(--color-navy-300)">série</span></div></header>';
-    const tabs='<nav class="r-tabs" style="position:fixed;bottom:0;left:0;right:0;z-index:40;display:flex;background:#fff;border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)">'
+      +'<div style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--panel-dark-bg);color:var(--panel-dark-fg)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-yellow)" stroke-width="2" stroke-linecap="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"></path></svg><span style="font:700 13px/1 var(--font-mono);color:var(--panel-dark-fg)">'+V.streak+'</span><span style="font:600 11px/1 var(--font-body);color:var(--color-navy-300)">série</span></div></header>';
+    const tabs='<nav class="r-tabs" style="position:fixed;bottom:0;left:0;right:0;z-index:40;display:flex;background:var(--bg-card);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)">'
       +this.navBtn('tb','reviser','Réviser','onReviser','goReviser',V,21)+this.navBtn('tb','atlas','Atlas','onAtlas','goAtlas',V,21)+this.navBtn('tb','trier','Oui / Non','onTrier','goTrier',V,21)+this.navBtn('tb','progres','Progrès','onProgres','goProgres',V,21)+'</nav>';
     return '<div class="r-shell">'+rail+'<main style="min-width:0;width:100%">'+header+'<div class="r-pad">'+this.viewHtml(V)+'</div>'+tabs+'</main></div>';
   }
@@ -651,7 +699,10 @@ JS += r"""
 const APP=new App();
 window.addEventListener('popstate',ev=>{if(ev.state&&ev.state.v)APP.restore(ev.state);});
 window.addEventListener('keydown',ev=>{
-  if(APP.state.view==='trierPlay'&&!APP._critBusy){if(ev.key==='ArrowRight'){ev.preventDefault();APP.critAns(true)();}else if(ev.key==='ArrowLeft'){ev.preventDefault();APP.critAns(false)();}}
+  if(APP.state.view==='trierPlay'&&!APP._critBusy){
+    const k=ev.key.toLowerCase();
+    if(ev.key==='ArrowRight'||k==='o'||k==='y'){ev.preventDefault();APP.critAns(true)();}
+    else if(ev.key==='ArrowLeft'||k==='n'){ev.preventDefault();APP.critAns(false)();}}
 });
 APP.mount();
 """
