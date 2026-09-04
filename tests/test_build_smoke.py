@@ -96,3 +96,20 @@ def test_les_astuces_de_confusion_sont_injectees():
     assert atlas_data.CONF, "aucun groupe de confusion lu"
     avec_conf = [s for s in data if s["conf"]]
     assert avec_conf, "aucune espèce ne porte d'astuce « Ne pas confondre »"
+
+    ids = {s["id"] for s in data}
+    for s in avec_conf:
+        for g in s["conf"]:
+            assert g["tip"], s["name"]
+            # les sosies servent à tirer les distracteurs du mode sosies : ce sont des
+            # identifiants d'espèces existantes, et jamais l'espèce elle-même
+            assert set(g["ids"]) <= ids, (s["name"], g["ids"])
+            assert s["id"] not in g["ids"], s["name"]
+
+    # l'appartenance à un groupe est réciproque
+    par_id = {s["id"]: s for s in data}
+    for s in avec_conf:
+        for g in s["conf"]:
+            for autre in g["ids"]:
+                assert any(s["id"] in h["ids"] for h in par_id[autre]["conf"]), \
+                    "%s ↔ %s" % (s["name"], autre)

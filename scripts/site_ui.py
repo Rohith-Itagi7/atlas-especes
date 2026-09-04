@@ -175,7 +175,6 @@ class App{
   mastery(id){const a=this.st(id,'photo'),b=this.st(id,'fiche');const s=a.s+b.s,c=a.c+b.c;return s?Math.round(100*c/s):0;}
   all(){return this.state.data||[];}
   aspAvail(){const cat=this.state.cfg.cat,set=new Set();this.all().forEach(s=>{if(this.inCat(s,cat))s.imgs.forEach(i=>i.a.forEach(a=>set.add(a)));});return ['feuille','ecorce','fruit','fleur','port','rameau'].filter(a=>set.has(a));}
-  inCat(s,cat){return cat==='mixte'||s.cat===cat;}
   label(list,id){const f=list.find(x=>x[0]===id);return f?f[1]:id;}
   // __MATCH_DEBUT__  (bloc extrait et test\u00e9 sous node par tests/test_saisie.py)
   norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
@@ -202,6 +201,47 @@ class App{
     return proche(sp)&&!autres.some(proche);}                     // faute de frappe non ambigu\u00eb
   // __MATCH_FIN__
   clean(s){return (s||'').replace(/\*\*/g,'');}
+  // « Ne pas confondre » du quiz : en mode sosies, le critère du groupe qui a fourni les
+  // distracteurs ; sinon tous les critères de l'espèce.
+  quizTips(q,sp){if(!sp||!sp.conf||!sp.conf.length)return [];
+    const g=q&&q.conf>=0?sp.conf[q.conf]:null;
+    return (g?[g]:sp.conf).map(x=>({txt:this.clean(x.tip)}));}
+  // __SOSIES_DEBUT__  (bloc extrait et testé sous node par tests/test_sosies.py)
+  inCat(s,cat){return cat==='mixte'||s.cat===cat;}
+  // Les 3 mauvaises réponses du QCM, et le groupe de confusion qui a servi à les tirer (-1 sinon).
+  // En mode sosies, on puise d'abord dans « Confusions - référence.md » : les confusions qui
+  // comptent sont souvent inter-familles (ail des ours / colchique / muguet), là où le genre
+  // latin et la famille passent à côté. Le genre/famille ne sert qu'à compléter.
+  distracteurs(sp,cfg,rand){
+    const melange=arr=>arr.slice().sort(()=>rand()-0.5);
+    const autres=this.all().filter(s=>s.id!==sp.id&&this.inCat(s,cfg.cat));
+    const parId={};autres.forEach(s=>{parId[s.id]=s;});
+    let choisis=[],conf=-1;
+    if(cfg.diff==='sosies'){
+      const groupes=(sp.conf||[]).map((g,i)=>({i,sosies:(g.ids||[]).map(id=>parId[id]).filter(Boolean)}))
+        .filter(g=>g.sosies.length)
+        .sort((a,b)=>b.sosies.length-a.sosies.length);   // le groupe le plus fourni d'abord
+      if(groupes.length){
+        conf=groupes[0].i;
+        const vus={};
+        groupes.forEach(g=>melange(g.sosies).forEach(s=>{if(!vus[s.id]){vus[s.id]=1;choisis.push(s);}}));
+      }
+    }
+    if(choisis.length<3){   // repli historique : genre/famille en sosies, même catégorie sinon
+      let pool;
+      if(cfg.diff==='sosies'){
+        const genre=(sp.latin||'').split(' ')[0];
+        const proches=autres.filter(s=>(s.latin||'').split(' ')[0]===genre||s.fields.famille===sp.fields.famille);
+        pool=proches.length>=3?proches:autres;
+      }else{
+        const memeCat=autres.filter(s=>s.cat===sp.cat);
+        pool=memeCat.length>=3?memeCat:autres;
+      }
+      const vus={};choisis.forEach(s=>{vus[s.id]=1;});
+      melange(pool).forEach(s=>{if(choisis.length<3&&!vus[s.id]){vus[s.id]=1;choisis.push(s);}});
+    }
+    return {noms:choisis.slice(0,3).map(s=>s.name),conf};}
+  // __SOSIES_FIN__
   pool(){const {cfg}=this.state;const base=this.all().filter(s=>this.inCat(s,cfg.cat));const byMode=base.filter(s=>cfg.mode==='apprendre'?!this.known(s.id,cfg.qtype):this.known(s.id,cfg.qtype));let p=(byMode.length>=4?byMode:base);if(cfg.qtype==='photo'&&cfg.aspect!=='tout'){const f=p.filter(s=>s.imgs.some(i=>i.a.indexOf(cfg.aspect)>=0));if(f.length>=4)p=f;}return p;}
   buildQ(){const {cfg}=this.state;const p=this.pool();if(!p.length)return null;
     const win=Math.min(12,Math.max(0,p.length-1));const recent=new Set(this._recent.slice(-win));
@@ -210,7 +250,10 @@ class App{
     if(!cand.length)cand=p;
     const sp=cand[Math.floor(Math.random()*cand.length)];
     this._recent.push(sp.id);if(this._recent.length>Math.max(win,1))this._recent=this._recent.slice(-Math.max(win,1));
-    let imgs=sp.imgs;if(cfg.aspect!=='tout'){const f=imgs.filter(i=>i.a.indexOf(cfg.aspect)>=0);if(f.length)imgs=f;}const img=imgs[Math.floor(Math.random()*imgs.length)]||sp.imgs[0];let opts=[];if(cfg.diff!=='saisie'){const genus=(sp.latin||'').split(' ')[0];let peers=this.all().filter(s=>s.id!==sp.id&&this.inCat(s,cfg.cat));if(cfg.diff==='sosies'){const near=peers.filter(s=>(s.latin||'').split(' ')[0]===genus||s.fields.famille===sp.fields.famille);peers=near.length>=3?near:peers;}else{const same=peers.filter(s=>s.cat===sp.cat);peers=same.length>=3?same:peers;}const shuffled=peers.slice().sort(()=>Math.random()-0.5).slice(0,3).map(s=>s.name);opts=shuffled.concat([sp.name]).sort(()=>Math.random()-0.5);}return{sp,img,opts};}
+    let imgs=sp.imgs;if(cfg.aspect!=='tout'){const f=imgs.filter(i=>i.a.indexOf(cfg.aspect)>=0);if(f.length)imgs=f;}const img=imgs[Math.floor(Math.random()*imgs.length)]||sp.imgs[0];let opts=[],conf=-1;
+    if(cfg.diff!=='saisie'){const d=this.distracteurs(sp,cfg,Math.random);conf=d.conf;
+      opts=d.noms.concat([sp.name]).sort(()=>Math.random()-0.5);}
+    return{sp,img,opts,conf};}
   top(){window.scrollTo(0,0);}
   start=()=>{this._recent=[];const q=this.buildQ();this.setState({view:'quiz',tab:'reviser',q,picked:null,ok:false,typed:'',sess:{s:0,c:0,streak:this.state.sess.streak,best:this.state.sess.best}});this.top();this.pushNav();};
   next=()=>{this.setState({q:this.buildQ(),picked:null,ok:false,typed:'',reveal:{},info:null});this.top();};
@@ -296,7 +339,7 @@ class App{
       options:q?q.opts.map(o=>({label:o,hint:'',s:!answered?'':(this.answerOk(o,sp,true)?'ok':(o===S.picked?'no':'dim')),go:()=>this.grade(o)})):[],
       answered,fbColor:correct?'#2F6B3A':'#A33A2B',fbLabel:correct?'Bonne réponse':'Raté',
       answerName:sp?sp.name:'',answerLatin:sp?sp.latin:'',answerNote:sp?this.clean(sp.note==='—'?(sp.fields.repartition||''):sp.note):'',
-      hasTips:!!(sp&&sp.conf&&sp.conf.length),tips:sp&&sp.conf?sp.conf.map(t=>({txt:this.clean(t)})):[],
+      hasTips:!!(sp&&sp.conf&&sp.conf.length),tips:this.quizTips(q,sp),
       next:this.next,openAnswerFiche:()=>{this._ficheScroll=window.scrollY;this.setState({view:'fiche',tab:'atlas',fiche:sp.id,fimg:0,ficheFrom:'quiz'});this.top();this.pushNav();},
       sessLine:S.sess.c+' / '+S.sess.s+' cette session',sessPct:S.sess.s?Math.round(100*S.sess.c/S.sess.s):0,
       query:S.query,onSearch:ev=>{this.state.query=ev.target.value;this.render();},atlasCount:this.atlasArr().length,
@@ -306,7 +349,7 @@ class App{
       fImg:fcur?fcur.u:'',fImgAsp:fcur?('Cette photo montre : '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'divers')):'',
       fThumbs:fimgs.map((im,i)=>({u:im.u,border:i===S.fimg?'#16241C':'transparent',go:()=>this.setState({fimg:i})})),
       fFields:this.fieldRows(fiche,false),
-      fHasTips:!!(fiche&&fiche.conf&&fiche.conf.length),fTips:fiche&&fiche.conf?fiche.conf.map(t=>({txt:this.clean(t)})):[],
+      fHasTips:!!(fiche&&fiche.conf&&fiche.conf.length),fTips:fiche&&fiche.conf?fiche.conf.map(g=>({txt:this.clean(g.tip)})):[],
       fPrev:this.moveFiche(-1),fNext:this.moveFiche(1),
       catChips:catList.map(c=>({label:c[1],on:cfg.cat===c[0]?'1':'0',go:this.setCfg('cat',c[0])})),
       criteria:this.CRIT.map(c=>({q:c.q,n:all.filter(s=>this.inCat(s,cfg.cat)&&c.has(s)).length,go:this.startCrit(c)})).filter(x=>x.n>=4),

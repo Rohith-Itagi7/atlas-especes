@@ -21,18 +21,31 @@ def enc_web(p):
     b = os.path.basename(p)
     return "img/especes/" + b if (os.sep + "especes" + os.sep) in p else "img/quiz-extra/" + b
 
-def conf_tips(stem):
-    """Liste de textes 'ce qui tranche' pour les groupes de confusion contenant l'espèce."""
-    return [g["tip"] for g in atlas_data.CONF if stem in g["stems"]]
+def conf_groups(stem, id_par_stem):
+    """Groupes de confusion de l'espèce : le critère qui tranche **et** ses sosies.
+
+    Le quiz en a besoin des deux : le texte pour le feedback, les identifiants pour tirer
+    des distracteurs qui sont de vraies confusions (souvent inter-familles).
+    """
+    out = []
+    for g in atlas_data.CONF:
+        if stem not in g["stems"]:
+            continue
+        ids = [id_par_stem[m] for m in g["stems"] if m != stem and m in id_par_stem]
+        out.append({"tip": g["tip"], "ids": ids})
+    return out
 
 def to_web_data(species):
+    id_par_stem = {}
+    for s in species:
+        id_par_stem.setdefault(s["stem"], s["id"])
     out = []
     for s in species:
         imgs = [{"u": enc_web(p), "a": atlas_data.aspect_of(p, s["stem"])} for p in s["paths"]]
         d = {
             "id": s["id"], "name": s["name"], "latin": s["latin"], "cat": s["cat"],
             "note": s["note"], "fields": s["fields"], "imgs": imgs,
-            "conf": conf_tips(s["stem"]),
+            "conf": conf_groups(s["stem"], id_par_stem),
             # orthographes acceptées en mode saisie (cf. atlas_data.answer_variants)
             "alt": atlas_data.answer_variants(s["name"], s["latin"]),
         }
