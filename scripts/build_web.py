@@ -54,8 +54,14 @@ def to_web_data(species):
         out.append(d)
     return out
 
+def aspects_web():
+    """Vocabulaire des aspects pour le site (l'app n'en garde aucune copie en dur)."""
+    return [{"id": a.id, "label": a.label, "emoji": a.emoji, "cible": a.cible}
+            for a in atlas_data.ASPECTS]
+
 def assemble(data):
-    js = site_ui.JS.replace("/*__DATA__*/", json.dumps(data, ensure_ascii=False))
+    js = (site_ui.JS.replace("/*__DATA__*/", json.dumps(data, ensure_ascii=False))
+                    .replace("/*__ASPECTS__*/", json.dumps(aspects_web(), ensure_ascii=False)))
     head = ('<meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
             '<title>Atlas des espèces</title><style>' + site_ui.CSS + '</style>')

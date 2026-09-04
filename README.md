@@ -82,7 +82,8 @@ Espèces diverses - référence.md   fougères, graminées, mousses, lichens
 img/especes/                      vignette principale de chaque espèce
 img/quiz-extra/                   photos supplémentaires + _aspects.tsv (annotation des aspects)
 COUVERTURE.md                     carte des aspects présents/manquants par espèce (généré)
-scripts/atlas_data.py             couche de données : lecture des atlas, photos, contributions
+scripts/atlas_data.py             couche de données : atlas, photos, contributions, vocabulaire
+                                  des aspects (constante ASPECTS = source unique)
 scripts/build_web.py              build du site statique (utilisé par la CI)
 scripts/site_ui.py                interface du site (CSS + app vanilla)
 scripts/generer_quiz.py           build local des versions autonome / Artifact (macOS, `sips`)

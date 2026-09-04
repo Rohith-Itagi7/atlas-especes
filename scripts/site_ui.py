@@ -112,6 +112,8 @@ BODY = '<div id="app"></div>'
 
 JS = r"""
 const SPECIES_DATA = /*__DATA__*/;
+// Vocabulaire des aspects, injecté au build depuis scripts/atlas_data.py (source unique)
+const ASPECTS_DATA = /*__ASPECTS__*/;
 const CHEV='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>';
 const ARROW='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h13M12 5l7 7-7 7"></path></svg>';
 const ICONS={reviser:'<circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3.5"></circle>',atlas:'<rect x="3.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1"></rect>',trier:'<path d="M4 5h16l-6 7v7l-4-2v-5z"></path>',progres:'<path d="M4 20V11M10 20V4M16 20v-6M2 20h20"></path>'};
@@ -122,7 +124,7 @@ function e(s){return (s==null?'':''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 class App{
   CATS=[['ligneux','Ligneux'],['herbace','Herbacées'],['champignon','Champignons'],['faune','Faune'],['divers','Diverses'],['mixte','Tout']];
-  ASP=[['tout','Tout'],['feuille','Feuille'],['ecorce','Écorce'],['fruit','Fruit'],['fleur','Fleur'],['port','Port'],['rameau','Rameau']];
+  ASP=[['tout','Tout']].concat(ASPECTS_DATA.map(a=>[a.id,a.label]));
   QT=[['photo','une photo'],['fiche','sa fiche']];
   DF=[['qcm','QCM'],['sosies','Sosies'],['saisie','Saisie libre']];
   MD=[['apprendre','Apprendre'],['reviser','Réviser']];
@@ -175,7 +177,7 @@ class App{
   ficheStat(){const all=this.all(),P=this.state.prog;let reps=0,cor=0,k=0;all.forEach(s=>{const x=P[s.id+'|fiche']||{s:0,c:0};reps+=x.s;cor+=x.c;if(x.s>=3&&x.c/x.s>=0.75)k++;});return{n:all.length,reps,k,pct:all.length?Math.round(100*k/all.length):0,acc:reps?Math.round(100*cor/reps):0};}
   mastery(id){const a=this.st(id,'photo'),b=this.st(id,'fiche');const s=a.s+b.s,c=a.c+b.c;return s?Math.round(100*c/s):0;}
   all(){return this.state.data||[];}
-  aspAvail(){const cat=this.state.cfg.cat,set=new Set();this.all().forEach(s=>{if(this.inCat(s,cat))s.imgs.forEach(i=>i.a.forEach(a=>set.add(a)));});return ['feuille','ecorce','fruit','fleur','port','rameau'].filter(a=>set.has(a));}
+  aspAvail(){const cat=this.state.cfg.cat,set=new Set();this.all().forEach(s=>{if(this.inCat(s,cat))s.imgs.forEach(i=>i.a.forEach(a=>set.add(a)));});return ASPECTS_DATA.map(a=>a.id).filter(a=>set.has(a));}
   label(list,id){const f=list.find(x=>x[0]===id);return f?f[1]:id;}
   // __MATCH_DEBUT__  (bloc extrait et test\u00e9 sous node par tests/test_saisie.py)
   norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}

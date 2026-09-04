@@ -24,9 +24,9 @@ import glob, os, re, sys
 import atlas_data
 
 BASE = atlas_data.BASE
-# Vocabulaire des aspects, dérivé de la table de mots-clés du parseur (cf. #8, qui doit en
-# faire une constante partagée en propre). « divers » = photo sans aspect annoncé.
-ASPECTS = set(atlas_data.ASPECT_KW.values()) | {"divers"}
+# Vocabulaire des aspects : source unique dans scripts/atlas_data.py.
+ASPECTS = atlas_data.ASPECTS_VALIDES              # ids + « divers » (sans aspect annoncé)
+ASPECTS_NOMMES = ", ".join(atlas_data.ASPECT_IDS)  # pour les messages d'erreur
 
 def verifier_latin(latin):
     """Message si le nom latin n'a pas la forme « Genre espèce », sinon None.
@@ -140,8 +140,7 @@ def verifier_photos_extra(stems):
                     if t and not t.isdigit() and t not in atlas_data.ASPECT_KW]
         if inconnus and name not in atlas_data.SIDE:
             warns.append("img/quiz-extra/%s : mot-clé d'aspect non reconnu (%s) — aspects "
-                         "possibles : %s" % (name, ", ".join(inconnus),
-                                             ", ".join(sorted(ASPECTS - {"divers"}))))
+                         "possibles : %s" % (name, ", ".join(inconnus), ASPECTS_NOMMES))
     return errs, warns
 
 def verifier_sidecar():
@@ -169,7 +168,7 @@ def verifier_sidecar():
             a = a.strip()
             if a and a not in ASPECTS:
                 errs.append("%s : aspect inconnu « %s » — attendu : %s"
-                            % (ou, a, ", ".join(sorted(ASPECTS))))
+                            % (ou, a, ASPECTS_NOMMES))
     return errs, warns
 
 def verifier_vignettes(stems):
@@ -232,7 +231,7 @@ def verifier_contributions(stems):
                     a = a.strip()
                     if a and a not in ASPECTS:
                         errs.append("%s : aspect inconnu « %s » — attendu : %s"
-                                    % (ou, a, ", ".join(sorted(ASPECTS))))
+                                    % (ou, a, ASPECTS_NOMMES))
     return errs, warns
 
 def verifier_confusions(stems):

@@ -44,8 +44,11 @@ format du tableau (mêmes colonnes, séparées par `|`).
 1. Repère le **stem** (préfixe de fichier) de l'espèce = le nom de sa vignette dans
    `img/especes/` (par ex. `sauge.jpg` → stem = `sauge`).
 2. Dépose ta photo dans **`img/quiz-extra/`** en la nommant :
-   `stem-aspect-n.jpg` — où *aspect* ∈ `feuille`, `ecorce`, `fruit`, `fleur`, `port`
-   (plusieurs aspects possibles avec `_`, ex. `sauge-feuille_fleur-1.jpg`).
+   `stem-aspect-n.jpg` — où *aspect* ∈ `feuille`, `ecorce`, `fruit`, `fleur`, `port`,
+   `rameau` (rameau d'hiver / bourgeons, comme on identifie un ligneux hors saison).
+   Plusieurs aspects possibles avec `_`, ex. `sauge-feuille_fleur-1.jpg`.
+   Synonymes acceptés : `feuilles`, `fruits`, `fleurs`, `rameaux`, `bourgeon`, `hiver`,
+   `silhouette`. La liste fait foi dans `scripts/atlas_data.py` (constante `ASPECTS`).
    Exemple : `sauge-fleur-2.jpg`.
    Le **tiret après le stem est obligatoire** : `ail_des_ours-1.jpg` est une photo de l'ail
    des ours, pas de l'ail. Une photo qui ne suit pas la convention n'est rattachée à aucune

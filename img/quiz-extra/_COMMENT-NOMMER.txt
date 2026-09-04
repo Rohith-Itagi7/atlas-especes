@@ -1,7 +1,8 @@
 # Comment nommer les photos du quiz
 # Dossier : img/quiz-extra/
 # Format : <prefixe>-<aspect(s)>-<numero>.jpg
-# Aspects : feuille, ecorce, fruit, fleur, rameau (=rameau d'hiver/bourgeon), port.
+# Aspects : feuille, ecorce, fruit, fleur, port, rameau (=rameau d'hiver/bourgeon).
+# Synonymes acceptes : feuilles, fruits, fleurs, rameaux, bourgeon, hiver, silhouette.
 # Plusieurs aspects : separer par _ ou -  (ex. feuille_fleur).
 # Exemples : chene_liege-ecorce-1.jpg  /  pommier-fruit-1.jpg  /  ciboulette-feuille_fleur-1.jpg
 # Sans mot-cle (ex. chene_liege-1.jpg) => aspect 'divers'.

@@ -11,7 +11,7 @@ La lecture des atlas vient de scripts/atlas_data.py (source unique, testée).
 """
 import base64, json, os, subprocess, tempfile
 
-from atlas_data import ATLASES, CONF, SIDE, apply_corrections, aspect_of, parse_atlas
+from atlas_data import ASPECTS, ATLASES, CONF, SIDE, apply_corrections, aspect_of, parse_atlas
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -232,10 +232,12 @@ BODY = r"""
 
 JS = r"""
 const SPECIES = /*__DATA__*/;
+const ASPECT_LIST = /*__ASPECTS__*/;
 const KEY='quizEspeces_v1', FLAGKEY='photoFlags_v1', TAGKEY='tagOverrides_v1', CORRKEY='photoCorr_v1';
 const REPO='iribarnesy/atlas-especes';
-const ASPECTS={tout:'✨ Tout',divers:'Divers',feuille:'🍃 Feuille',ecorce:'🪵 Écorce',fruit:'🍒 Fruit',fleur:'🌸 Fleur',rameau:"❄️ Rameau",port:'🌲 Port'};
-const CHIP_ASPECTS=['feuille','ecorce','fruit','fleur','port'];
+const ASPECTS=Object.assign({tout:'✨ Tout',divers:'Divers'},
+  ...ASPECT_LIST.map(a=>({[a.id]:(a.emoji?a.emoji+' ':'')+a.label})));
+const CHIP_ASPECTS=ASPECT_LIST.filter(a=>a.cible).map(a=>a.id);
 const FIELD_ORDER=[['groupe','Groupe'],['type','Type'],['cycle','Cycle'],['famille','Famille'],['ecologie','Écologie'],['hote','Arbre / substrat'],['habitat','Habitat'],['role','Rôle'],['regime','Régime'],['saison','Saison'],['lumiere','Lumière'],['fixn','Fixation N'],['mycorhize','Mycorhize'],['succession','Succession'],['strate','Strate'],['fonction','Fonction'],['comestible','Comestible'],['repartition','Où on la trouve'],['notes','Notes']];
 const CATLABEL={ligneux:'🌳 Ligneux',herbace:'🌿 Herbacées',champignon:'🍄 Champignons',faune:'🦋 Faune',divers:'🌾 Diverses'};
 const CATSHORT={ligneux:'ligneux',herbace:'herbacée',champignon:'champignon',faune:'animal',divers:'flore'};
@@ -267,7 +269,7 @@ const pool=()=>SPECIES.filter(sp=>inScope(sp)&&(cfg.mode==='apprendre'?!known(sp
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 const row=(l,v)=>`<div class="stat"><span>${l}</span><b>${v}</b></div>`;
 function aspectsAvail(){const set=new Set();scopeAll().forEach(sp=>sp.imgs.forEach(im=>effA(im).forEach(x=>set.add(x))));
-  const order=['divers','feuille','ecorce','fruit','fleur','rameau','port'];const present=order.filter(a=>set.has(a));
+  const order=['divers'].concat(ASPECT_LIST.map(a=>a.id));const present=order.filter(a=>set.has(a));
   return present.filter(a=>a!=='divers').length?['tout',...present]:['tout'];}
 function radios(key,items){const host=document.getElementById(key);host.innerHTML='';
   items.forEach(([val,lab])=>{const d=document.createElement('div');d.className='opt'+(cfg[key]===val?' sel':'');d.tabIndex=0;d.textContent=lab;d.dataset.val=val;
@@ -519,8 +521,12 @@ window.addEventListener('keydown',e=>{if(document.getElementById('crit').classLi
 renderConfig();
 """
 
+def aspects_js():
+    return [{"id": a.id, "label": a.label, "emoji": a.emoji, "cible": a.cible} for a in ASPECTS]
+
 def assemble(data, standalone):
-    js = JS.replace("/*__DATA__*/", json.dumps(data, ensure_ascii=False))
+    js = (JS.replace("/*__DATA__*/", json.dumps(data, ensure_ascii=False))
+            .replace("/*__ASPECTS__*/", json.dumps(aspects_js(), ensure_ascii=False)))
     if standalone:
         head = ('<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
                 '<title>Atlas &amp; quiz des espèces</title><style>' + CSS + '</style>')

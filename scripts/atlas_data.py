@@ -10,7 +10,7 @@ Aspects des photos : nom de fichier <stem>-<aspect>-<n>.jpg (+ sidecar
 img/quiz-extra/_aspects.tsv « fichier<TAB>aspect1,aspect2 » qui OVERRIDE, non destructif,
 pour tagger les vignettes).
 """
-import glob, os, re, unicodedata
+import collections, glob, os, re, unicodedata
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG = os.path.join(BASE, "img", "especes")
@@ -20,9 +20,35 @@ ATLASES = [("Espèces - référence.md", "ligneux"), ("Espèces herbacées - ré
            ("Champignons - référence.md", "champignon"), ("Faune - référence.md", "faune"),
            ("Espèces diverses - référence.md", "divers")]
 IMG_RE = re.compile(r"!\[\[(?:[^\]\|]*/)?([^\]\|]+\.(?:jpg|jpeg|png))", re.I)
-ASPECT_KW = {"feuille": "feuille", "feuilles": "feuille", "ecorce": "ecorce", "fruit": "fruit",
-             "fruits": "fruit", "fleur": "fleur", "fleurs": "fleur", "rameau": "rameau",
-             "rameaux": "rameau", "bourgeon": "rameau", "hiver": "rameau", "port": "port", "silhouette": "port"}
+# ------------------------------------------------------------------ aspects des photos
+# SOURCE UNIQUE du vocabulaire : tout le reste (couverture, vérification, site, générateur
+# local, documentation) en dérive. Ajouter un aspect ici suffit.
+#   id          identifiant utilisé dans les noms de fichiers et dans _aspects.tsv
+#   label       libellé affiché
+#   synonymes   mots-clés acceptés en plus de l'id dans un nom de fichier
+#   emoji       décoration (générateur local uniquement)
+#   cible       compte dans l'objectif de couverture (colonne de COUVERTURE.md)
+#   terme_en    mot-clé de recherche côté API d'images (scripts/fetch_aspects.py)
+Aspect = collections.namedtuple("Aspect", "id label synonymes emoji cible terme_en")
+ASPECTS = [
+    Aspect("feuille", "Feuille", ("feuilles",), "🍃", True, "leaf"),
+    Aspect("ecorce", "Écorce", (), "🪵", True, "bark"),
+    Aspect("fruit", "Fruit", ("fruits",), "🍒", True, "fruit"),
+    Aspect("fleur", "Fleur", ("fleurs",), "🌸", True, "flower"),
+    Aspect("port", "Port", ("silhouette",), "🌲", True, "habit"),
+    # Rameau d'hiver / bourgeons : c'est ainsi qu'on identifie un ligneux hors saison, donc
+    # un aspect de plein droit — mais aucune photo ne l'utilise encore, et une colonne vide
+    # pour 187 plantes noierait les vrais manques. COUVERTURE.md l'ajoutera d'elle-même dès
+    # la première photo (cf. scripts/couverture.py).
+    Aspect("rameau", "Rameau", ("rameaux", "bourgeon", "hiver"), "❄️", False, "twig"),
+]
+DIVERS = "divers"        # photo sans aspect annoncé
+DIVERS_LABEL = "Divers"
+
+ASPECT_KW = {kw: a.id for a in ASPECTS for kw in (a.id,) + a.synonymes}
+ASPECT_LABEL = dict([(a.id, a.label) for a in ASPECTS] + [(DIVERS, DIVERS_LABEL)])
+ASPECT_IDS = tuple(a.id for a in ASPECTS)
+ASPECTS_VALIDES = frozenset(ASPECT_IDS) | {DIVERS}   # ce qu'on accepte dans _aspects.tsv
 
 def load_corrections():
     """Actions de contribution (depuis l'app ou à la main) : img/quiz-extra/_corrections.tsv
@@ -130,14 +156,14 @@ def hkey(h):
 def aspect_of(path, stem):
     base = os.path.basename(path)
     if base in SIDE:
-        return SIDE[base] or ["divers"]
+        return SIDE[base] or [DIVERS]
     fn = os.path.splitext(base.lower())[0]
     suffix = fn[len(stem):] if fn.startswith(stem) else fn
     found = []
     for tok in re.split(r"[-_ ]+", suffix):
         if tok in ASPECT_KW and ASPECT_KW[tok] not in found:
             found.append(ASPECT_KW[tok])
-    return found or ["divers"]
+    return found or [DIVERS]
 
 PHOTO_EXT = (".jpg", ".jpeg", ".png")
 

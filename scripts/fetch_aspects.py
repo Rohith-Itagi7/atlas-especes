@@ -9,14 +9,20 @@ Idempotent (saute un aspect déjà présent). Relancer generer_quiz.py ensuite.
 """
 import re, os, json, time, glob, subprocess, urllib.request, urllib.parse, urllib.error
 
+import atlas_data
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXTRA = os.path.join(BASE, "img", "quiz-extra")
 os.makedirs(EXTRA, exist_ok=True)
 IMG_RE = re.compile(r"!\[\[(?:[^\]\|]*/)?([^\]\|]+\.(?:jpg|jpeg|png))", re.I)
 UA = "ForestryQuiz/1.0 (personal educational use)"
 ATLASES = [("Espèces - référence.md", "ligneux"), ("Espèces herbacées - référence.md", "herbace")]
-ASP_LIG = [("ecorce", "bark"), ("feuille", "leaf"), ("fruit", "fruit")]
-ASP_HERB = [("feuille", "leaf"), ("fleur", "flower"), ("fruit", "fruit")]
+# Quels aspects chercher, et sous quel mot-clé anglais : les identifiants et les termes
+# viennent du vocabulaire partagé (scripts/atlas_data.py). Renommer un aspect là-bas fait
+# échouer ce script à l'import plutôt que de le laisser télécharger n'importe quoi.
+_TERME = {a.id: a.terme_en for a in atlas_data.ASPECTS}
+ASP_LIG = [(i, _TERME[i]) for i in ("ecorce", "feuille", "fruit")]
+ASP_HERB = [(i, _TERME[i]) for i in ("feuille", "fleur", "fruit")]
 BAD = ("map", "range", "distribution", "locator", "icon", "logo", "diagram", "chart", "signature", "illustration")
 
 def species_all():
