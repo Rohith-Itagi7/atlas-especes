@@ -8,7 +8,10 @@ et écosystèmes tempérés**.
   compétences suivies séparément), en mode *Apprendre* / *Réviser*, filtrable par aspect
   (feuille, écorce, fruit, fleur, port), en facile (QCM) ou difficile (saisie).
 - **Atlas** : fiche complète de chaque espèce + toutes ses photos.
-- **Progression** sauvegardée dans le navigateur, exportable / importable (fichier `.json`).
+- **Progression** sauvegardée dans le navigateur, **exportable / importable** (fichier `.json`) :
+  l'import **fusionne** par défaut (additionne les compteurs, pour récupérer sa progression
+  depuis un autre appareil), avec un bouton séparé pour **remplacer**. Les fichiers exportés
+  par les versions précédentes restent lisibles.
 
 Le site est **statique** : une page `index.html` + les images. Aucune donnée n'est envoyée
 nulle part ; tout reste dans ton navigateur.

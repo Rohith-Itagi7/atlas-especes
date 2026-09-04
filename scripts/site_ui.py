@@ -156,6 +156,7 @@ class App{
     sess:{s:0,c:0,streak:0,best:0},
     query:'', listCat:'mixte', fiche:null, fimg:0, ficheFrom:'atlas',
     crit:null, cq:[], cp:0, csess:{s:0,c:0}, cfb:null, canim:'',
+    progMsg:'', progMsgOk:true,
     prog:{}
   };
   setState(patch,cb){Object.assign(this.state,patch);this.render();if(cb)cb.call(this);}
@@ -282,8 +283,53 @@ class App{
     const truth=crit.ok(sp),ok=truth===yes;this._critBusy=true;
     this.setState({cfb:(ok?'✅ Bravo':'❌ Raté')+' — '+sp.name+' : c’était '+(truth?'oui':'non'),cfbOk:ok,csess:{s:csess.s+1,c:csess.c+(ok?1:0)},canim:yes?'flyR':'flyL',prog:this.bumpKeys(['crit|'+crit.id],ok)});
     setTimeout(()=>{this._critBusy=false;this.setState({cp:(cp+1)%cq.length,canim:''});},320);};}
-  exportProg=()=>{try{const b=new Blob([JSON.stringify(this.state.prog)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='atlas-progression.json';document.body.appendChild(a);a.click();a.remove();}catch(e){}};
-  resetProg=()=>{if(!confirm('Réinitialiser toute la progression ?'))return;try{localStorage.removeItem('atlas-v2-prog');}catch(e){}this.setState({prog:{},sess:{s:0,c:0,streak:0,best:0}});};
+  // __PROG_DEBUT__  (bloc extrait et testé sous node par tests/test_progression.py)
+  // Clés de progression : « <espèce>|photo », « <espèce>|photo:<aspect> », « <espèce>|fiche »,
+  // « crit|<question> ». Une entrée = {s: réponses, c: correctes}.
+  CLE_PROG=/^(?:crit\|[^|]+|[^|]+\|photo(?::[a-z]+)?|[^|]+\|fiche)$/;
+  progExport(prog){return JSON.stringify({v:1,app:'atlas-especes',prog:prog||{}});}
+  // Lit un fichier de progression : enveloppe {v:1,prog:…} ou ancien format (objet plat).
+  // Les entrées non conformes sont comptées et ignorées, pas rejetées en bloc.
+  progParse(txt){
+    let o;
+    try{o=JSON.parse(txt);}catch(e){return {erreur:'Fichier illisible : ce n’est pas du JSON.'};}
+    if(o&&typeof o==='object'&&!Array.isArray(o)&&o.prog&&typeof o.prog==='object')o=o.prog;
+    if(!o||typeof o!=='object'||Array.isArray(o))return {erreur:'Fichier inattendu : aucune progression trouvée.'};
+    const prog={};let ignores=0;
+    Object.keys(o).forEach(k=>{const v=o[k];
+      const bon=this.CLE_PROG.test(k)&&v&&typeof v==='object'
+        &&Number.isInteger(v.s)&&Number.isInteger(v.c)&&v.s>=0&&v.c>=0&&v.c<=v.s;
+      if(bon)prog[k]={s:v.s,c:v.c};else ignores++;});
+    if(!Object.keys(prog).length)
+      return {erreur:'Aucune entrée exploitable dans ce fichier'+(ignores?' ('+ignores+' ignorée'+(ignores>1?'s':'')+')':'')+'.'};
+    return {prog,ignores};}
+  // Fusion additive : c'est le cas d'usage (« je récupère ma progression d'un autre appareil »).
+  progFusion(actuel,entrant){const prog=Object.assign({},actuel||{});let ajoutes=0,fusionnes=0;
+    Object.keys(entrant).forEach(k=>{const e=entrant[k];
+      if(prog[k]){prog[k]={s:prog[k].s+e.s,c:prog[k].c+e.c};fusionnes++;}
+      else{prog[k]={s:e.s,c:e.c};ajoutes++;}});
+    return {prog,ajoutes,fusionnes};}
+  // Résumé de ce qui vient de se passer : on compte les entrées **du fichier**, pas le total
+  // après fusion, sinon les nombres ne s'additionnent pas pour l'utilisateur.
+  progResume(r,remplace){const n=r.ajoutes+r.fusionnes;
+    return (remplace?'Progression remplacée : ':'Progression importée : ')+n+' entrée'+(n>1?'s':'')
+      +(remplace?'':' ('+r.ajoutes+' ajoutée'+(r.ajoutes>1?'s':'')+', '+r.fusionnes+' fusionnée'+(r.fusionnes>1?'s':'')+')')
+      +(r.ignores?' · '+r.ignores+' ignorée'+(r.ignores>1?'s':''):'')+'.';}
+  // __PROG_FIN__
+  exportProg=()=>{try{const b=new Blob([this.progExport(this.state.prog)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='atlas-progression.json';document.body.appendChild(a);a.click();a.remove();}catch(e){}};
+  pickImport(remplace){return ()=>{this._remplace=remplace;const el=document.getElementById('prog-file');if(el){el.value='';el.click();}};}
+  onImportFile=ev=>{const f=ev.target&&ev.target.files&&ev.target.files[0];if(!f)return;
+    const remplace=!!this._remplace;const r=new FileReader();
+    r.onerror=()=>this.setState({progMsg:'Fichier illisible.',progMsgOk:false});
+    r.onload=()=>{const lu=this.progParse(String(r.result||''));
+      if(lu.erreur){this.setState({progMsg:lu.erreur,progMsgOk:false});return;}
+      const n=Object.keys(lu.prog).length,actuel=Object.keys(this.state.prog).length;
+      if(remplace&&actuel&&!confirm('Remplacer toute ta progression ('+actuel+' entrées) par ce fichier ('+n+' entrées) ? Ton avancement actuel sera perdu.'))return;
+      const res=remplace?{prog:lu.prog,ajoutes:n,fusionnes:0}:this.progFusion(this.state.prog,lu.prog);
+      try{localStorage.setItem('atlas-v2-prog',JSON.stringify(res.prog));}catch(e){}
+      this.setState({prog:res.prog,progMsg:this.progResume({ajoutes:res.ajoutes,fusionnes:res.fusionnes,ignores:lu.ignores},remplace),progMsgOk:true});};
+    r.readAsText(f);};
+  resetProg=()=>{if(!confirm('Réinitialiser toute la progression ?'))return;try{localStorage.removeItem('atlas-v2-prog');}catch(e){}this.setState({prog:{},sess:{s:0,c:0,streak:0,best:0},progMsg:'Progression réinitialisée.',progMsgOk:true});};
   fieldRows(sp,quiz){if(!sp)return [];const hidden={comestible:1,notes:1};return this.FIELDS.filter(f=>sp.fields[f[0]]).map(f=>{const k=f[0],rk=sp.id+'|'+k,blur=!!(quiz&&hidden[k]&&!this.state.reveal[rk]);return{l:f[1],v:this.clean(sp.fields[k]),b:blur?'1':'0',go:blur?(()=>{const r=Object.assign({},this.state.reveal);r[rk]=1;this.setState({reveal:r});}):(()=>{}),hasInfo:!!this.GLOSS[k],info:this.GLOSS[k]||'',openInfo:this.state.info===rk,goInfo:()=>this.setState({info:this.state.info===rk?null:rk})};});}
 
   renderVals(){
@@ -360,7 +406,9 @@ class App{
       skillRows:this.ASP.map(a=>{const st=this.aspStat(a[0]);return{label:a[0]==='tout'?'Photo — vue d’ensemble':'Photo — '+a[1].toLowerCase(),n:st.n,right:st.k+' / '+st.n+' maîtrisées',acc:st.reps?st.acc+'% de réussite · '+st.reps+(st.reps>1?' réponses':' réponse'):'jamais travaillé',pct:st.pct,bar:st.reps?'#2F6B3A':'#C8D2C6'};}).filter(r=>r.n>0).concat([(f=>({label:'Fiche de caractères (sans photo)',right:f.k+' / '+f.n+' maîtrisées',n:f.n,acc:f.reps?f.acc+'% de réussite · '+f.reps+(f.reps>1?' réponses':' réponse'):'jamais travaillé',pct:f.pct,bar:f.reps?'#2F6B3A':'#C8D2C6'}))(this.ficheStat())]),
       critRows:this.CRIT.map(c=>{const x=S.prog['crit|'+c.id]||{s:0,c:0},acc=x.s?Math.round(100*x.c/x.s):0;return{label:c.q,right:x.s?x.c+' / '+x.s+' bonnes réponses':'jamais joué',acc:x.s>=6?(acc>=75?'Solide':(acc>=50?'À consolider':'Fragile')):(x.s?'Trop peu de réponses':'—'),pct:acc,bar:x.s?(acc>=75?'#2F6B3A':(acc>=50?'#A87B3C':'#A33A2B')):'#C8D2C6'};}),
       catCards:catList.filter(c=>c[0]!=='mixte').map(c=>{const arr=catOf(c[0]),k=knownIn(c[0]);return{label:c[1],n:arr.length,pct:arr.length?Math.round(100*k/arr.length):0};}),
-      exportProg:this.exportProg,resetProg:this.resetProg
+      exportProg:this.exportProg,resetProg:this.resetProg,
+      importProg:this.pickImport(false),replaceProg:this.pickImport(true),
+      onImportFile:this.onImportFile,progMsg:S.progMsg,progMsgOk:S.progMsgOk?'1':'0'
     };
   }
 """
@@ -455,7 +503,7 @@ JS += r"""
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Reconnaissance — par compétence</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Reconnaître une écorce, une fleur ou une fiche de caractères sont des compétences distinctes : chacune est suivie séparément.</div>'+V.skillRows.map(row).join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Critères écologiques — oui / non</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Ta fiabilité question par question.</div>'+V.critRows.map(row).join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:14px">Couverture par catégorie</div>'+V.catCards.map(c=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font:600 14px/1 var(--font-body)">'+e(c.label)+'</span><span style="font:700 12px/1 var(--font-mono);color:var(--fg-3)">'+c.n+'</span></div><div style="height:6px;margin-top:10px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-navy-900);width:'+c.pct+'%"></div></div></div>').join('')+'</div>'
-      +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:12px">Sauvegarde</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:56ch;margin-bottom:14px">La progression reste dans ce navigateur. Exporte un fichier pour la garder ou changer d\'appareil.</div><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="ib" data-h="'+h(V.exportProg)+'">Exporter ma progression</button><button class="ib" data-h="'+h(V.resetProg)+'" style="color:var(--color-brand-red)">Réinitialiser</button></div></div>'
+      +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:12px">Sauvegarde</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:56ch;margin-bottom:14px">La progression reste dans ce navigateur. Exporte un fichier pour la garder ou changer d\'appareil.</div><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="ib" data-h="'+h(V.exportProg)+'">Exporter ma progression</button><button class="ib" data-h="'+h(V.importProg)+'">Importer un fichier</button><button class="ib" data-h="'+h(V.replaceProg)+'">Remplacer par un fichier…</button><button class="ib" data-h="'+h(V.resetProg)+'" style="color:var(--color-brand-red)">Réinitialiser</button></div><input id="prog-file" type="file" accept="application/json,.json" data-hc="'+h(V.onImportFile)+'" style="display:none">'+(V.progMsg?'<div role="status" style="margin-top:12px;padding:10px 12px;border-radius:8px;font:600 12px/1.45 var(--font-body);background:'+(V.progMsgOk==='1'?'var(--color-success-soft);color:var(--color-success)':'var(--color-warning-soft);color:var(--color-warning)')+'">'+e(V.progMsg)+'</div>':'')+'</div>'
       +'<div style="font:400 11px/1.5 var(--font-body);color:var(--fg-4);padding-top:8px;border-top:1px solid var(--border)">Photos : Wikimedia Commons &amp; iNaturalist (licences libres / CC). <a href="https://github.com/iribarnesy/atlas-especes" target="_blank" rel="noopener">Contribuer sur GitHub</a></div>'
       +'</div>';
     }
@@ -482,6 +530,7 @@ JS += r"""
     root.querySelectorAll('[data-h]').forEach(el=>{el.addEventListener('click',ev=>{const f=H[+el.getAttribute('data-h')];if(f)f(ev);});});
     root.querySelectorAll('[data-hi]').forEach(el=>{el.addEventListener('input',ev=>{const f=H[+el.getAttribute('data-hi')];if(f)f(ev);});});
     root.querySelectorAll('[data-hk]').forEach(el=>{el.addEventListener('keydown',ev=>{const f=H[+el.getAttribute('data-hk')];if(f)f(ev);});});
+    root.querySelectorAll('[data-hc]').forEach(el=>{el.addEventListener('change',ev=>{const f=H[+el.getAttribute('data-hc')];if(f)f(ev);});});
     const top=root.querySelector('.critstack [data-drag]');
     if(top){let x0=0,dx=0,drag=false;const self=this;top.style.touchAction='pan-y';
       top.addEventListener('pointerdown',ev=>{if(self._critBusy)return;drag=true;x0=ev.clientX;dx=0;try{top.setPointerCapture(ev.pointerId);}catch(e){}});
