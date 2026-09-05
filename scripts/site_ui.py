@@ -214,7 +214,7 @@ class App{
     sess:{s:0,c:0,streak:0,best:0},
     query:'', listCat:'mixte', fiche:null, fimg:0, ficheFrom:'atlas',
     crit:null, cq:[], cp:0, csess:{s:0,c:0}, cfb:null, canim:'',
-    progMsg:'', progMsgOk:true, routeMsg:'',
+    progMsg:'', progMsgOk:true, routeMsg:'', rappelHeure:'19:00',
     enLigne:(typeof navigator!=='undefined'&&'onLine' in navigator)?navigator.onLine:true,
     majPrete:false, dl:null, offMsg:'',
     prog:{}
@@ -228,6 +228,7 @@ class App{
         if(m.migrees)try{localStorage.setItem('atlas-v2-prog',JSON.stringify(m.prog));}catch(e2){}}}catch(e){}
     // L'app gère son défilement (retour de fiche) : sans « manual », le navigateur
     // réappliquerait sa propre position mémorisée juste après, écrasant la nôtre.
+    try{const h=localStorage.getItem('atlas-rappel-heure');if(h)this.state.rappelHeure=h;}catch(e){}
     try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){}
     const route=this.vueDeUrl(location.hash);
     if(!(route&&route.v!=='home'&&this.ouvrirRoute(route)))this.render();
@@ -652,6 +653,72 @@ class App{
       +(remplace?'':' ('+r.ajoutes+' ajoutée'+(r.ajoutes>1?'s':'')+', '+r.fusionnes+' fusionnée'+(r.fusionnes>1?'s':'')+')')
       +(r.ignores?' · '+r.ignores+' ignorée'+(r.ignores>1?'s':''):'')+'.';}
   // __PROG_FIN__
+  // __RAPPEL_DEBUT__  (bloc extrait et testé sous node par tests/test_rappel.py)
+  // Rappel quotidien de révision. Un site statique ne peut PAS programmer une notification
+  // à une heure choisie : les Notification Triggers ont été abandonnées, le Web Push exige
+  // un serveur qui pousse à l'heure dite, et le Periodic Background Sync laisse le
+  // navigateur choisir le moment. On délègue donc au calendrier du téléphone, qui sait
+  // faire ça depuis toujours, hors ligne et sans rien envoyer nulle part : un fichier .ics
+  // avec un événement quotidien et son alarme.
+  RAPPEL_TITRE='Réviser l’atlas des espèces';
+  // Repliage RFC 5545 : une ligne fait au plus 75 **octets**, la suite est préfixée d'une
+  // espace. En octets et non en caractères — « é » en compte deux, et les critères sont
+  // pleins d'accents.
+  octets(s){let n=0;for(const ch of s){const c=ch.codePointAt(0);
+    n+=c<0x80?1:(c<0x800?2:(c<0x10000?3:4));}return n;}
+  plierLigne(ligne){const out=[];let cur='';
+    for(const ch of ligne){                       // for..of : jamais couper une paire de substitution
+      if(this.octets(cur)+this.octets(ch)>75){out.push(cur);cur=' ';}
+      cur+=ch;}
+    out.push(cur);return out.join('\r\n');}
+  echapperIcs(t){return String(t==null?'':t)
+    .replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');}
+  deuxChiffres(n){return (n<10?'0':'')+n;}
+  horodatageUtc(d){return d.getUTCFullYear()+this.deuxChiffres(d.getUTCMonth()+1)
+    +this.deuxChiffres(d.getUTCDate())+'T'+this.deuxChiffres(d.getUTCHours())
+    +this.deuxChiffres(d.getUTCMinutes())+this.deuxChiffres(d.getUTCSeconds())+'Z';}
+  // Heure « flottante » (sans Z ni TZID) : 19 h reste 19 h même en voyage, ce qu'on veut
+  // d'un rappel quotidien — contrairement à un rendez-vous, qui lui a un fuseau.
+  dateFlottante(d){return d.getFullYear()+this.deuxChiffres(d.getMonth()+1)
+    +this.deuxChiffres(d.getDate())+'T'+this.deuxChiffres(d.getHours())
+    +this.deuxChiffres(d.getMinutes())+'00';}
+  prochaineOccurrence(maintenant,heure,minute){
+    const d=new Date(maintenant.getFullYear(),maintenant.getMonth(),maintenant.getDate(),heure,minute,0,0);
+    if(d.getTime()<=maintenant.getTime())d.setDate(d.getDate()+1);  // l'heure est passée : demain
+    return d;}
+  icsRappel(heure,minute,url,maintenantMs,uid){
+    const maintenant=new Date(maintenantMs);
+    const debut=this.prochaineOccurrence(maintenant,heure|0,minute|0);
+    const L=[
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Atlas des espèces//Rappel de révision//FR',
+      'CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',
+      'UID:'+(uid||('rappel-'+maintenantMs))+'@atlas-especes',
+      'DTSTAMP:'+this.horodatageUtc(maintenant),
+      'DTSTART:'+this.dateFlottante(debut),
+      'DURATION:PT15M',
+      'RRULE:FREQ=DAILY',
+      'SUMMARY:'+this.echapperIcs(this.RAPPEL_TITRE),
+      'DESCRIPTION:'+this.echapperIcs('Quinze minutes de quiz. Les cartes échues passent en premier : '+url),
+      'URL:'+this.echapperIcs(url),
+      'BEGIN:VALARM','ACTION:DISPLAY','TRIGGER:PT0S',
+      'DESCRIPTION:'+this.echapperIcs(this.RAPPEL_TITRE),
+      'END:VALARM','END:VEVENT','END:VCALENDAR'];
+    return L.map(l=>this.plierLigne(l)).join('\r\n')+'\r\n';}
+  // Relance à l'ouverture : le seul rappel qu'une page statique sait vraiment faire.
+  derniereSession(prog){let max=null;
+    Object.keys(prog||{}).forEach(k=>{const c=prog[k];
+      if(c&&typeof c.last==='number'&&(max===null||c.last>max))max=c.last;});
+    return max;}
+  phraseRelance(prog,jour,dues){
+    if(!dues)return '';
+    const der=this.derniereSession(prog);
+    const ecart=der===null?null:jour-der;
+    const quand=ecart===null?'':(ecart<=0?'Depuis ta session d’aujourd’hui, '
+      :(ecart===1?'Depuis hier, ':'Depuis '+ecart+' jours, '));
+    const n=dues+' carte'+(dues>1?'s':'');
+    return quand+(quand?n.charAt(0).toLowerCase()+n.slice(1):n)
+      +(dues>1?' attendent':' attend')+' d’être revue'+(dues>1?'s':'')+'.';}
+  // __RAPPEL_FIN__
   exportProg=()=>{try{const b=new Blob([this.progExport(this.state.prog)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='atlas-progression.json';document.body.appendChild(a);a.click();a.remove();}catch(e){}};
   pickImport(remplace){return ()=>{this._remplace=remplace;const el=document.getElementById('prog-file');if(el){el.value='';el.click();}};}
   onImportFile=ev=>{const f=ev.target&&ev.target.files&&ev.target.files[0];if(!f)return;
@@ -667,6 +734,19 @@ class App{
       try{localStorage.setItem('atlas-v2-prog',JSON.stringify(prog));}catch(e){}
       this.setState({prog,progMsg:this.progResume({ajoutes:res.ajoutes,fusionnes:res.fusionnes,ignores:lu.ignores},remplace),progMsgOk:true});};
     r.readAsText(f);};
+  // Le fichier .ics part dans le calendrier de l'appareil, qui se charge de sonner :
+  // rien n'est envoyé nulle part, et ça marche hors ligne, sur iOS comme sur Android.
+  telechargerRappel=()=>{try{
+      const [h,m]=(this.state.rappelHeure||'19:00').split(':');
+      const ics=this.icsRappel(parseInt(h,10),parseInt(m,10),location.href.split('#')[0],Date.now());
+      const b=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(b);
+      a.download='rappel-atlas.ics';document.body.appendChild(a);a.click();a.remove();
+      this.setState({progMsg:'Rappel quotidien à '+this.state.rappelHeure+' : ouvre le fichier téléchargé pour l’ajouter à ton calendrier.',progMsgOk:true});
+    }catch(e){this.setState({progMsg:'Impossible de préparer le rappel.',progMsgOk:false});}};
+  setRappelHeure=ev=>{const v=ev.target.value||'19:00';
+    try{localStorage.setItem('atlas-rappel-heure',v);}catch(e){}
+    this.setState({rappelHeure:v});};
   resetProg=()=>{if(!confirm('Réinitialiser toute la progression ?'))return;try{localStorage.removeItem('atlas-v2-prog');}catch(e){}this.setState({prog:{},sess:{s:0,c:0,streak:0,best:0},progMsg:'Progression réinitialisée.',progMsgOk:true});};
   fieldRows(sp,quiz){if(!sp)return [];const hidden={comestible:1,notes:1};return this.FIELDS.filter(f=>sp.fields[f[0]]).map(f=>{const k=f[0],rk=sp.id+'|'+k,blur=!!(quiz&&hidden[k]&&!this.state.reveal[rk]);return{l:f[1],v:this.clean(sp.fields[k]),b:blur?'1':'0',go:blur?(()=>{const r=Object.assign({},this.state.reveal);r[rk]=1;this.setState({reveal:r});}):(()=>{}),hasInfo:!!this.GLOSS[k],info:this.GLOSS[k]||'',openInfo:this.state.info===rk,goInfo:()=>this.setState({info:this.state.info===rk?null:rk})};});}
 
@@ -698,6 +778,9 @@ class App{
         libelle:i===0?'à réapprendre':(this.intervalle(i)===1?'chaque jour':'tous les '+this.intervalle(i)+' jours'),
         pct:srs.total?Math.round(100*n/srs.total):0})),
       duesTotalCartes:srs.total,
+      relance:this.phraseRelance(S.prog,this.jour(),srs.dues),
+      rappelHeure:S.rappelHeure,setRappelHeure:this.setRappelHeure,
+      telechargerRappel:this.telechargerRappel,
       isHome:S.view==='home',showQuick:this.props.quickSessions!==false,showMastery:this.props.showMastery!==false,
       isQuiz:S.view==='quiz'&&!!q,isAtlas:S.view==='atlas',isFiche:S.view==='fiche'&&!!fiche,
       isTrierPick:S.view==='trierPick',isTrierPlay:S.view==='trierPlay'&&!!critSp,isProgres:S.view==='progres',
@@ -801,6 +884,7 @@ JS += r"""
         +'<div><div style="font:700 22px/1 var(--font-headline-data)'+(V.dues?';color:var(--color-brand-red)':'')+'">'+V.dues+'</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:5px">à revoir aujourd\'hui</div></div>'
         +'<div><div style="font:700 22px/1 var(--font-headline-data)">'+V.heroPct+'%</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:5px">déjà maîtrisé</div></div>'
         +'<div><div style="font:700 22px/1 var(--font-headline-data)">'+V.best+'</div><div style="font:600 11px/1.2 var(--font-body);color:var(--fg-3);margin-top:5px">meilleure série</div></div></div>'
+      +(V.relance?'<div style="margin-top:-12px;padding:11px 13px;border-radius:8px;background:var(--color-warning-soft);color:var(--color-warning);font:600 13px/1.45 var(--font-body)">'+e(V.relance)+'</div>':'')
       +'<button class="pb" data-k="dark" data-h="'+h(V.start)+'">Lancer'+ARROW+'</button>'
       +(V.showQuick?'<div><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:10px">Ou une séance déjà réglée</div><div class="r-cats">'
         +V.presets.map(p=>'<button class="gc" style="padding:16px;display:flex;flex-direction:column;gap:8px;min-height:112px" data-h="'+h(p.go)+'"><div style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:var(--color-brand-red)">'+e(p.tag)+'</div><div style="font:700 16px/1.25 var(--font-body);padding-bottom:2px">'+e(p.title)+'</div><div style="font:400 13px/1.4 var(--font-body);color:var(--fg-3)">'+e(p.sub)+'</div></button>').join('')
@@ -876,6 +960,12 @@ JS += r"""
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:6px">Critères écologiques — oui / non</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:60ch;margin-bottom:14px">Ta fiabilité question par question.</div>'+V.critRows.map(row).join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:14px">Couverture par catégorie</div>'+V.catCards.map(c=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font:600 14px/1 var(--font-body)">'+e(c.label)+'</span><span style="font:700 12px/1 var(--font-mono);color:var(--fg-3)">'+c.n+'</span></div><div style="height:6px;margin-top:10px;background:var(--color-navy-100);border-radius:999px;overflow:hidden"><div style="height:100%;background:var(--color-navy-900);width:'+c.pct+'%"></div></div></div>').join('')+'</div>'
       +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:12px">Sauvegarde</div><div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:56ch;margin-bottom:14px">La progression reste dans ce navigateur. Exporte un fichier pour la garder ou changer d\'appareil.</div><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="ib" data-h="'+h(V.exportProg)+'">Exporter ma progression</button><button class="ib" data-h="'+h(V.importProg)+'">Importer un fichier</button><button class="ib" data-h="'+h(V.replaceProg)+'">Remplacer par un fichier…</button><button class="ib" data-h="'+h(V.resetProg)+'" style="color:var(--color-brand-red)">Réinitialiser</button></div><input id="prog-file" type="file" accept="application/json,.json" data-hc="'+h(V.onImportFile)+'" style="display:none">'+(V.progMsg?'<div role="status" style="margin-top:12px;padding:10px 12px;border-radius:8px;font:600 12px/1.45 var(--font-body);background:'+(V.progMsgOk==='1'?'var(--color-success-soft);color:var(--color-success)':'var(--color-warning-soft);color:var(--color-warning)')+'">'+e(V.progMsg)+'</div>':'')+'</div>'
+      +'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:12px">Rappel quotidien</div>'
+        +'<div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:56ch;margin-bottom:14px">Un site web ne peut pas te sonner tout seul à une heure choisie. Celui-ci prépare donc un <b>événement pour ton calendrier</b>, qui s\'en charge — hors ligne, et sans que rien ne sorte de ton appareil.</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">'
+        +'<label for="rappel-heure" style="font:600 13px/1 var(--font-body);color:var(--fg-2)">Tous les jours à</label>'
+        +'<input id="rappel-heure" type="time" value="'+e(V.rappelHeure)+'" data-hc="'+h(V.setRappelHeure)+'" style="font:600 13px/1 var(--font-mono);padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;background:var(--bg-card);color:var(--fg-1)">'
+        +'<button class="ib" data-h="'+h(V.telechargerRappel)+'">Ajouter à mon calendrier</button></div></div>'
       +(V.horsLigneDispo==='1'?'<div><div style="font:700 9px/1 var(--font-condensed);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:12px">Hors ligne</div>'
         +'<div style="font:400 13px/1.5 var(--font-body);color:var(--fg-3);max-width:56ch;margin-bottom:14px">L\'app fonctionne sans réseau une fois ouverte, et garde les photos déjà vues. Pour partir sur le terrain, télécharge les photos d\'une catégorie à l\'avance.</div>'
         +'<div style="display:flex;flex-wrap:wrap;gap:8px">'+V.offCats.map(c=>'<button class="ib" data-h="'+h(c.go)+'"'+(V.dlEnCours==='1'?' disabled':'')+'>'+e(c.label)+' · '+e(c.taille)+'</button>').join('')

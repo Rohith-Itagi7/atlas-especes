@@ -48,6 +48,24 @@ textuelles qui nomment l'espèce et l'aspect — sauf dans le quiz avant la rép
 l'alternative ne dit que l'aspect pour ne pas donner la solution. Les résultats sont annoncés
 aux lecteurs d'écran, et `prefers-reduced-motion` désactive les animations de cartes.
 
+## ⏰ Rappel quotidien
+
+Dans *Progrès → Rappel quotidien*, choisis une heure et le site prépare un fichier `.ics`
+à ouvrir dans ton calendrier : un événement **quotidien** de 15 minutes, avec son alarme et
+un lien vers l'app. C'est le calendrier de l'appareil qui sonne — donc hors ligne, sur iOS
+comme sur Android, et sans que rien ne sorte de chez toi.
+
+Pourquoi pas une vraie notification ? Parce qu'un site **statique** ne peut pas en
+programmer une à une heure choisie : les *Notification Triggers* (notification locale
+planifiée) ont été expérimentées puis abandonnées, le *Web Push* exige un serveur qui
+pousse au bon moment, et le *Periodic Background Sync* laisse le navigateur décider quand
+il se réveille. Le calendrier, lui, sait faire ça depuis toujours.
+
+L'heure est écrite en temps « flottant » (sans fuseau) : 19 h reste 19 h même en voyage.
+
+À l'ouverture, l'accueil rappelle aussi ce qui attend — « Depuis 3 jours, 4 cartes
+attendent d'être revues » — et se tait quand il n'y a rien à revoir.
+
 ## 📴 Hors ligne
 
 L'atlas sert sur le terrain, là où il n'y a pas de réseau. Une fois la page ouverte une
@@ -121,6 +139,11 @@ python3 -m pytest                                # ~1 s
 Les tests couvrent la lecture des atlas (colonnes, vignettes, aspects des photos), les
 contributions (`tag` / `reassign` / `remove`), les groupes de confusion, la règle
 « Est-ce comestible ? » du mode Oui/Non, et un test de bout en bout du build du site.
+
+Le **rappel quotidien** l'est aussi (`tests/test_rappel.py`) : le fichier `.ics` part dans
+une app tierce qui ne pardonne pas les écarts au RFC 5545 (repliage des lignes à 75
+**octets**, CRLF, échappement des virgules), et un import raté échoue en silence. Le
+fichier produit est en plus relu par la bibliothèque `icalendar` avant chaque livraison.
 
 La **planification de la révision** est testée à part (`tests/test_revision.py`) : le JS
 réellement livré est rejoué sous node avec des dates simulées — barème des intervalles,

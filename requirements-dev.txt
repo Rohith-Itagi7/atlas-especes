@@ -5,3 +5,8 @@ pytest>=8
 # Optionnelle, mais utilisée par le build du site pour produire les vignettes légères
 # (scripts/derives.py) : sans elle, le site est construit avec les images d'origine.
 Pillow>=10
+
+# Optionnelle elle aussi : relit le fichier .ics du rappel quotidien avec un parseur tiers
+# (tests/test_rappel.py), plutôt que de s'en remettre à ma seule lecture du RFC 5545.
+# Sans elle, ce test unique est sauté, les autres tournent.
+icalendar>=6
