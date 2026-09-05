@@ -1,6 +1,7 @@
 _site/
 __pycache__/
 *.pyc
+.pytest_cache/
 .DS_Store
 # gros fichiers générés en local (artifact / standalone), pas versionnés
 Quiz especes*.html

@@ -1,10 +1,14 @@
 # Comment nommer les photos du quiz
 # Dossier : img/quiz-extra/
 # Format : <prefixe>-<aspect(s)>-<numero>.jpg
-# Aspects : feuille, ecorce, fruit, fleur, rameau (=rameau d'hiver/bourgeon), port.
+# Aspects : feuille, ecorce, fruit, fleur, port, rameau (=rameau d'hiver/bourgeon).
+# Synonymes acceptes : feuilles, fruits, fleurs, rameaux, bourgeon, hiver, silhouette.
 # Plusieurs aspects : separer par _ ou -  (ex. feuille_fleur).
 # Exemples : chene_liege-ecorce-1.jpg  /  pommier-fruit-1.jpg  /  ciboulette-feuille_fleur-1.jpg
 # Sans mot-cle (ex. chene_liege-1.jpg) => aspect 'divers'.
+# Le tiret apres le prefixe est OBLIGATOIRE : « ail_des_ours-1.jpg » va bien a l'ail des
+# ours et non a l'ail. Une photo hors convention n'est rattachee a aucune espece, et
+# scripts/verifier_atlas.py la signale.
 # Puis relancer : python3 scripts/generer_quiz.py
 
 ESPECE                             PREFIXE DE FICHIER         (latin)
