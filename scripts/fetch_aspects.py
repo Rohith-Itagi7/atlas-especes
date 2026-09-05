@@ -6,8 +6,15 @@ Télécharge des photos par ASPECT depuis Wikimedia Commons pour LIGNEUX et HERB
   herbacées : feuille(leaf), fleur(flower), fruit(fruit)   (pas d'écorce)
 Fichiers : img/quiz-extra/<stem>-<aspect>-1.jpg (réduits sips 420px q70).
 Idempotent (saute un aspect déjà présent). Relancer generer_quiz.py ensuite.
+
+  python3 scripts/fetch_aspects.py                        tout l'atlas
+  python3 scripts/fetch_aspects.py --lot lots/lot-1.txt   un lot (cf. #17)
+  python3 scripts/fetch_aspects.py --especes cigue,arum   quelques espèces
 """
-import re, os, json, time, glob, subprocess, urllib.request, urllib.parse, urllib.error
+import re, os, sys, json, time, glob, subprocess, urllib.request, urllib.parse, urllib.error
+
+import atlas_data
+import credits
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXTRA = os.path.join(BASE, "img", "quiz-extra")
@@ -15,8 +22,12 @@ os.makedirs(EXTRA, exist_ok=True)
 IMG_RE = re.compile(r"!\[\[(?:[^\]\|]*/)?([^\]\|]+\.(?:jpg|jpeg|png))", re.I)
 UA = "ForestryQuiz/1.0 (personal educational use)"
 ATLASES = [("Espèces - référence.md", "ligneux"), ("Espèces herbacées - référence.md", "herbace")]
-ASP_LIG = [("ecorce", "bark"), ("feuille", "leaf"), ("fruit", "fruit")]
-ASP_HERB = [("feuille", "leaf"), ("fleur", "flower"), ("fruit", "fruit")]
+# Quels aspects chercher, et sous quel mot-clé anglais : les identifiants et les termes
+# viennent du vocabulaire partagé (scripts/atlas_data.py). Renommer un aspect là-bas fait
+# échouer ce script à l'import plutôt que de le laisser télécharger n'importe quoi.
+_TERME = {a.id: a.terme_en for a in atlas_data.ASPECTS}
+ASP_LIG = [(i, _TERME[i]) for i in ("ecorce", "feuille", "fruit")]
+ASP_HERB = [(i, _TERME[i]) for i in ("feuille", "fleur", "fruit")]
 BAD = ("map", "range", "distribution", "locator", "icon", "logo", "diagram", "chart", "signature", "illustration")
 
 def species_all():
@@ -40,9 +51,11 @@ def clean_latin(l):
     return " ".join(l.split()[:2])
 
 def commons_photo(latin, kw):
+    """(url de la photo, crédit) — extmetadata porte l'auteur et la licence, exigés par CC-BY."""
     q = urllib.parse.urlencode({"action": "query", "generator": "search",
         "gsrsearch": '%s %s' % (latin, kw), "gsrnamespace": "6", "gsrlimit": "8",
-        "prop": "imageinfo", "iiprop": "url|mime", "iiurlwidth": "700", "format": "json"})
+        "prop": "imageinfo", "iiprop": "url|mime|extmetadata", "iiurlwidth": "700",
+        "format": "json"})
     req = urllib.request.Request("https://commons.wikimedia.org/w/api.php?" + q, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=30) as r:
         d = json.load(r)
@@ -54,7 +67,7 @@ def commons_photo(latin, kw):
             continue
         ii = p.get("imageinfo", [{}])[0]
         if ii.get("mime") in ("image/jpeg", "image/png") and ii.get("thumburl"):
-            return ii["thumburl"]
+            return ii["thumburl"], credits.credit_commons(ii)
     return None
 
 def dl(url, dest):
@@ -78,8 +91,23 @@ def with_retry(fn, *a):
             raise
     return None
 
+def choisir(sp, argv):
+    """Restreint la liste au lot demandé par --lot / --especes (cf. atlas_data)."""
+    arg = None
+    for i, a in enumerate(argv):
+        if a in ("--lot", "--especes") and i + 1 < len(argv):
+            arg = argv[i + 1]
+    if not arg:
+        return sp
+    demandes = atlas_data.lire_lot(arg)
+    retenus, inconnus = atlas_data.selection([x[0] for x in sp], demandes)
+    if inconnus:
+        raise SystemExit("stem(s) inconnu(s) dans le lot : %s" % ", ".join(inconnus))
+    ordre = {s: i for i, s in enumerate(retenus)}
+    return sorted([x for x in sp if x[0] in ordre], key=lambda x: ordre[x[0]])
+
 def main():
-    sp = species_all()
+    sp = choisir(species_all(), sys.argv[1:])
     print("%d espèces (ligneux + herbacées)" % len(sp))
     ok = 0
     for i, (stem, latin, cat) in enumerate(sp):
@@ -91,10 +119,12 @@ def main():
                 got.append(asp + "=déjà"); continue
             dest = os.path.join(EXTRA, "%s-%s-1.jpg" % (stem, asp))
             try:
-                src = with_retry(commons_photo, cl, kw)
-                if not src:
+                trouve = with_retry(commons_photo, cl, kw)
+                if not trouve:
                     got.append(asp + "=∅"); time.sleep(2.5); continue
-                dl(src, dest); got.append(asp + "=OK"); ok += 1
+                src, credit = trouve
+                dl(src, dest); credits.noter(dest, **credit)
+                got.append(asp + "=OK"); ok += 1
             except Exception:
                 got.append(asp + "=err")
             time.sleep(2.5)

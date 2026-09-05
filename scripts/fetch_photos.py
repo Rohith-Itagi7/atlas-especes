@@ -3,9 +3,17 @@
 """
 Télécharge des photos supplémentaires (iNaturalist) pour chaque espèce des atlas,
 les réduit (≤420 px, JPEG q70) et les range dans img/quiz-extra/<stem>-N.jpg.
+Chaque image téléchargée est créditée dans img/CREDITS.tsv (auteur, licence, page).
 Idempotent : saute les espèces qui ont déjà des extras. Relancer le générateur ensuite.
+
+  python3 scripts/fetch_photos.py                        tout l'atlas
+  python3 scripts/fetch_photos.py --lot lots/lot-1.txt   un lot (cf. #17)
+  python3 scripts/fetch_photos.py --especes cigue,arum   quelques espèces
 """
-import re, os, json, time, glob, subprocess, urllib.request, urllib.parse
+import re, os, sys, json, time, glob, subprocess, urllib.request, urllib.parse
+
+import atlas_data
+import credits
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG = os.path.join(BASE, "img", "especes")
@@ -60,7 +68,8 @@ def taxon_photos(latin):
         p = tp.get("photo", {})
         u = p.get("medium_url") or p.get("url")
         if u:
-            urls.append(u)
+            # le crédit accompagne l'URL : iNaturalist est surtout du CC-BY / CC-BY-NC
+            urls.append((u, credits.credit_inaturalist(p)))
     return urls
 
 def dl(url, dest):
@@ -74,8 +83,23 @@ def dl(url, dest):
                     dest + ".orig", "--out", dest], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.remove(dest + ".orig")
 
+def choisir(sp, argv):
+    """Restreint la liste au lot demandé par --lot / --especes (cf. atlas_data)."""
+    arg = None
+    for i, a in enumerate(argv):
+        if a in ("--lot", "--especes") and i + 1 < len(argv):
+            arg = argv[i + 1]
+    if not arg:
+        return sp
+    demandes = atlas_data.lire_lot(arg)
+    retenus, inconnus = atlas_data.selection([x[0] for x in sp], demandes)
+    if inconnus:
+        raise SystemExit("stem(s) inconnu(s) dans le lot : %s" % ", ".join(inconnus))
+    ordre = {s: i for i, s in enumerate(retenus)}
+    return sorted([x for x in sp if x[0] in ordre], key=lambda x: ordre[x[0]])
+
 def main():
-    sp = species_list()
+    sp = choisir(species_list(), sys.argv[1:])
     ok = skip = fail = 0
     for i, (stem, latin) in enumerate(sp):
         if glob.glob(os.path.join(EXTRA, stem + "-*")):
@@ -83,9 +107,10 @@ def main():
         try:
             urls = taxon_photos(latin)[:N_EXTRA]
             n = 0
-            for j, u in enumerate(urls, 1):
+            for j, (u, credit) in enumerate(urls, 1):
                 try:
-                    dl(u, os.path.join(EXTRA, "%s-%d.jpg" % (stem, j))); n += 1
+                    dest = os.path.join(EXTRA, "%s-%d.jpg" % (stem, j))
+                    dl(u, dest); credits.noter(dest, **credit); n += 1
                     time.sleep(0.5)
                 except Exception as e:
                     print("   img fail %s-%d: %s" % (stem, j, e))
