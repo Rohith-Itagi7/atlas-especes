@@ -173,6 +173,27 @@ def verifier_sidecar():
                             % (ou, a, ASPECTS_NOMMES))
     return errs, warns
 
+def verifier_noms_uniques():
+    """Un même nom de fichier dans les deux dossiers d'images écraserait sa vignette.
+
+    Les dérivés du build vivent à plat dans img/thumb/, nommés d'après le fichier source
+    (cf. scripts/derives.py) : deux sources homonymes produisent un seul dérivé, et l'une
+    des deux photos s'affiche à la place de l'autre. Rien ne l'interdisait — le
+    commentaire de derives.py s'en remettait à un contrôle qui n'existait pas.
+    """
+    errs = []
+    def noms(dossier):
+        if not os.path.isdir(dossier):
+            return set()
+        return {n for n in os.listdir(dossier)
+                if not n.startswith("_") and n.lower().endswith(atlas_data.PHOTO_EXT)}
+
+    for name in sorted(noms(atlas_data.IMG) & noms(atlas_data.EXTRA)):
+        errs.append("%s : présent dans img/especes/ ET img/quiz-extra/ — les deux "
+                    "partageraient la même vignette img/thumb/%s, renommer l'un des deux"
+                    % (name, name))
+    return errs, []
+
 def verifier_vignettes(stems):
     """Une vignette de img/especes/ que personne n'utilise n'apparaît pas dans le site."""
     errs, warns = [], []
@@ -295,7 +316,7 @@ def main():
                      verifier_contributions, verifier_confusions):
         e, w = controle(stems)
         errs += e; warns += w
-    for controle in (verifier_sidecar, verifier_credits):
+    for controle in (verifier_sidecar, verifier_credits, verifier_noms_uniques):
         e, w = controle()
         errs += e; warns += w
 

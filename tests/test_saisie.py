@@ -149,3 +149,17 @@ def test_chaque_voisine_reste_acceptee_sur_son_propre_nom():
                      ["Aubépine lissa", "Aubépine lissa"]], VOISINES)
 
     assert got == [True, True]
+
+
+# ------------------------------------------------ validation à vide (trouvé à la revue)
+
+def test_une_saisie_vide_ne_compte_pas_de_reponse():
+    """« picked » valait '' (falsy) : le garde-fou `if(this.state.picked)return` ne
+    retenait rien, et chaque Entrée à vide enregistrait une mauvaise réponse — sans
+    rien afficher, donc sans que l'utilisateur voie pourquoi sa carte redescendait
+    d'une boîte (cf. #16)."""
+    js = load_module("site_ui").JS
+
+    assert "this.state.picked!==null" in js, "tester la valeur, pas sa véracité"
+    assert re.search(r"cfg\.diff==='saisie'&&!String\(name==null\?'':name\)\.trim\(\)\)return",
+                     js), "une saisie vide doit sortir avant d'être notée"

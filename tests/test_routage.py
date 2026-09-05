@@ -191,3 +191,16 @@ def test_le_titre_reflete_la_vue():
     assert titres[1].startswith("Alisier torminal · ")
     assert titres[2].startswith("Ma session · ")
     assert all(t.endswith("Atlas & quiz des espèces") for t in titres)
+
+
+# ------------------------------------------ un lien partagé doit ouvrir CE quiz-là (revue)
+
+def test_les_defauts_omis_de_l_url_sont_bien_les_defauts_pas_les_reglages_du_lecteur():
+    """urlDeVue omet « mixte » et « tout » pour garder les liens lisibles. Si la relecture
+    traite un paramètre absent comme « inchangé », celui qui clique ouvre le quiz avec SES
+    propres réglages — un lien de quiz mixte devient un quiz champignons chez le voisin."""
+    js = load_module("site_ui").JS
+
+    assert re.search(r"DEFAUTS\s*=\s*\{[^}]*cat:'mixte'[^}]*aspect:'tout'", js), \
+        "appliquerRoute doit repartir des valeurs par défaut"
+    assert re.search(r"Object\.assign\(\{\},this\.state\.cfg,DEFAUTS\)", js)

@@ -30,8 +30,11 @@ FOND = (22, 36, 28)        # var(--color-navy-900) du site
 FEUILLE = (166, 199, 138)  # vert clair, lisible sur le fond
 
 # La coquille : ce qui est mis en cache à l'installation (quelques centaines de ko).
-def coquille():
-    return ["./", "index.html", MANIFESTE, ICONE_SVG] + [n for _px, n in ICONES_PNG]
+def coquille(avec_png=True):
+    """Ne liste que ce qui a vraiment été écrit : sans Pillow, les PNG n'existent pas, et
+    un fichier absent dans la coquille suffisait à laisser le site sans mode hors ligne."""
+    base = ["./", "index.html", MANIFESTE, ICONE_SVG]
+    return base + ([n for _px, n in ICONES_PNG] if avec_png else [])
 
 
 def manifeste():
@@ -97,7 +100,11 @@ const FICHIERS = __COQUILLE__;
 
 self.addEventListener('install', ev => {
   // On n'active pas de force : la page proposera « Recharger » quand la version sera prête.
-  ev.waitUntil(caches.open(COQUILLE).then(c => c.addAll(FICHIERS)).catch(() => {}));
+  // Fichier par fichier, et non addAll : celui-ci est atomique, si bien qu'un seul 404
+  // (une icône absente, un déploiement partiel) laissait le site SANS mode hors ligne.
+  ev.waitUntil(caches.open(COQUILLE)
+    .then(c => Promise.all(FICHIERS.map(f => c.add(f).catch(() => {}))))
+    .catch(() => {}));
 });
 
 self.addEventListener('activate', ev => {
@@ -149,16 +156,20 @@ self.addEventListener('fetch', ev => {
 """
 
 
-def sw_js(version):
+def sw_js(version, avec_png=True):
     return (JS_SW.replace("__VERSION__", version)
                  .replace("__CACHE_IMAGES__", CACHE_IMAGES)
-                 .replace("__COQUILLE__", json.dumps(coquille())))
+                 .replace("__COQUILLE__", json.dumps(coquille(avec_png))))
 
 
 def ecrire(outdir, version):
-    """Écrit sw.js, le manifeste et les icônes. Renvoie True si les PNG ont pu être produits."""
+    """Écrit sw.js, le manifeste et les icônes. Renvoie True si les PNG ont pu être produits.
+
+    Les icônes d'abord : le service worker ne doit précacher que des fichiers qui existent.
+    """
+    png = ecrire_icones(outdir)
     with open(os.path.join(outdir, FICHIER_SW), "w", encoding="utf-8") as fh:
-        fh.write(sw_js(version))
+        fh.write(sw_js(version, png))
     with open(os.path.join(outdir, MANIFESTE), "w", encoding="utf-8") as fh:
         json.dump(manifeste(), fh, ensure_ascii=False, indent=2)
-    return ecrire_icones(outdir)
+    return png

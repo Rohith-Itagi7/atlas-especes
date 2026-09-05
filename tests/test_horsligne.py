@@ -194,3 +194,41 @@ def test_mixte_prend_tout_sans_doublon():
     got, = _appeler([["urlsCategorie", "mixte"]])
 
     assert len(got) == len(set(got)) == 5
+
+
+# ------------------------------------------- la coquille sans Pillow (trouvé à la revue)
+
+def test_la_coquille_ne_liste_que_les_icones_produites(sw):
+    """Sans Pillow, les PNG ne sont pas écrits. Les précacher quand même cassait TOUT le
+    mode hors ligne : addAll est atomique, et son échec est avalé par .catch(() => {}).
+    Mesuré en navigateur : 0 fichier en cache, et ERR_FAILED serveur coupé."""
+    assert set(n for _px, n in sw.ICONES_PNG) <= set(sw.coquille(True))
+    assert not [f for f in sw.coquille(False) if f.endswith(".png")]
+    assert "index.html" in sw.coquille(False), "l'essentiel reste précaché"
+
+
+def test_l_installation_ne_perd_pas_tout_pour_un_fichier(sw):
+    """Un seul 404 (icône absente, déploiement partiel) ne doit pas coûter le hors ligne."""
+    code = "\n".join(l for l in sw.sw_js("v").split("\n") if not l.strip().startswith("//"))
+
+    assert "addAll" not in code, "addAll est atomique : un échec emporte toute la coquille"
+    assert "c.add(f).catch" in code
+
+
+def test_ecrire_n_annonce_que_des_fichiers_qu_il_a_ecrits(sw, tmp_path):
+    """Le contrat qui compte : tout fichier annoncé au précache existe vraiment.
+
+    « ./ » et index.html sont produits par build_web.py, pas par ce module : le reste de
+    la coquille est à la charge de site_sw, et c'est là qu'était le trou (les PNG).
+    """
+    out = str(tmp_path)
+
+    sw.ecrire(out, "v1")
+
+    js = open(os.path.join(out, sw.FICHIER_SW), encoding="utf-8").read()
+    fichiers = json.loads(re.search(r"const FICHIERS = (\[.*?\]);", js, re.S).group(1))
+    assert "./" in fichiers and "index.html" in fichiers, "la page elle-même doit être précachée"
+    a_nous = [f for f in fichiers if f not in ("./", "index.html")]
+    absents = [f for f in a_nous if not os.path.exists(os.path.join(out, f))]
+
+    assert not absents, "annoncés au précache mais absents : %s" % absents

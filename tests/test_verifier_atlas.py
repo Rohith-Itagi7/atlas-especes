@@ -317,3 +317,24 @@ def test_le_verificateur_passe_sur_le_depot_reel():
 
     assert r.returncode == 0, r.stdout + r.stderr
     assert "Atlas valides" in r.stdout
+
+
+# ---------------------------------------------------- noms de fichiers homonymes (revue)
+
+def test_un_meme_nom_dans_les_deux_dossiers_est_une_erreur(va, repo):
+    """Les dérivés vivent à plat dans img/thumb/, nommés d'après la source : deux sources
+    homonymes n'en produisent qu'un, et une photo s'affiche à la place de l'autre.
+    derives.py s'en remettait à un contrôle qui n'existait pas."""
+    repo.vignette("ortie.jpg")
+    repo.extra_photo("ortie.jpg")          # même nom des deux côtés
+
+    errs, warns = va.verifier_noms_uniques()
+
+    assert len(errs) == 1 and "ortie.jpg" in errs[0] and "img/thumb/" in errs[0]
+
+
+def test_des_noms_distincts_ne_declenchent_rien(va, repo):
+    repo.vignette("ortie.jpg")
+    repo.extra_photo("ortie-feuille-1.jpg")
+
+    assert va.verifier_noms_uniques() == ([], [])

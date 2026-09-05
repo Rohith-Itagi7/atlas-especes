@@ -404,6 +404,10 @@ class App{
     return (o/1048576).toFixed(o<10*1048576?1:0).replace('.',',')+' Mo';}
   // Toutes les images d'une catégorie (original + vignette), sans doublon : ce qu'il faut
   // télécharger pour consulter cette catégorie hors ligne.
+  // Combien de photos (et non d'URL : chacune en pèse deux, l'original et sa vignette).
+  photosCategorie(cat){let n=0;
+    this.all().forEach(s=>{if(cat!=='mixte'&&s.cat!==cat)return;n+=s.imgs.length;});
+    return n;}
   urlsCategorie(cat){const vu={},out=[];
     this.all().forEach(s=>{if(cat!=='mixte'&&s.cat!==cat)return;
       s.imgs.forEach(im=>[im.u,im.t].forEach(u=>{if(u&&!vu[u]){vu[u]=1;out.push(u);}}));});
@@ -430,7 +434,7 @@ class App{
   telecharger(cat){return async ()=>{
     if(this.state.dl||!this.horsLigneDispo())return;
     const urls=this.urlsCategorie(cat);
-    this.setState({dl:{cat,fait:0,total:urls.length,echecs:0},offMsg:''});
+    this.setState({dl:{cat,fait:0,total:urls.length,photos:this.photosCategorie(cat),echecs:0},offMsg:''});
     let cache;
     try{cache=await caches.open(OFFLINE_DATA.cache);}
     catch(e){this.setState({dl:null,offMsg:'Cache indisponible dans ce navigateur.'});return;}
@@ -445,7 +449,8 @@ class App{
       if((i+1)%8===0||i+1===urls.length)this.render();
     }
     const d=this.state.dl;
-    this.setState({dl:null,offMsg:d.total+' photo'+(d.total>1?'s':'')+' disponible'+(d.total>1?'s':'')+' hors ligne'
+    const n=d.photos;
+    this.setState({dl:null,offMsg:n+' photo'+(n>1?'s':'')+' disponible'+(n>1?'s':'')+' hors ligne'
       +(d.echecs?' ('+d.echecs+' échec'+(d.echecs>1?'s':'')+')':'')+'.'});};}
   viderImages=async ()=>{
     if(!this.horsLigneDispo())return;
@@ -524,7 +529,13 @@ class App{
     this.top();return true;}
   start=()=>{if(this.lancerQuiz())this.pushNav();};
   next=()=>{this.setState({q:this.buildQ(),picked:null,ok:false,typed:'',reveal:{},info:null});this.top();};
-  grade(name){const {q,cfg,sess}=this.state;if(!q||this.state.picked)return;const ok=this.answerOk(name,q.sp);const streak=ok?sess.streak+1:0;// la carte du réglage courant est planifiée en premier, puis celles des aspects montrés
+  grade(name){const {q,cfg,sess}=this.state;
+    // picked!==null et non !picked : une saisie vide vaut '' (falsy) et repassait le
+    // garde-fou, si bien que chaque Entrée à vide comptait une mauvaise réponse — sans
+    // rien afficher, donc sans que l'utilisateur comprenne pourquoi sa carte redescend.
+    if(!q||this.state.picked!==null)return;
+    if(cfg.diff==='saisie'&&!String(name==null?'':name).trim())return;
+    const ok=this.answerOk(name,q.sp);const streak=ok?sess.streak+1:0;// la carte du réglage courant est planifiée en premier, puis celles des aspects montrés
     let keys=[this.cleQuiz(q.sp.id,cfg)];if(cfg.qtype==='photo'){keys.push(q.sp.id+'|photo');if(q.img&&q.img.a)keys=keys.concat(q.img.a.map(a=>q.sp.id+'|photo:'+a));keys=keys.filter((k,i)=>keys.indexOf(k)===i);}this.setState({picked:name,ok,prog:this.bumpKeys(keys,ok),sess:{s:sess.s+1,c:sess.c+(ok?1:0),streak,best:Math.max(sess.best,streak)}});
     setTimeout(()=>{const el=document.getElementById('quiz-fb');if(el&&window.innerWidth<900)el.scrollIntoView({behavior:'smooth',block:'center'});},30);}
   setCfg(k,v){return ()=>{const cfg=Object.assign({},this.state.cfg);cfg[k]=v;this.setState({cfg});};}
@@ -568,7 +579,11 @@ class App{
       this.setState({view:'fiche',tab:'atlas',fiche:sp.id,fimg:0,ficheFrom:'atlas',routeMsg:''});
       return true;}
     if(r.v==='quiz'){
-      const cfg=Object.assign({},this.state.cfg);
+      // Un paramètre absent de l'URL vaut sa valeur PAR DÉFAUT, pas celle du destinataire :
+      // urlDeVue omet « mixte » et « tout » pour garder les liens lisibles, donc les relire
+      // comme « inchangé » faisait ouvrir le quiz avec les réglages de celui qui clique.
+      const DEFAUTS={cat:'mixte',qtype:'photo',aspect:'tout',diff:'qcm'};
+      const cfg=Object.assign({},this.state.cfg,DEFAUTS);
       ['cat','qtype','aspect','diff'].forEach((k,i)=>{const v=[r.cfgCat,r.qtype,r.aspect,r.diff][i];if(v)cfg[k]=v;});
       this.state.cfg=cfg;
       // une question est tirée au hasard : un lien de quiz partage les réglages, pas la question
@@ -825,7 +840,10 @@ class App{
       fAlt:fiche&&fcur?(fiche.name+' — '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'vue d’ensemble')):'',
       fImgAsp:fcur?('Cette photo montre : '+(fcur.a.map(a=>this.label(this.ASP,a)).join(', ')||'divers')):'',
       fCredit:fcur&&fcur.c?fcur.c:'',fCreditUrl:fcur&&fcur.cu?fcur.cu:'',
-      fThumbs:fimgs.map((im,i)=>({u:this.petite(im),border:i===S.fimg?'var(--fg-1)':'transparent',go:()=>this.setState({fimg:i})})),
+      fThumbs:fimgs.map((im,i)=>({u:this.petite(im),border:i===S.fimg?'var(--fg-1)':'transparent',
+        alt:(fiche?fiche.name:'')+((im.a&&im.a.length)?' — '+im.a.map(x=>this.label(this.ASP,x)).join(', ').toLowerCase():''),
+        courant:i===S.fimg?'true':'false',
+        go:()=>this.setState({fimg:i})})),
       fFields:this.fieldRows(fiche,false),
       fHasTips:!!(fiche&&fiche.conf&&fiche.conf.length),fTips:fiche&&fiche.conf?fiche.conf.map(g=>({txt:this.clean(g.tip)})):[],
       fPrev:this.moveFiche(-1),fNext:this.moveFiche(1),
@@ -901,7 +919,7 @@ JS += r"""
       if(V.isTyped) right+='<div style="display:flex;gap:8px"><input id="q-typed" aria-label="Nom de l’espèce" value="'+e(V.typed)+'" data-hi="'+h(V.onType)+'" data-hk="'+h(V.onTypeKey)+'" placeholder="Tape le nom de l\'espèce…" style="flex:1;padding:14px 16px;border:1px solid var(--border);border-radius:8px;font:400 15px/1 var(--font-body);color:var(--fg-1);min-width:0"><button class="ib" style="padding:12px 18px" data-h="'+h(V.submitTyped)+'">Valider</button></div>';
       if(V.hasOptions) right+=V.options.map(o=>'<button class="opt" data-s="'+o.s+'" data-h="'+h(o.go)+'"><span>'+e(o.label)+'</span></button>').join('');
       if(V.answered){
-        right+='<div class="anim" id="quiz-fb" role="status" aria-live="polite" style=""margin-top:6px;border:1px solid var(--border);border-left:3px solid '+V.fbColor+';border-radius:8px;background:var(--bg-card);padding:16px">'
+        right+='<div class="anim" id="quiz-fb" role="status" aria-live="polite" style="margin-top:6px;border:1px solid var(--border);border-left:3px solid '+V.fbColor+';border-radius:8px;background:var(--bg-card);padding:16px">'
         +'<span style="font:700 10px/1 var(--font-condensed);letter-spacing:.12em;text-transform:uppercase;color:'+V.fbColor+'">'+e(V.fbLabel)+'</span>'
         +'<div style="margin-top:10px;font:700 20px/1.2 var(--font-body)">'+e(V.answerName)+'</div><div style="font:italic 400 13px/1.35 var(--font-body);color:var(--fg-3)">'+e(V.answerLatin)+'</div>'
         +(V.answerNote?'<div style="margin-top:10px;font:400 14px/1.45 var(--font-body);color:var(--fg-2)">'+e(V.answerNote)+'</div>':'')
